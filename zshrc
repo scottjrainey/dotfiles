@@ -1,8 +1,8 @@
 # If you come from bash you might have to change your $PATH.
-export PATH=$HOME/bin:$HOME/Library/Python/2.7/bin:/usr/local/bin:$PATH
+export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH=/Users/srainey/.oh-my-zsh
+export ZSH=$HOME/.oh-my-zsh
 
 # Set name of the theme to load. Optionally, if you set this to "random"
 # it'll load a random theme each time that oh-my-zsh is loaded.
@@ -59,7 +59,9 @@ source $ZSH/oh-my-zsh.sh
 
 DEFAULT_USER="srainey"
 
-. /Users/srainey/Library/Python/2.7/lib/python/site-packages/powerline/bindings/zsh/powerline.zsh
+if [[ -r ~/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh ]]; then
+  source ~/.local/lib/python2.7/site-packages/powerline/bindings/zsh/powerline.zsh
+fi
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
@@ -90,8 +92,8 @@ DEFAULT_USER="srainey"
 
 # Include todo.txt-cli (https://github.com/ginatrapani/todo.txt-cli) if a
 # ~/.todo.cfg file exists
-if [ -f ~/.todo.cfg ]; then
-  export TODOTXT_DEFAULT_ACTION=ls
-  source /usr/local/Cellar/todo-txt/2.10/etc/bash_completion.d/todo_completion complete -F _todo td
-  alias td='/usr/local/Cellar/todo-txt/2.10/bin/todo.sh'
-fi
+#if [ -f ~/.todo.cfg ]; then
+#  export TODOTXT_DEFAULT_ACTION=ls
+#  source /usr/local/Cellar/todo-txt/2.10/etc/bash_completion.d/todo_completion complete -F _todo td
+#  alias td='/usr/local/Cellar/todo-txt/2.10/bin/todo.sh'
+#fi
