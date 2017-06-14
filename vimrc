@@ -5,9 +5,12 @@
 " End of vimrc-install additions.
 source $VIMRUNTIME/vimrc_example.vim
 " Powerline
-set rtp+=/Users/srainey/Library/Python/2.7/lib/python/site-packages/powerline/bindings/vim
-python from powerline.vim import setup as powerline_setup
-python powerline_setup()
-python del powerline_setup
+set rtp+=$HOME/.local/lib/python/site-packages/powerline/bindings/vim/
+" always show statusline
+set laststatus=2
+set t_Co=256
+" python3 from powerline.vim import setup as powerline_setup
+" python3 powerline_setup()
+" python3 del powerline_setup
 " Line numbering
 set number relativenumber
