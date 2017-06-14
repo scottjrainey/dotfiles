@@ -1,0 +1,7 @@
+[user]
+	email = scottjrainey@gmail.com
+	name = Scott Rainey
+
+[core]
+	excludesfile = ~/.gitignore_global
+
