@@ -14,3 +14,9 @@ set t_Co=256
 " python3 del powerline_setup
 " Line numbering
 set number relativenumber
+
+" Allow local overrides in ~/.vimrc_local
+let $LOCALFILE=expand("~/.vimrc_local")
+if filereadable($LOCALFILE)
+    source $LOCALFILE
+endif

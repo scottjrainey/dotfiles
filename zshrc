@@ -81,6 +81,11 @@ fi
 # ssh
 # export SSH_KEY_PATH="~/.ssh/rsa_id"
 
+# Look for local overrides
+if [ -f ~/.zshrc_local ]; then
+    source ~/.zshrc_local
+fi
+
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
 # users are encouraged to define aliases within the ZSH_CUSTOM folder.
