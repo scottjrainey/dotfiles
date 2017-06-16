@@ -51,7 +51,7 @@ ZSH_THEME="agnoster"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(docker docker-compose git osx vi-mode zsh-navigation-tools)
+plugins=(docker docker-compose git vi-mode zsh-navigation-tools)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -85,20 +85,3 @@ fi
 if [ -f ~/.zshrc_local ]; then
     source ~/.zshrc_local
 fi
-
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
-
-# Include todo.txt-cli (https://github.com/ginatrapani/todo.txt-cli) if a
-# ~/.todo.cfg file exists
-#if [ -f ~/.todo.cfg ]; then
-#  export TODOTXT_DEFAULT_ACTION=ls
-#  source /usr/local/Cellar/todo-txt/2.10/etc/bash_completion.d/todo_completion complete -F _todo td
-#  alias td='/usr/local/Cellar/todo-txt/2.10/bin/todo.sh'
-#fi
