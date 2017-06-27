@@ -10,6 +10,8 @@
     ~/.gitconfig:
     ~/.gitignore_global:
     ~/.oh-my-zsh:
+    ~/.todo: 'todo.txt_cli-2.9'
+    ~/.todo.cfg: 'todo.txt_cli-2.9/todo.cfg'
     ~/.vim:
     ~/.vimrc:
     ~/.zshrc:
