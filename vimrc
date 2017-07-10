@@ -1,9 +1,11 @@
-" Following lines added by drush vimrc-install on Wed, 30 Apr 2014 20:50:23 +0000.
-" set nocompatible
-" call pathogen#infect('/Users/srainey/.drush/vimrc/bundle')
-" call pathogen#infect('/Users/srainey/.vim/bundle')
-" End of vimrc-install additions.
-source $VIMRUNTIME/vimrc_example.vim
+" Settings related to http://drupal.org/project/vimrc
+set nocompatible
+" execute pathogen#infect('~/.vim/bundle/drupalvim/bundle')
+execute pathogen#infect()
+syntax on
+filetype plugin indent on
+" End of drupal/vimrc
+" source $VIMRUNTIME/vimrc_example.vim
 " Powerline
 set rtp+=$HOME/.local/lib/python/site-packages/powerline/bindings/vim/
 " always show statusline
@@ -14,6 +16,8 @@ set t_Co=256
 " python3 del powerline_setup
 " Line numbering
 set number relativenumber
+" Show the command being entered
+set showcmd
 
 " Allow local overrides in ~/.vimrc_local
 let $LOCALFILE=expand("~/.vimrc_local")
