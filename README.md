@@ -4,5 +4,5 @@ For those that care for such nonsense...
 
 ```sh
 brew bundle --file=Brewfile
-stow aerospace ghostty nvim starship zsh
+stow aerospace bat ghostty nvim starship zsh
 ```
