@@ -9,13 +9,7 @@ after-login-command = []
 # You can use it to add commands that run after AeroSpace startup.
 # 'after-startup-command' is run after 'after-login-command'
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
-after-startup-command = [
-  'exec-and-forget open -a "Google Chrome"',
-  'exec-and-forget open -a "Cursor"',
-  'exec-and-forget open -na "Google Chrome" --args --new-window "https://mail.google.com" "https://mail.proton.me"',
-  'exec-and-forget open -a "Obsidian"',
-  'exec-and-forget open -a "Ghostty"',
-]
+after-startup-command = []
 
 # Start AeroSpace at login
 start-at-login = true
@@ -138,9 +132,9 @@ automatically-unhide-macos-hidden-apps = false
     alt-9 = 'workspace 9'
 #   alt-a = 'workspace A' # In your config, you can drop workspace bindings that you don't need
     alt-b = 'workspace B' # Browser: Chrome, Brave, etc.
-#   alt-c = 'workspace C'
+    alt-c = 'workspace C' # Calendar
 #   alt-d = 'workspace D'
-    alt-e = 'workspace E' # Editor: Neovide, Cursor
+    alt-e = 'workspace E' # Editor: VSCode, Neovide, Cursor
 #   alt-g = 'workspace G'
 #   alt-i = 'workspace I'
     alt-m = 'workspace M' # Mail
@@ -170,7 +164,7 @@ automatically-unhide-macos-hidden-apps = false
     alt-shift-9 = 'move-node-to-workspace 9'
 #   alt-shift-a = 'move-node-to-workspace A'
     alt-shift-b = 'move-node-to-workspace B'
-#   alt-shift-c = 'move-node-to-workspace C'
+    alt-shift-c = 'move-node-to-workspace C'
 #   alt-shift-d = 'move-node-to-workspace D'
     alt-shift-e = 'move-node-to-workspace E'
 #   alt-shift-g = 'move-node-to-workspace G'
@@ -230,7 +224,7 @@ automatically-unhide-macos-hidden-apps = false
     e = ['exec-and-forget open -a "Cursor"']
     m = ['exec-and-forget open -na "Google Chrome" --args --new-window "https://mail.google.com" "https://mail.proton.me"']
     n = ['exec-and-forget open -a "Obsidian"']
-    t = ['exec-and-forget open -a "Ghostty"']
+    t = ['exec-and-forget open -na "Ghostty"']
 
 # Windows default to floating
 [[on-window-detected]]
@@ -241,20 +235,20 @@ automatically-unhide-macos-hidden-apps = false
 [[on-window-detected]] # Ghostty
     if.app-id = 'com.mitchellh.ghostty'
     if.during-aerospace-startup = true
-    run = 'move-node-to-workspace T'
+    run = ['layout tiling', 'move-node-to-workspace T']
 
 [[on-window-detected]] # Cursor
     if.app-id = 'com.todesktop.230313mzl4w4u92'
-    if.during-aerospace-startup = true
-    run = 'move-node-to-workspace E'
+    run = ['layout tiling', 'move-node-to-workspace E']
 
 [[on-window-detected]] # Chrome
     if.app-id = 'com.google.Chrome'
-    if.during-aerospace-startup = true
-    run = 'move-node-to-workspace B'
+    run = ['layout tiling', 'move-node-to-workspace B']
 
 [[on-window-detected]] # Obsidian
     if.app-id = 'md.obsidian'
-    if.during-aerospace-startup = true
-    run = 'move-node-to-workspace N'
+    run = ['layout tiling', 'move-node-to-workspace N']
 
+[[on-window-detected]] # Calendar
+    if.app-id = 'md.obsidian'
+    run = ['layout tiling', 'move-node-to-workspace C']
