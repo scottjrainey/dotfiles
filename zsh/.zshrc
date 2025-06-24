@@ -70,7 +70,12 @@ export ZSH="$HOME/.oh-my-zsh"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git sudo vi-mode zsh-autosuggestions)
+plugins=(git sudo vi-mode)
+if [[ "$TERM_PROGRAM" != "vscode" ]]; then
+  plugins+=(zsh-autosuggestions)
+else
+  echo "zsh-autosuggestions disabled in VSCode terminal"
+fi
 
 source $ZSH/oh-my-zsh.sh
 
