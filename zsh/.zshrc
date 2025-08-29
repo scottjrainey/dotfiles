@@ -79,6 +79,10 @@ fi
 
 source $ZSH/oh-my-zsh.sh
 
+# Commandline editor vars
+export EDITOR="nvim"
+export VISUAL="$EDITOR"
+
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
