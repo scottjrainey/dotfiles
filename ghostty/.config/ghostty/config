@@ -42,3 +42,4 @@
 # # Just for example:
 # resize-overlay-duration = 4s 200ms
 theme = tokyonight_moon
+keybind = shift+enter=text:\x1b\r
