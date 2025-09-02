@@ -16,6 +16,10 @@ project_types:
     instructions: ~/.agent-os/instructions
     standards: ~/.agent-os/standards
 
+  express-prisma-postgres:
+    instructions: ~/.agent-os/project_types/express-prisma-postgres/instructions
+    standards: ~/.agent-os/project_types/express-prisma-postgres/standards
+
   # type_a:
   #   instructions: ~/.agent-os/project_types/type_a/instructions
   #   standards: ~/.agent-os/project_types/type_a/standards
@@ -24,4 +28,4 @@ project_types:
   #   instructions: ~/.agent-os/project_types/type_b/instructions
   #   standards: ~/.agent-os/project_types/type_b/standards
 
-default_project_type: default
+default_project_type: express-prisma-postgres
