@@ -4,7 +4,7 @@ For those that care for such nonsense...
 
 ```sh
 brew bundle --file=Brewfile
-stow aerospace agent-os bat ghostty nvim starship zsh
+stow aerospace agent-os bat ghostty nvim starship tmux zsh
 ```
 
 ## Notes
