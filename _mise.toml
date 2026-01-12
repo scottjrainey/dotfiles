@@ -1,0 +1,19 @@
+[tools]
+bun = "latest"
+claude = "latest"
+neovim = "latest"
+node = "22"
+fzf = "latest"
+fd = "latest"
+ripgrep = "latest"
+xh = "latest"
+uv = "latest"
+python = "3.14"
+starship = "latest"
+bat = "latest"
+eza = "latest"
+lazygit = "latest"
+
+[settings]
+experimental = true
+lockfile = true

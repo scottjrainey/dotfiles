@@ -127,18 +127,16 @@ alias lsa='ls -a'
 alias lt='eza --tree --level=2 --long --icons --git'
 alias lta='lt -a'
 
-alias fabric='fabric-ai'
-
 # Theming
 export EZA_CONFIG_DIR="$HOME/.config/eza"
 
+# Activate mise to init mise-manageed tools
+eval "$(mise activate zsh)"
+eval "$(mise hook-env -s zsh)"
+
 eval "$(starship init zsh)"
 source <(fzf --zsh)
-eval "$(zoxide init zsh)"
 
-source <(COMPLETE=zsh jj)
-
-# Homebrew PATH configuration
+# Homebrew PATH configuration - prefer tool management with mise above
 export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
-export PATH="/usr/local/opt/python@3.12/libexec/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
