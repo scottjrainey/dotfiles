@@ -6,6 +6,14 @@ backend = "aqua:sharkdp/bat"
 "platforms.macos-arm64" = { checksum = "sha256:e30beff26779c9bf60bb541e1d79046250cb74378f2757f8eb250afddb19e114", url = "https://github.com/sharkdp/bat/releases/download/v0.26.1/bat-v0.26.1-aarch64-apple-darwin.tar.gz"}
 "platforms.macos-x64" = { checksum = "sha256:830d63b0bba1fa040542ec569e3cf77f60d3356b9de75116a344b061e0894245", url = "https://github.com/sharkdp/bat/releases/download/v0.26.1/bat-v0.26.1-x86_64-apple-darwin.tar.gz"}
 
+[[tools.bat-extras]]
+version = "2024.08.24"
+backend = "aqua:eth-p/bat-extras"
+"platforms.linux-arm64" = { url = "https://github.com/eth-p/bat-extras/releases/download/v2024.08.24/bat-extras-2024.08.24.zip"}
+"platforms.linux-x64" = { url = "https://github.com/eth-p/bat-extras/releases/download/v2024.08.24/bat-extras-2024.08.24.zip"}
+"platforms.macos-arm64" = { url = "https://github.com/eth-p/bat-extras/releases/download/v2024.08.24/bat-extras-2024.08.24.zip"}
+"platforms.macos-x64" = { url = "https://github.com/eth-p/bat-extras/releases/download/v2024.08.24/bat-extras-2024.08.24.zip"}
+
 [[tools.bun]]
 version = "1.3.5"
 backend = "core:bun"
@@ -22,6 +30,14 @@ backend = "core:bun"
 [[tools.claude]]
 version = "2.1.1"
 backend = "npm:@anthropic-ai/claude-code"
+
+[[tools.delta]]
+version = "0.18.2"
+backend = "aqua:dandavison/delta"
+"platforms.linux-arm64" = { url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-aarch64-unknown-linux-gnu.tar.gz"}
+"platforms.linux-x64" = { url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-x86_64-unknown-linux-musl.tar.gz"}
+"platforms.macos-arm64" = { url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-aarch64-apple-darwin.tar.gz"}
+"platforms.macos-x64" = { url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-x86_64-apple-darwin.tar.gz"}
 
 [[tools.eza]]
 version = "0.23.4"
@@ -43,6 +59,30 @@ backend = "aqua:junegunn/fzf"
 "platforms.macos-arm64" = { checksum = "sha256:b7f34c964d8e52c471c933cef8ec43dc71997c266cafafd1b013bed10fc229a1", url = "https://github.com/junegunn/fzf/releases/download/v0.67.0/fzf-0.67.0-darwin_arm64.tar.gz"}
 "platforms.macos-x64" = { checksum = "sha256:88dc853e0914793a2e7be0d1acfe6c922d9ccad08e3302df092399775b0279ff", url = "https://github.com/junegunn/fzf/releases/download/v0.67.0/fzf-0.67.0-darwin_amd64.tar.gz"}
 
+[[tools.gh]]
+version = "2.83.2"
+backend = "aqua:cli/cli"
+"platforms.linux-arm64" = { checksum = "sha256:b1a0c0a0fcf18524e36996caddc92a062355ed014defc836203fe20fba75a38e", url = "https://github.com/cli/cli/releases/download/v2.83.2/gh_2.83.2_linux_arm64.tar.gz"}
+"platforms.linux-x64" = { checksum = "sha256:ca6e7641214fbd0e21429cec4b64a7ba626fd946d8f9d6d191467545b092015e", url = "https://github.com/cli/cli/releases/download/v2.83.2/gh_2.83.2_linux_amd64.tar.gz"}
+"platforms.macos-arm64" = { checksum = "sha256:ba3e0396ebbc8da17256144ddda503e4e79c8b502166335569f8390d6b75fa8d", url = "https://github.com/cli/cli/releases/download/v2.83.2/gh_2.83.2_macOS_arm64.zip"}
+"platforms.macos-x64" = { checksum = "sha256:6f1712519ccc768946791dc97da407bf188582345b73fef3d604d050ebf6f614", url = "https://github.com/cli/cli/releases/download/v2.83.2/gh_2.83.2_macOS_amd64.zip"}
+
+[[tools.jj]]
+version = "0.37.0"
+backend = "aqua:jj-vcs/jj"
+"platforms.linux-arm64" = { checksum = "sha256:f42164567abbcc0b13354eeb1ecd11f4245d7dce4de849bf794a4d5e1b615c62", url = "https://github.com/jj-vcs/jj/releases/download/v0.37.0/jj-v0.37.0-aarch64-unknown-linux-musl.tar.gz"}
+"platforms.linux-x64" = { checksum = "sha256:7fd8e28d65106768054becbc1e0b929bed7c4c963d598f9f9a629bfa92eb7171", url = "https://github.com/jj-vcs/jj/releases/download/v0.37.0/jj-v0.37.0-x86_64-unknown-linux-musl.tar.gz"}
+"platforms.macos-arm64" = { checksum = "sha256:e42bc72d8b67843555ae0a362a4432c1cc98cc3850a25bcd90599c3c4a6911bd", url = "https://github.com/jj-vcs/jj/releases/download/v0.37.0/jj-v0.37.0-aarch64-apple-darwin.tar.gz"}
+"platforms.macos-x64" = { checksum = "sha256:ac1cd91eebc7434a32f513974cecb3f21390e9478ba08a2f9815febf28b6dd7d", url = "https://github.com/jj-vcs/jj/releases/download/v0.37.0/jj-v0.37.0-x86_64-apple-darwin.tar.gz"}
+
+[[tools.jqp]]
+version = "0.8.0"
+backend = "aqua:noahgorstein/jqp"
+"platforms.linux-arm64" = { checksum = "sha256:178a3d5ad64aefcabb0cf69435b70b23b13618ea71b829148223179b80ac101b", url = "https://github.com/noahgorstein/jqp/releases/download/v0.8.0/jqp_Linux_arm64.tar.gz"}
+"platforms.linux-x64" = { checksum = "sha256:66b2a100ff114a8bbe45a8e6052269fb2f4c61de4edd5ea57b763bf2ec7c6593", url = "https://github.com/noahgorstein/jqp/releases/download/v0.8.0/jqp_Linux_x86_64.tar.gz"}
+"platforms.macos-arm64" = { checksum = "sha256:aa53c1fa492c3cd26258391c312a152a0768b578b7ac0074ffb1daf0b3d6046d", url = "https://github.com/noahgorstein/jqp/releases/download/v0.8.0/jqp_Darwin_arm64.tar.gz"}
+"platforms.macos-x64" = { checksum = "sha256:8af39481eb9ccc2c69665bb89b8ee8fa3558acbc58f65be293832e69dc865c99", url = "https://github.com/noahgorstein/jqp/releases/download/v0.8.0/jqp_Darwin_x86_64.tar.gz"}
+
 [[tools.lazygit]]
 version = "0.58.0"
 backend = "aqua:jesseduffield/lazygit"
@@ -50,6 +90,10 @@ backend = "aqua:jesseduffield/lazygit"
 "platforms.linux-x64" = { checksum = "sha256:6161fa717cd07d133f7f1c53fe6e49de97d718dbb4b9e1481604dca6f3b8c647", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.58.0/lazygit_0.58.0_linux_x86_64.tar.gz"}
 "platforms.macos-arm64" = { checksum = "sha256:7e6c4794f18fbae11ccb75131a71f0216846847a772f702e4f78d26eb2137d35", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.58.0/lazygit_0.58.0_darwin_arm64.tar.gz"}
 "platforms.macos-x64" = { checksum = "sha256:22a16c6a6db258a448ede340d81e32b56ab3a6d51ffdfa763f5c9af27188b4ee", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.58.0/lazygit_0.58.0_darwin_x86_64.tar.gz"}
+
+[[tools.nasm]]
+version = "0.99.05"
+backend = "asdf:nasm"
 
 [[tools.neovim]]
 version = "0.11.5"
@@ -87,6 +131,14 @@ backend = "aqua:starship/starship"
 "platforms.macos-arm64" = { checksum = "sha256:d3a0da21374962625a2ee992110979bc1fa33424d7b6aea58a70405e26544fd9", url = "https://github.com/starship/starship/releases/download/v1.24.2/starship-aarch64-apple-darwin.tar.gz"}
 "platforms.macos-x64" = { checksum = "sha256:237beb10cc970c4361536e9f9f434dfed755f8282c5cd951b6a7e3fcbda8e779", url = "https://github.com/starship/starship/releases/download/v1.24.2/starship-x86_64-apple-darwin.tar.gz"}
 
+[[tools.terraform]]
+version = "1.14.3"
+backend = "aqua:hashicorp/terraform"
+"platforms.linux-arm64" = { checksum = "sha256:fb5b004070e5e438214a74ddca321c22246f799e5cbe1ee9df582528e953f8cc", url = "https://releases.hashicorp.com/terraform/1.14.3/terraform_1.14.3_linux_arm64.zip"}
+"platforms.linux-x64" = { checksum = "sha256:178b2a602251bb68b94732aceca2cc1023d87597cb83dba92cab31b6689edb4d", url = "https://releases.hashicorp.com/terraform/1.14.3/terraform_1.14.3_linux_amd64.zip"}
+"platforms.macos-arm64" = { checksum = "sha256:c45e74c19f38ec7fcb55f74b9788a75a2cbb07da45343b197ae4a41637e571b6", url = "https://releases.hashicorp.com/terraform/1.14.3/terraform_1.14.3_darwin_arm64.zip"}
+"platforms.macos-x64" = { checksum = "sha256:f88d0c3ff98add0e0288bfc1fe59df15e7fb0302bddef6a7367f734ef213cd02", url = "https://releases.hashicorp.com/terraform/1.14.3/terraform_1.14.3_darwin_amd64.zip"}
+
 [[tools.uv]]
 version = "0.9.22"
 backend = "aqua:astral-sh/uv"
@@ -102,3 +154,11 @@ backend = "aqua:ducaale/xh"
 "platforms.linux-x64" = { checksum = "sha256:fc738e616b327e7a10256e206c78073bfeed95d73af6ba9ced4c5eb20ac8d717", url = "https://github.com/ducaale/xh/releases/download/v0.25.3/xh-v0.25.3-x86_64-unknown-linux-musl.tar.gz"}
 "platforms.macos-arm64" = { checksum = "sha256:3886af1df744a44f6f8da37d51e3f733c14b35aeb3f46828ee528970ad708951", url = "https://github.com/ducaale/xh/releases/download/v0.25.3/xh-v0.25.3-aarch64-apple-darwin.tar.gz"}
 "platforms.macos-x64" = { checksum = "sha256:ef0bd8fe2752abd84202d0b0ac5d4943712ce3c464d70a679b140ca2a0a475cf", url = "https://github.com/ducaale/xh/releases/download/v0.25.3/xh-v0.25.3-x86_64-apple-darwin.tar.gz"}
+
+[[tools.yq]]
+version = "4.50.1"
+backend = "aqua:mikefarah/yq"
+"platforms.linux-arm64" = { checksum = "sha256:cf0a663d8e4e00bb61507c5237b95b45a6aaa1fbedac77f4dc8abdadd5e2b745", url = "https://github.com/mikefarah/yq/releases/download/v4.50.1/yq_linux_arm64"}
+"platforms.linux-x64" = { checksum = "sha256:c7a1278e6bbc4924f41b56db838086c39d13ee25dcb22089e7fbf16ac901f0d4", url = "https://github.com/mikefarah/yq/releases/download/v4.50.1/yq_linux_amd64"}
+"platforms.macos-arm64" = { checksum = "sha256:589cd3e27b2a0ae62fc4513c7d18db56203aaf88bf7c480f0cb3d4f4d0ac5514", url = "https://github.com/mikefarah/yq/releases/download/v4.50.1/yq_darwin_arm64"}
+"platforms.macos-x64" = { checksum = "sha256:6c24724c203f8ef0afaa4584d8b7baa150fec7f6d8a493efa49b80f620174119", url = "https://github.com/mikefarah/yq/releases/download/v4.50.1/yq_darwin_amd64"}
