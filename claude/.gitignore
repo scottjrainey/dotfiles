@@ -1,0 +1,15 @@
+# Ignore everything by default
+*
+
+# Include configuration files and directories
+!.gitignore
+!settings.json
+!commands/
+!commands/**
+!plugins/
+!plugins/installed_plugins.json
+!plugins/known_marketplaces.json
+
+# You might also want to include:
+# !hooks.json (if you use hooks)
+# !.claudeignore (if you have custom ignore patterns)

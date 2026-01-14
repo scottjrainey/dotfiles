@@ -1,6 +1,8 @@
 # Dotfiles
 
-A collection of configuration files for a development environment on macOS, managed with mise and Homebrew.
+A collection of configuration files for a cross-platform development environment, managed with mise and Homebrew.
+
+Supports both **macOS** and **Linux** (including devcontainers and VMs for isolated agentic work).
 
 ## What's Included
 
@@ -10,11 +12,11 @@ A collection of configuration files for a development environment on macOS, mana
 - **fzf**: Fuzzy finder integration
 
 ### Terminal & Editor
-- **ghostty**: Terminal emulator
+- **ghostty**: Terminal emulator (macOS only)
 - **neovim**: Neovim with LazyVim configuration
 - **tmux**: Terminal multiplexer
 
-### Window Management
+### Window Management (macOS only)
 - **aerospace**: Tiling window manager for macOS
 - **karabiner-elements**: Keyboard customization
 
@@ -34,11 +36,15 @@ A collection of configuration files for a development environment on macOS, mana
 
 ### Prerequisites
 
+**macOS:**
 Install Homebrew if you haven't already:
 
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
+
+**Linux:**
+Homebrew is optional on Linux. You can install mise and other tools using your system's package manager, or install [Homebrew on Linux](https://docs.brew.sh/Homebrew-on-Linux).
 
 ### Installation Steps
 
@@ -50,11 +56,15 @@ git clone <your-repo-url> ~/repos/dotfiles
 cd ~/repos/dotfiles
 ```
 
-2. Install Homebrew dependencies (includes mise):
+2. Install dependencies:
 
+**macOS with Homebrew:**
 ```sh
 brew bundle --file=Brewfile
 ```
+
+**Linux:**
+Install mise and other required tools using your package manager. Core requirements: mise, zsh, git.
 
 3. Install Oh My Zsh if not already installed:
 
@@ -74,7 +84,7 @@ git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-m
 mise install
 ```
 
-6. Symlink configuration files:
+6. Symlink configuration files (automatically detects OS and links appropriate configs):
 
 ```sh
 ./install.sh
@@ -87,6 +97,16 @@ source ~/.zshrc
 ```
 
 ## Notes
+
+### Cross-Platform Support
+
+The dotfiles work on both macOS and Linux environments. The installation script automatically detects the operating system and only links platform-specific configurations when appropriate.
+
+**Platform-specific tools:**
+- **macOS only**: ghostty, aerospace, karabiner-elements
+- **All platforms**: zsh, starship, fzf, neovim, tmux, mise-managed tools
+
+On Linux systems (including devcontainers and VMs), the macOS-specific configurations are skipped entirely, allowing you to use the same dotfiles repository across different environments.
 
 ### Repository Location
 
@@ -117,3 +137,5 @@ The `install.sh` script creates symlinks for:
 - `~/.config/starship.toml` → `starship.toml`
 - `~/.config/tmux/tmux.conf` → `tmux.conf`
 - `~/.zshrc` → `zshrc`
+- `~/.claude` → `claude/`
+- `~/.local/bin` → `bin/`
