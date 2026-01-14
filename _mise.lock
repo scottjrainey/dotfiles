@@ -15,20 +15,12 @@ backend = "aqua:eth-p/bat-extras"
 "platforms.macos-x64" = { url = "https://github.com/eth-p/bat-extras/releases/download/v2024.08.24/bat-extras-2024.08.24.zip"}
 
 [[tools.bun]]
-version = "1.3.5"
+version = "1.3.6"
 backend = "core:bun"
-"platforms.linux-arm64" = { checksum = "sha256:ed01000f85bd97785228ad2845dc92a1860b8054856826d7317690ac8f8ee74b", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.5/bun-linux-aarch64.zip"}
-"platforms.linux-arm64-musl" = { checksum = "sha256:980b567beeca875b79776d60a35b178309583df3f0973b3bae62f7244dc486ad", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.5/bun-linux-aarch64-musl.zip"}
-"platforms.linux-x64" = { checksum = "sha256:7051d86a924aefea3e0b96213b5fd8f79c0793f9cae6534233e627e5c3db4669", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.5/bun-linux-x64.zip"}
-"platforms.linux-x64-baseline" = { checksum = "sha256:6bddacd6a65855698b9816f2d74871eda4dd0b7fa921140c6445248f94a742fd", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.5/bun-linux-x64-baseline.zip"}
-"platforms.linux-x64-musl" = { checksum = "sha256:720d88e0e5f40450a1da91c0226f626b156eaa224876d794fa95f6ebf74f46b6", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.5/bun-linux-x64-musl.zip"}
-"platforms.linux-x64-musl-baseline" = { checksum = "sha256:57997319f8b9f72ce137363c3dfcd8d401327925108bb30dc5c3257452fba524", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.5/bun-linux-x64-musl-baseline.zip"}
-"platforms.macos-arm64" = { checksum = "sha256:db17588a4aea8804856825d4bead3f05e1f37276ca606f37e369b4f72f35d3fb", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.5/bun-darwin-aarch64.zip"}
-"platforms.macos-x64" = { checksum = "sha256:f5ffc03030fe527a86295fb5852bb08c5e99b707560011d1d509ab028902bf29", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.5/bun-darwin-x64.zip"}
-"platforms.macos-x64-baseline" = { checksum = "sha256:34b9a56b851058dafa1bc9d61233f2c383aa996889bba30b3180f5ccc2cff1b2", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.5/bun-darwin-x64-baseline.zip"}
+"platforms.macos-x64" = { checksum = "blake3:23f075aff0896d940c1c33fe6781c7d7a57006f1a1c722449686618cdebd294a"}
 
 [[tools.claude]]
-version = "2.1.1"
+version = "2.1.7"
 backend = "npm:@anthropic-ai/claude-code"
 
 [[tools.delta]]
@@ -84,12 +76,9 @@ backend = "aqua:noahgorstein/jqp"
 "platforms.macos-x64" = { checksum = "sha256:8af39481eb9ccc2c69665bb89b8ee8fa3558acbc58f65be293832e69dc865c99", url = "https://github.com/noahgorstein/jqp/releases/download/v0.8.0/jqp_Darwin_x86_64.tar.gz"}
 
 [[tools.lazygit]]
-version = "0.58.0"
+version = "0.58.1"
 backend = "aqua:jesseduffield/lazygit"
-"platforms.linux-arm64" = { checksum = "sha256:0e3bf5ae9688763198a63e4bc3d0306fa0199e74a28c7ccb42a8b316cd69529c", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.58.0/lazygit_0.58.0_linux_arm64.tar.gz"}
-"platforms.linux-x64" = { checksum = "sha256:6161fa717cd07d133f7f1c53fe6e49de97d718dbb4b9e1481604dca6f3b8c647", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.58.0/lazygit_0.58.0_linux_x86_64.tar.gz"}
-"platforms.macos-arm64" = { checksum = "sha256:7e6c4794f18fbae11ccb75131a71f0216846847a772f702e4f78d26eb2137d35", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.58.0/lazygit_0.58.0_darwin_arm64.tar.gz"}
-"platforms.macos-x64" = { checksum = "sha256:22a16c6a6db258a448ede340d81e32b56ab3a6d51ffdfa763f5c9af27188b4ee", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.58.0/lazygit_0.58.0_darwin_x86_64.tar.gz"}
+"platforms.macos-x64" = { checksum = "sha256:9f824298c8dbb3efaf6bf93a2e3be8a31fd53213bd3e759b7bd49d7bc7f8e3d0", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.58.1/lazygit_0.58.1_darwin_x86_64.tar.gz"}
 
 [[tools.nasm]]
 version = "0.99.05"
@@ -104,12 +93,9 @@ backend = "aqua:neovim/neovim"
 "platforms.macos-x64" = { checksum = "sha256:6612760a7037ca2518e456908baf5e43101fa79819d18979fc4d4e8441d9dfa5", url = "https://github.com/neovim/neovim/releases/download/v0.11.5/nvim-macos-x86_64.tar.gz"}
 
 [[tools.node]]
-version = "22.21.1"
+version = "22.22.0"
 backend = "core:node"
-"platforms.linux-arm64" = { checksum = "sha256:c86830dedf77f8941faa6c5a9c863bdfdd1927a336a46943decc06a38f80bfb2", url = "https://nodejs.org/dist/v22.21.1/node-v22.21.1-linux-arm64.tar.gz"}
-"platforms.linux-x64" = { checksum = "sha256:219a152ea859861d75adea578bdec3dce8143853c13c5187f40c40e77b0143b2", url = "https://nodejs.org/dist/v22.21.1/node-v22.21.1-linux-x64.tar.gz"}
-"platforms.macos-arm64" = { checksum = "sha256:c170d6554fba83d41d25a76cdbad85487c077e51fa73519e41ac885aa429d8af", url = "https://nodejs.org/dist/v22.21.1/node-v22.21.1-darwin-arm64.tar.gz"}
-"platforms.macos-x64" = { checksum = "sha256:8e3dc89614debe66c2a6ad2313a1adb06eb37db6cd6c40d7de6f7d987f7d1afd", url = "https://nodejs.org/dist/v22.21.1/node-v22.21.1-darwin-x64.tar.gz"}
+"platforms.macos-x64" = { checksum = "sha256:5ea50c9d6dea3dfa3abb66b2656f7a4e1c8cef23432b558d45fb538c7b5dedce", url = "https://nodejs.org/dist/v22.22.0/node-v22.22.0-darwin-x64.tar.gz"}
 
 [[tools.python]]
 version = "3.14.2"
@@ -140,12 +126,9 @@ backend = "aqua:hashicorp/terraform"
 "platforms.macos-x64" = { checksum = "sha256:f88d0c3ff98add0e0288bfc1fe59df15e7fb0302bddef6a7367f734ef213cd02", url = "https://releases.hashicorp.com/terraform/1.14.3/terraform_1.14.3_darwin_amd64.zip"}
 
 [[tools.uv]]
-version = "0.9.22"
+version = "0.9.25"
 backend = "aqua:astral-sh/uv"
-"platforms.linux-arm64" = { checksum = "sha256:a400eaede62557af86bed6c5252a101aa1efd596698bb10c9400334fcc2847ec", url = "https://github.com/astral-sh/uv/releases/download/0.9.22/uv-aarch64-unknown-linux-musl.tar.gz"}
-"platforms.linux-x64" = { checksum = "sha256:84d087a8e77a223d80578919894f3103f46ca7c263250c3e0478ce7c38850349", url = "https://github.com/astral-sh/uv/releases/download/0.9.22/uv-x86_64-unknown-linux-musl.tar.gz"}
-"platforms.macos-arm64" = { checksum = "sha256:4bfc6dacc9bcc9e433a9214a658495ca082b94fd607949b6745a955f34ccbc3c", url = "https://github.com/astral-sh/uv/releases/download/0.9.22/uv-aarch64-apple-darwin.tar.gz"}
-"platforms.macos-x64" = { checksum = "sha256:c0057ad78b475f343739b1bbe223361c1054524c9edf310ee1dc85a050207f86", url = "https://github.com/astral-sh/uv/releases/download/0.9.22/uv-x86_64-apple-darwin.tar.gz"}
+"platforms.macos-x64" = { checksum = "sha256:4982dfff14b3548bc85d0fa0abec6ab8ae62836b218bf1223741ba1392ef93bf", url = "https://github.com/astral-sh/uv/releases/download/0.9.25/uv-x86_64-apple-darwin.tar.gz"}
 
 [[tools.xh]]
 version = "0.25.3"
