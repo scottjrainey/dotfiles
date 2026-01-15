@@ -90,6 +90,11 @@ export VISUAL="$EDITOR"
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
 
+# Default to xterm-256color when terminfo is unknown
+if ! infocmp >/dev/null 2>&1; then
+  export TERM=xterm-256color
+fi
+
 # Preferred editor for local and remote sessions
 # if [[ -n $SSH_CONNECTION ]]; then
 #   export EDITOR='vim'
