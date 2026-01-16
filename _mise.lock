@@ -10,7 +10,7 @@ backend = "aqua:sharkdp/bat"
 version = "2024.08.24"
 backend = "aqua:eth-p/bat-extras"
 "platforms.linux-arm64" = { url = "https://github.com/eth-p/bat-extras/releases/download/v2024.08.24/bat-extras-2024.08.24.zip"}
-"platforms.linux-x64" = { url = "https://github.com/eth-p/bat-extras/releases/download/v2024.08.24/bat-extras-2024.08.24.zip"}
+"platforms.linux-x64" = { checksum = "blake3:7981bdbfbef5c00fde58158e5f2e48bdf5e60da8286d5ed03ee7f01ab740a547", url = "https://github.com/eth-p/bat-extras/releases/download/v2024.08.24/bat-extras-2024.08.24.zip"}
 "platforms.macos-arm64" = { url = "https://github.com/eth-p/bat-extras/releases/download/v2024.08.24/bat-extras-2024.08.24.zip"}
 "platforms.macos-x64" = { url = "https://github.com/eth-p/bat-extras/releases/download/v2024.08.24/bat-extras-2024.08.24.zip"}
 
@@ -35,7 +35,7 @@ backend = "npm:@anthropic-ai/claude-code"
 version = "0.18.2"
 backend = "aqua:dandavison/delta"
 "platforms.linux-arm64" = { url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-aarch64-unknown-linux-gnu.tar.gz"}
-"platforms.linux-x64" = { url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-x86_64-unknown-linux-musl.tar.gz"}
+"platforms.linux-x64" = { checksum = "blake3:fdd1cd8e8d98a7f2bacc64c2fad07a048ede031be6cd03bde8922d8b8819db07", url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-x86_64-unknown-linux-musl.tar.gz"}
 "platforms.macos-arm64" = { url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-aarch64-apple-darwin.tar.gz"}
 "platforms.macos-x64" = { url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-x86_64-apple-darwin.tar.gz"}
 

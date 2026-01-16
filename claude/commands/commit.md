@@ -1,34 +1,34 @@
-# Generate Git Commit
+---
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
+description: Create a git commit
+---
 
-Based on the `Instructions` below, take the `Variables` follow the `Run` section to create a git commit with a properly formatted message. Then follow the `Report` section to report the results of your work.
+## Context
 
-## Variables
+- Current git status: !`git status`
+- Current git diff (staged and unstaged changes): !`git diff HEAD`
+- Current branch: !`git branch --show-current`
+- Recent commits: !`git log --oneline -10`
 
-agent_name: $ARGUMENT
-issue_class: $ARGUMENT
-issue: $ARGUMENT
+## Your task
 
-## Instructions
+First, check if the project has its own `/commit` command:
+1. Look for a commit skill/command in .claude/, claude/, or .anthropic/ directories
+2. Check if there's a `/commit` command defined in the project's claude configuration
 
-- Generate a concise commit message in the format: `<agent_name>: <issue_class>: <commit message>`
-- The `<commit message>` should be:
-  - Present tense (e.g., "add", "fix", "update", not "added", "fixed", "updated")
-  - 50 characters or less
-  - Descriptive of the actual changes made
-  - No period at the end
-- Examples:
-  - `sdlc_planner: feat: add user authentication module`
-  - `sdlc_implementor: bug: fix login validation error`
-  - `sdlc_planner: chore: update dependencies to latest versions`
-- Extract context from the issue JSON to make the commit message relevant
-- Don't include any 'Generated with...' or 'Authored by...' in the commit message. Focus purely on the changes made.
+If a project-specific `/commit` command exists:
+- Use that command instead by calling the Skill tool with skill: "commit"
+- Follow any project-specific commit conventions defined in that command
 
-## Run
-
-1. Run `git diff HEAD` to understand what changes have been made
-2. Run `git add -A` to stage all changes
-3. Run `git commit -m "<generated_commit_message>"` to create the commit
-
-## Report
-
-Return ONLY the commit message that was used (no other text)
+If no project-specific `/commit` command exists:
+- Based on the above changes and recent commit history, create a single git commit
+- Follow the repository's commit message style (see recent commits above)
+- Use a single-line commit message in the format: `type: description`
+- Common types: fix, feat, chore, refactor, docs
+- Keep the message concise and descriptive
+- Use present tense (e.g., "add", "fix", "update")
+- Do not include Co-Authored-By or any additional lines
+- You have the capability to call multiple tools in a single response
+- Stage and create the commit with: `git commit -m "type: description"`
+- Do not use any other tools or do anything else
+- Do not send any other text or messages besides these tool calls
