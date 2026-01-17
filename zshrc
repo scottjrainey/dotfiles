@@ -77,6 +77,10 @@ else
   echo "zsh-autosuggestions disabled in VSCode terminal"
 fi
 
+# Activate mise to init mise-managed tools (before loading plugins that may use them)
+eval "$(mise activate zsh)"
+eval "$(mise hook-env -s zsh)"
+
 source $ZSH/oh-my-zsh.sh
 
 # Commandline editor vars
@@ -134,10 +138,6 @@ alias lta='lt -a'
 
 # Theming
 export EZA_CONFIG_DIR="$HOME/.config/eza"
-
-# Activate mise to init mise-manageed tools
-eval "$(mise activate zsh)"
-eval "$(mise hook-env -s zsh)"
 
 eval "$(starship init zsh)"
 source <(fzf --zsh)
