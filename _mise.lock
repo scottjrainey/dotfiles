@@ -91,10 +91,6 @@ backend = "aqua:jesseduffield/lazygit"
 "platforms.macos-arm64" = { checksum = "sha256:d93a8a217a51f26d0a643a97bd31e3fabcb2e3a78cdbf1f1e533b9cd8bc881ce", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.58.1/lazygit_0.58.1_darwin_arm64.tar.gz"}
 "platforms.macos-x64" = { checksum = "sha256:9f824298c8dbb3efaf6bf93a2e3be8a31fd53213bd3e759b7bd49d7bc7f8e3d0", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.58.1/lazygit_0.58.1_darwin_x86_64.tar.gz"}
 
-[[tools.nasm]]
-version = "0.99.05"
-backend = "asdf:nasm"
-
 [[tools.neovim]]
 version = "0.11.5"
 backend = "aqua:neovim/neovim"
