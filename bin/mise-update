@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Update mise tools and lockfile
+mise up
+mise lock --platform linux-x64,linux-arm64,macos-arm64,macos-x64
