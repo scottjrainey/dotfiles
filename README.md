@@ -8,12 +8,12 @@ Supports both **macOS** and **Linux** (including devcontainers and VMs for isola
 
 ### Shell Environment
 - **zsh**: Shell configuration with Oh My Zsh
-- **starship**: Cross-shell prompt
-- **fzf**: Fuzzy finder integration
+- **starship**: Cross-shell prompt (managed by mise)
+- **fzf**: Fuzzy finder integration (managed by mise)
 
 ### Terminal & Editor
 - **ghostty**: Terminal emulator (macOS only)
-- **neovim**: Neovim with LazyVim configuration
+- **neovim**: Neovim with LazyVim configuration (managed by mise)
 - **tmux**: Terminal multiplexer
 
 ### Window Management (macOS only)
@@ -22,9 +22,8 @@ Supports both **macOS** and **Linux** (including devcontainers and VMs for isola
 
 ### Development Tools (managed by mise)
 - **Languages**: node (22), python (3.14), bun
-- **CLI Tools**: bat, bat-extras, delta, eza, fd, gh, jj, jqp, lazygit, ripgrep, xh, yq, uv
-- **Infrastructure**: terraform
-- **Other**: claude, nasm
+- **CLI Tools**: bat, bat-extras, delta, eza, fd, fzf, gh, jj, jqp, lazygit, neovim, ripgrep, starship, xh, yq, uv
+- **Other**: claude
 
 ### Additional Tools (via Homebrew)
 - **Utilities**: git-filter-repo, mprocs, nmap, nushell, pipx, tectonic, codecrafters

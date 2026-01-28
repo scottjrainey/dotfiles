@@ -15,20 +15,20 @@ backend = "aqua:eth-p/bat-extras"
 "platforms.macos-x64" = { url = "https://github.com/eth-p/bat-extras/releases/download/v2024.08.24/bat-extras-2024.08.24.zip"}
 
 [[tools.bun]]
-version = "1.3.6"
+version = "1.3.7"
 backend = "core:bun"
-"platforms.linux-arm64" = { checksum = "sha256:5afd12b366ba2d8297245cc29c039416334dd872152c1db02e5c8aa8c66e96b1", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.6/bun-linux-aarch64.zip"}
-"platforms.linux-arm64-musl" = { checksum = "sha256:21af5d4c276dc4a0a3bbd3893a83994fa9de916b6807f8af9aff43d6193e579d", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.6/bun-linux-aarch64-musl.zip"}
-"platforms.linux-x64" = { checksum = "sha256:9ba98d2134550d6690875b23a4f5c48e74b7cb267e8cc1b8f52605921c6c11ef", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.6/bun-linux-x64.zip"}
-"platforms.linux-x64-baseline" = { checksum = "sha256:1954abee08900de610a8b4692f5fffa6c6b15d8afde7d1de4d3f88cfc60e7d5f", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.6/bun-linux-x64-baseline.zip"}
-"platforms.linux-x64-musl" = { checksum = "sha256:b13061f7e2ef5896fff95d849213a9628e9d89036cb7a23837c6dbba8844f636", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.6/bun-linux-x64-musl.zip"}
-"platforms.linux-x64-musl-baseline" = { checksum = "sha256:36638b6943d5d29cd6a1e148ffc1f43417a690f44101b3fc083bd11eba418d12", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.6/bun-linux-x64-musl-baseline.zip"}
-"platforms.macos-arm64" = { checksum = "sha256:2af1ec8437759ab05b3b0ea421fe9e22e6c705cb4cb0751c326982642dace8fa", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.6/bun-darwin-aarch64.zip"}
-"platforms.macos-x64" = { checksum = "sha256:83ef84c2a9d25dfef6ba0b31be3d8a09952ef311c71feca4488a628e96c26706", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.6/bun-darwin-x64.zip"}
-"platforms.macos-x64-baseline" = { checksum = "sha256:b2d8994d4cf70641366d69b87420b805d1d984f4ea7e16a352df156949474fa5", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.6/bun-darwin-x64-baseline.zip"}
+"platforms.linux-arm64" = { checksum = "sha256:d5c7d651423c2bc5ae3f92d36837ffb2ddc6ee91849672500b7fe8e5a5159fbc", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.7/bun-linux-aarch64.zip"}
+"platforms.linux-arm64-musl" = { checksum = "sha256:c3ec285016f567bc89bce46751a6425bbc256ec85ec5795d9a3b9edb039ddc8d", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.7/bun-linux-aarch64-musl.zip"}
+"platforms.linux-x64" = { checksum = "sha256:2bd2e0e0bdf09483be67a704607848ebe72c28420824e4ce772ce3da62c23d65", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.7/bun-linux-x64.zip"}
+"platforms.linux-x64-baseline" = { checksum = "sha256:cc14546006bf49419f3a20d2f591c8e167d112e1aa2ef1d8c77e1aec5ead372d", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.7/bun-linux-x64-baseline.zip"}
+"platforms.linux-x64-musl" = { checksum = "sha256:a38045aeeb7fb2d2dbc93aece67e92940571293abb040aef3334bf0f8dfe9b51", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.7/bun-linux-x64-musl.zip"}
+"platforms.linux-x64-musl-baseline" = { checksum = "sha256:8da029b5d0ca5105cde7e33618402756ec4eff88bbc10de47bc0bc06f8d6d12c", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.7/bun-linux-x64-musl-baseline.zip"}
+"platforms.macos-arm64" = { checksum = "sha256:16701e494998e4764d49af2fbe62d25ec59cf3c79ee696eba1def2cfe9049d64", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.7/bun-darwin-aarch64.zip"}
+"platforms.macos-x64" = { checksum = "sha256:cdfe9c71cacbdd9a73f098c3b050671957a7414e1321dfedd9a410d7794dae51", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.7/bun-darwin-x64.zip"}
+"platforms.macos-x64-baseline" = { checksum = "sha256:9c2c1aee6d72e96195c3051f91232504759507aaaeb093d5b70f88697e1a8eaf", url = "https://github.com/oven-sh/bun/releases/download/bun-v1.3.7/bun-darwin-x64-baseline.zip"}
 
 [[tools.claude]]
-version = "2.1.19"
+version = "2.1.22"
 backend = "npm:@anthropic-ai/claude-code"
 
 [[tools.delta]]
@@ -92,12 +92,12 @@ backend = "aqua:jesseduffield/lazygit"
 "platforms.macos-x64" = { checksum = "sha256:9f824298c8dbb3efaf6bf93a2e3be8a31fd53213bd3e759b7bd49d7bc7f8e3d0", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.58.1/lazygit_0.58.1_darwin_x86_64.tar.gz"}
 
 [[tools.neovim]]
-version = "0.11.5"
+version = "0.11.6"
 backend = "vfox:mise-plugins/vfox-neovim"
-"platforms.linux-arm64" = { url = "https://github.com/neovim/neovim/releases/download/v0.11.5/nvim-linux-x86_64.tar.gz"}
-"platforms.linux-x64" = { url = "https://github.com/neovim/neovim/releases/download/v0.11.5/nvim-linux-x86_64.tar.gz"}
-"platforms.macos-arm64" = { url = "https://github.com/neovim/neovim/releases/download/v0.11.5/nvim-linux-x86_64.tar.gz"}
-"platforms.macos-x64" = { url = "https://github.com/neovim/neovim/releases/download/v0.11.5/nvim-linux-x86_64.tar.gz"}
+"platforms.linux-arm64" = { url = "https://github.com/neovim/neovim/releases/download/v0.11.6/nvim-macos-x86_64.tar.gz"}
+"platforms.linux-x64" = { url = "https://github.com/neovim/neovim/releases/download/v0.11.6/nvim-macos-x86_64.tar.gz"}
+"platforms.macos-arm64" = { url = "https://github.com/neovim/neovim/releases/download/v0.11.6/nvim-macos-x86_64.tar.gz"}
+"platforms.macos-x64" = { url = "https://github.com/neovim/neovim/releases/download/v0.11.6/nvim-macos-x86_64.tar.gz"}
 
 [[tools.node]]
 version = "22.22.0"
@@ -127,21 +127,13 @@ backend = "aqua:starship/starship"
 "platforms.macos-arm64" = { checksum = "sha256:d3a0da21374962625a2ee992110979bc1fa33424d7b6aea58a70405e26544fd9", url = "https://github.com/starship/starship/releases/download/v1.24.2/starship-aarch64-apple-darwin.tar.gz"}
 "platforms.macos-x64" = { checksum = "sha256:237beb10cc970c4361536e9f9f434dfed755f8282c5cd951b6a7e3fcbda8e779", url = "https://github.com/starship/starship/releases/download/v1.24.2/starship-x86_64-apple-darwin.tar.gz"}
 
-[[tools.terraform]]
-version = "1.14.3"
-backend = "aqua:hashicorp/terraform"
-"platforms.linux-arm64" = { checksum = "sha256:fb5b004070e5e438214a74ddca321c22246f799e5cbe1ee9df582528e953f8cc", url = "https://releases.hashicorp.com/terraform/1.14.3/terraform_1.14.3_linux_arm64.zip"}
-"platforms.linux-x64" = { checksum = "sha256:178b2a602251bb68b94732aceca2cc1023d87597cb83dba92cab31b6689edb4d", url = "https://releases.hashicorp.com/terraform/1.14.3/terraform_1.14.3_linux_amd64.zip"}
-"platforms.macos-arm64" = { checksum = "sha256:c45e74c19f38ec7fcb55f74b9788a75a2cbb07da45343b197ae4a41637e571b6", url = "https://releases.hashicorp.com/terraform/1.14.3/terraform_1.14.3_darwin_arm64.zip"}
-"platforms.macos-x64" = { checksum = "sha256:f88d0c3ff98add0e0288bfc1fe59df15e7fb0302bddef6a7367f734ef213cd02", url = "https://releases.hashicorp.com/terraform/1.14.3/terraform_1.14.3_darwin_amd64.zip"}
-
 [[tools.uv]]
-version = "0.9.26"
+version = "0.9.27"
 backend = "aqua:astral-sh/uv"
-"platforms.linux-arm64" = { checksum = "sha256:ba8698c36c00c22efed4bd3506339b03c95604d001f02eaf6fbc814c9224d801", url = "https://github.com/astral-sh/uv/releases/download/0.9.26/uv-aarch64-unknown-linux-musl.tar.gz"}
-"platforms.linux-x64" = { checksum = "sha256:708b752876aeeb753257e1d55470569789e465684c1d3bc1760db26360b6c28b", url = "https://github.com/astral-sh/uv/releases/download/0.9.26/uv-x86_64-unknown-linux-musl.tar.gz"}
-"platforms.macos-arm64" = { checksum = "sha256:fcf0a9ea6599c6ae28a4c854ac6da76f2c889354d7c36ce136ef071f7ab9721f", url = "https://github.com/astral-sh/uv/releases/download/0.9.26/uv-aarch64-apple-darwin.tar.gz"}
-"platforms.macos-x64" = { checksum = "sha256:171eb8c518313e157c5b4cec7b4f743bc6bab1bd23e09b646679a02d096a047f", url = "https://github.com/astral-sh/uv/releases/download/0.9.26/uv-x86_64-apple-darwin.tar.gz"}
+"platforms.linux-arm64" = { checksum = "sha256:f80e97e1154a06e42143a173831289336ca9e34a67096ab070346958153e8e52", url = "https://github.com/astral-sh/uv/releases/download/0.9.27/uv-aarch64-unknown-linux-musl.tar.gz"}
+"platforms.linux-x64" = { checksum = "sha256:9f269bfb9c2e80808c373902af6a4af6cd5f4b4668b28c44aa09639cfed925c5", url = "https://github.com/astral-sh/uv/releases/download/0.9.27/uv-x86_64-unknown-linux-musl.tar.gz"}
+"platforms.macos-arm64" = { checksum = "sha256:1359538ed8664d172692cf4719ee0933a4a3bfb22fc91b0be1e19e7bdd8f5ef3", url = "https://github.com/astral-sh/uv/releases/download/0.9.27/uv-aarch64-apple-darwin.tar.gz"}
+"platforms.macos-x64" = { checksum = "sha256:3977309c5c79984c13c55d2d1cd7aa114a718eb29436c5bdb4bdfa08bf243438", url = "https://github.com/astral-sh/uv/releases/download/0.9.27/uv-x86_64-apple-darwin.tar.gz"}
 
 [[tools.xh]]
 version = "0.25.3"
