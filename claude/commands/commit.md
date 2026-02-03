@@ -12,15 +12,6 @@ description: Create a git commit
 
 ## Your task
 
-First, check if the project has its own `/commit` command:
-1. Look for a commit skill/command in .claude/, claude/, or .anthropic/ directories
-2. Check if there's a `/commit` command defined in the project's claude configuration
-
-If a project-specific `/commit` command exists:
-- Use that command instead by calling the Skill tool with skill: "commit"
-- Follow any project-specific commit conventions defined in that command
-
-If no project-specific `/commit` command exists:
 - Based on the above changes and recent commit history, create a single git commit
 - Follow the repository's commit message style (see recent commits above)
 - Use a single-line commit message in the format: `type: description`

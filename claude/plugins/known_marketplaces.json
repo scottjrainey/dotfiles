@@ -5,7 +5,7 @@
       "repo": "kepano/obsidian-skills"
     },
     "installLocation": "/Users/scottjrainey/.claude/plugins/marketplaces/obsidian-skills",
-    "lastUpdated": "2026-01-16T18:18:30.152Z"
+    "lastUpdated": "2026-02-03T00:39:27.294Z"
   },
   "claude-plugins-official": {
     "source": {
@@ -13,6 +13,6 @@
       "repo": "anthropics/claude-plugins-official"
     },
     "installLocation": "/home/vscode/.claude/plugins/marketplaces/claude-plugins-official",
-    "lastUpdated": "2026-01-29T00:12:52.943Z"
+    "lastUpdated": "2026-02-03T16:57:10.772Z"
   }
 }
