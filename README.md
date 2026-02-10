@@ -23,7 +23,7 @@ Supports both **macOS** and **Linux** (including devcontainers and VMs for isola
 ### Development Tools (managed by mise)
 - **Languages**: node (22), python (3.14), bun
 - **CLI Tools**: bat, bat-extras, delta, eza, fd, fzf, gh, jj, jqp, lazygit, neovim, ripgrep, starship, xh, yq, uv
-- **Other**: claude
+- **Other**: claude, codex
 
 ### Additional Tools (via Homebrew)
 - **Utilities**: git-filter-repo, mprocs, nmap, nushell, pipx, tectonic, codecrafters
@@ -117,10 +117,10 @@ Placing `dotfiles` in a less restricted path like `~/repos/dotfiles` avoids thes
 
 ### Custom Location
 
-If you need to use a different location, set the `DOTFILES_TARGET` environment variable before running `install.sh`:
+The `install.sh` script defaults to `DOTFILES_TARGET="$HOME/.dotfiles"`. If your dotfiles are at `~/repos/dotfiles` (recommended), set the variable before running:
 
 ```sh
-export DOTFILES_TARGET="/path/to/your/dotfiles"
+export DOTFILES_TARGET="$HOME/repos/dotfiles"
 ./install.sh
 ```
 
@@ -136,5 +136,9 @@ The `install.sh` script creates symlinks for:
 - `~/.config/starship.toml` → `starship.toml`
 - `~/.config/tmux/tmux.conf` → `tmux.conf`
 - `~/.zshrc` → `zshrc`
-- `~/.claude` → `claude/`
+- `~/.claude/settings.json` → `claude/settings.json`
+- `~/.claude/commands` → `claude/commands/`
+- `~/.claude/plugins/installed_plugins.json` → `claude/plugins/installed_plugins.json`
+- `~/.claude/plugins/known_marketplaces.json` → `claude/plugins/known_marketplaces.json`
+- `~/.oh-my-zsh/custom/plugins/*` → `oh-my-zsh-plugins/*`
 - `~/.local/bin` → `bin/`
