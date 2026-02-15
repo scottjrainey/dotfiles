@@ -148,3 +148,4 @@ source <(fzf --zsh)
 # Homebrew PATH configuration - prefer tool management with mise above
 export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.cache/.bun/bin:$PATH"
