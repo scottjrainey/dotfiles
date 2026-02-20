@@ -47,6 +47,7 @@ ln -sf "$DOTFILES_TARGET/claude/settings.json" "$HOME/.claude/settings.json"
 ln -sf "$DOTFILES_TARGET/claude/commands" "$HOME/.claude/"
 ln -sf "$DOTFILES_TARGET/claude/plugins/installed_plugins.json" "$HOME/.claude/plugins/installed_plugins.json"
 ln -sf "$DOTFILES_TARGET/claude/plugins/known_marketplaces.json" "$HOME/.claude/plugins/known_marketplaces.json"
+ln -sf "$DOTFILES_TARGET/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
 
 mkdir -p "$HOME/.local"
 ln -sf "$DOTFILES_TARGET/bin" "$HOME/.local/bin"

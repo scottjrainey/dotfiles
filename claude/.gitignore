@@ -9,6 +9,7 @@
 !plugins/
 !plugins/installed_plugins.json
 !plugins/known_marketplaces.json
+!statusline-command.sh
 
 # You might also want to include:
 # !hooks.json (if you use hooks)
