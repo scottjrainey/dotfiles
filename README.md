@@ -21,12 +21,11 @@ Supports both **macOS** and **Linux** (including devcontainers and VMs for isola
 - **karabiner-elements**: Keyboard customization
 
 ### Development Tools (managed by mise)
-- **Languages**: node (22), python (3.14), bun
-- **CLI Tools**: bat, bat-extras, delta, eza, fd, fzf, gh, jj, jqp, lazygit, neovim, ripgrep, starship, xh, yq, uv
-- **Other**: claude, codex
+- **CLI Tools**: bat, bat-extras, delta, eza, fd, fzf, jqp, lazygit, neovim, ripgrep, starship, xh, yq
 
 ### Additional Tools (via Homebrew)
-- **Utilities**: git-filter-repo, mprocs, nmap, nushell, pipx, tectonic, codecrafters
+- **Utilities**: git-filter-repo, mprocs, nmap, nushell, pipx, shellcheck, tectonic, codecrafters
+- **Apps**: Claude Code
 - **Fonts**: Fira Code Nerd Font, Iosevka Term Nerd Font, Symbols Only Nerd Font
 - **Dependencies**: ghostscript, luarocks
 - **Cloud**: Google Cloud CLI
