@@ -1,24 +1,25 @@
 {
   "version": 2,
   "plugins": {
-    "obsidian@obsidian-skills": [
-      {
-        "scope": "project",
-        "projectPath": "/Users/scottjrainey/repos/vault",
-        "installPath": "/Users/scottjrainey/.claude/plugins/cache/obsidian-skills/obsidian/1.0.0",
-        "version": "1.0.0",
-        "installedAt": "2026-01-14T09:39:29.714Z",
-        "lastUpdated": "2026-01-14T09:39:29.714Z"
-      }
-    ],
     "context7@claude-plugins-official": [
       {
         "scope": "project",
+        "projectPath": "/Users/scottjrainey/repos/blog",
         "installPath": "/Users/scottjrainey/.claude/plugins/cache/claude-plugins-official/context7/unknown",
         "version": "unknown",
         "installedAt": "2026-02-04T21:46:19.949Z",
-        "lastUpdated": "2026-02-04T21:46:19.949Z",
-        "projectPath": "/Users/scottjrainey/repos/blog"
+        "lastUpdated": "2026-02-04T21:46:19.949Z"
+      }
+    ],
+    "obsidian@obsidian-skills": [
+      {
+        "scope": "project",
+        "installPath": "/Users/scottjrainey/.claude/plugins/cache/obsidian-skills/obsidian/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-02-26T18:42:35.567Z",
+        "lastUpdated": "2026-02-26T18:42:35.567Z",
+        "gitCommitSha": "be978124b80dc6b60586773e1d125d1cdf36d26a",
+        "projectPath": "/Users/scottjrainey/repos/vault"
       }
     ]
   }
