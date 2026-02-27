@@ -52,6 +52,11 @@ ln -sf "$DOTFILES_TARGET/claude/statusline-command.sh" "$HOME/.claude/statusline
 mkdir -p "$HOME/.local"
 ln -sf "$DOTFILES_TARGET/bin" "$HOME/.local/bin"
 
+# Install Claude Code if not already installed
+if ! command -v claude &> /dev/null; then
+  curl -fsSL https://claude.ai/install.sh | bash
+fi
+
 # Install ghostty terminfo on non-macOS systems
 # Temporary until ghostty is included in ncurses (added in 6.5-20241228)
 if [[ "$OS" != "Darwin" ]]; then
