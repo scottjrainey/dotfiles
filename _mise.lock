@@ -59,12 +59,9 @@ backend = "aqua:noahgorstein/jqp"
 "platforms.macos-x64" = { checksum = "sha256:8af39481eb9ccc2c69665bb89b8ee8fa3558acbc58f65be293832e69dc865c99", url = "https://github.com/noahgorstein/jqp/releases/download/v0.8.0/jqp_Darwin_x86_64.tar.gz"}
 
 [[tools.lazygit]]
-version = "0.59.0"
+version = "0.60.0"
 backend = "aqua:jesseduffield/lazygit"
-"platforms.linux-arm64" = { checksum = "sha256:a334a6c125169f21942f1a8b02043932575547a6250a1a734d62111efd92aa8f", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.59.0/lazygit_0.59.0_linux_arm64.tar.gz"}
-"platforms.linux-x64" = { checksum = "sha256:264283f40a40c899d702a338b20622f690221f753f03bac827c1f34e91f516c2", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.59.0/lazygit_0.59.0_linux_x86_64.tar.gz"}
-"platforms.macos-arm64" = { checksum = "sha256:cdd42e86b16b3bc21ec5cbe4be92d688e39f3806b53b63c54d1af4f498302ed8", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.59.0/lazygit_0.59.0_darwin_arm64.tar.gz"}
-"platforms.macos-x64" = { checksum = "sha256:365db34a92d017f7e77fe03aa461a921c6a31832fa9d427a7b06c86732821f55", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.59.0/lazygit_0.59.0_darwin_x86_64.tar.gz"}
+"platforms.macos-x64" = { checksum = "sha256:9210a8bd8bf18537f9d7747361c8eba62518e10e4d5fbfe915cf110635eaab78", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.60.0/lazygit_0.60.0_darwin_x86_64.tar.gz"}
 
 [[tools.ripgrep]]
 version = "15.1.0"
