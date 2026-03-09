@@ -3,7 +3,7 @@ bat = "latest"
 bat-extras = "latest"
 delta = "latest"
 eza = "latest"
-fd = "latest"
+fd = "10.3.0"
 fzf = "latest"
 jqp = "latest"
 lazygit = "latest"
@@ -16,3 +16,6 @@ yq = "latest"
 [settings]
 experimental = true
 lockfile = true
+
+[settings.python]
+compile = true

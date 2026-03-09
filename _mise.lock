@@ -34,10 +34,6 @@ backend = "aqua:dandavison/delta"
 version = "0.23.4"
 backend = "asdf:eza"
 
-[[tools.fd]]
-version = "10.3.0"
-backend = "aqua:sharkdp/fd"
-
 [[tools.fzf]]
 version = "0.70.0"
 backend = "aqua:junegunn/fzf"

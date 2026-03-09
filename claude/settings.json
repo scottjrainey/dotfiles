@@ -1,8 +1,7 @@
 {
-  "skipDangerousModePermissionPrompt": true,
-  "effortLevel": "medium",
   "statusLine": {
     "type": "command",
     "command": "bash /Users/scottjrainey/.claude/statusline-command.sh"
-  }
+  },
+  "skipDangerousModePermissionPrompt": true
 }
