@@ -1,7 +1,7 @@
 [tools]
 bat = "latest"
 bat-extras = "latest"
-delta = "latest"
+delta = "0.18"
 eza = "latest"
 fd = "10.3.0"
 fzf = "latest"
