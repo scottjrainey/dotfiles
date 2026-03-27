@@ -91,9 +91,9 @@ backend = "aqua:ducaale/xh"
 "platforms.macos-x64" = { checksum = "sha256:ef0bd8fe2752abd84202d0b0ac5d4943712ce3c464d70a679b140ca2a0a475cf", url = "https://github.com/ducaale/xh/releases/download/v0.25.3/xh-v0.25.3-x86_64-apple-darwin.tar.gz"}
 
 [[tools.yq]]
-version = "4.52.4"
+version = "4.52.5"
 backend = "aqua:mikefarah/yq"
-"platforms.linux-arm64" = { checksum = "sha256:4c2cc022a129be5cc1187959bb4b09bebc7fb543c5837b93001c68f97ce39a5d", url = "https://github.com/mikefarah/yq/releases/download/v4.52.4/yq_linux_arm64"}
-"platforms.linux-x64" = { checksum = "sha256:0c4d965ea944b64b8fddaf7f27779ee3034e5693263786506ccd1c120f184e8c", url = "https://github.com/mikefarah/yq/releases/download/v4.52.4/yq_linux_amd64"}
-"platforms.macos-arm64" = { checksum = "sha256:6bfa43a439936644d63c70308832390c8838290d064970eaada216219c218a13", url = "https://github.com/mikefarah/yq/releases/download/v4.52.4/yq_darwin_arm64"}
-"platforms.macos-x64" = { checksum = "sha256:d72a75fe9953c707d395f653d90095b133675ddd61aa738e1ac9a73c6c05e8be", url = "https://github.com/mikefarah/yq/releases/download/v4.52.4/yq_darwin_amd64"}
+"platforms.linux-arm64" = { checksum = "sha256:90fa510c50ee8ca75544dbfffed10c88ed59b36834df35916520cddc623d9aaa", url = "https://github.com/mikefarah/yq/releases/download/v4.52.5/yq_linux_arm64"}
+"platforms.linux-x64" = { checksum = "sha256:75d893a0d5940d1019cb7cdc60001d9e876623852c31cfc6267047bc31149fa9", url = "https://github.com/mikefarah/yq/releases/download/v4.52.5/yq_linux_amd64"}
+"platforms.macos-arm64" = { checksum = "sha256:45a12e64d4bd8a31c72ee1b889e81f1b1110e801baad3d6f030c111db0068de0", url = "https://github.com/mikefarah/yq/releases/download/v4.52.5/yq_darwin_arm64"}
+"platforms.macos-x64" = { checksum = "sha256:6e399d1eb466860c3202d231727197fdce055888c5c7bec6964156983dd1559d", url = "https://github.com/mikefarah/yq/releases/download/v4.52.5/yq_darwin_amd64"}
