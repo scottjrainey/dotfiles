@@ -7,5 +7,10 @@
         "path": "../personal-os-skills"
       }
     }
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "npx -y ccstatusline@latest",
+    "padding": 0
   }
 }

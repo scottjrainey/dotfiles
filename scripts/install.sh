@@ -31,6 +31,7 @@ if [[ "$OS" == "Darwin" ]]; then
   ln -sf "$DOTFILES_TARGET/ghostty.config" "$CONFIG_DIR/ghostty/config"
 fi
 
+ln -sf "$DOTFILES_TARGET/ccstatusline" "$CONFIG_DIR/ccstatusline"
 ln -sf "$DOTFILES_TARGET/nvim" "$CONFIG_DIR/nvim"
 ln -sf "$DOTFILES_TARGET/ripgreprc" "$CONFIG_DIR/ripgrep/config"
 ln -sf "$DOTFILES_TARGET/starship.toml" "$CONFIG_DIR/starship.toml"
