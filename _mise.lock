@@ -66,6 +66,14 @@ backend = "aqua:jesseduffield/lazygit"
 "platforms.macos-arm64" = { checksum = "sha256:5045f0ff2117f12cb5232d65e01c054eb9ea6b8e2f0f0b80e99fbaa589b581b9", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.60.0/lazygit_0.60.0_darwin_arm64.tar.gz"}
 "platforms.macos-x64" = { checksum = "sha256:9210a8bd8bf18537f9d7747361c8eba62518e10e4d5fbfe915cf110635eaab78", url = "https://github.com/jesseduffield/lazygit/releases/download/v0.60.0/lazygit_0.60.0_darwin_x86_64.tar.gz"}
 
+[[tools.node]]
+version = "22.22.2"
+backend = "core:node"
+"platforms.linux-arm64" = { checksum = "sha256:b2f3a96f31486bfc365192ad65ced14833ad2a3c2e1bcefec4846902f264fa28", url = "https://nodejs.org/dist/v22.22.2/node-v22.22.2-linux-arm64.tar.gz"}
+"platforms.linux-x64" = { checksum = "sha256:978978a635eef872fa68beae09f0aad0bbbae6757e444da80b570964a97e62a3", url = "https://nodejs.org/dist/v22.22.2/node-v22.22.2-linux-x64.tar.gz"}
+"platforms.macos-arm64" = { checksum = "sha256:db4b275b83736df67533529a18cc55de2549a8329ace6c7bcc68f8d22d3c9000", url = "https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-arm64.tar.gz"}
+"platforms.macos-x64" = { checksum = "sha256:12a6abb9c2902cf48a21120da13f87fde1ed1b71a13330712949e8db818708ba", url = "https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-x64.tar.gz"}
+
 [[tools.ripgrep]]
 version = "15.1.0"
 backend = "aqua:BurntSushi/ripgrep"
