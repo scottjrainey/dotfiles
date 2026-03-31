@@ -1,7 +1,11 @@
 {
-  "statusLine": {
-    "type": "command",
-    "command": "bash /Users/scottjrainey/.claude/statusline-command.sh"
-  },
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "extraKnownMarketplaces": {
+    "personal-os-skills": {
+      "source": {
+        "source": "directory",
+        "path": "../personal-os-skills"
+      }
+    }
+  }
 }
