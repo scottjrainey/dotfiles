@@ -42,6 +42,9 @@ for file in "$DOTFILES_TARGET/oh-my-zsh-plugins"/*; do
   ln -sf "$file" "$ZSH_CUSTOM/plugins/"
 done
 
+# Link .agents files
+ln -sfn "$DOTFILES_TARGET/agents" "$HOME/.agents"
+
 # Link .claude configuration files (runtime data stays in ~/.claude)
 mkdir -p "$HOME/.claude/plugins"
 ln -sf "$DOTFILES_TARGET/claude/settings.json" "$HOME/.claude/settings.json"
@@ -52,14 +55,14 @@ mkdir -p "$HOME/.local"
 ln -sf "$DOTFILES_TARGET/bin" "$HOME/.local/bin"
 
 # Install Claude Code if not already installed
-if ! command -v claude &> /dev/null; then
+if ! command -v claude &>/dev/null; then
   curl -fsSL https://claude.ai/install.sh | bash
 fi
 
 # Install ghostty terminfo on non-macOS systems
 # Temporary until ghostty is included in ncurses (added in 6.5-20241228)
 if [[ "$OS" != "Darwin" ]]; then
-  cat > /tmp/ghostty.terminfo << 'EOF'
+  cat >/tmp/ghostty.terminfo <<'EOF'
 xterm-ghostty|ghostty|Ghostty,
     am, bce, ccc, hs, km, mc5i, mir, msgr, npc, xenl, AX, Su, Tc, XT, fullkbd,
     colors#256, cols#80, it#8, lines#24, pairs#32767,
