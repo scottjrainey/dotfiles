@@ -84,10 +84,6 @@ else
   echo "zsh-autosuggestions disabled in VSCode terminal"
 fi
 
-# Activate mise to init mise-managed tools (before loading plugins that may use them)
-eval "$(mise activate zsh)"
-eval "$(mise hook-env -s zsh)"
-
 source $ZSH/oh-my-zsh.sh
 
 # Commandline editor vars
@@ -145,7 +141,7 @@ export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgrep/config"
 eval "$(starship init zsh)"
 source <(fzf --zsh)
 
-# Homebrew PATH configuration - prefer tool management with mise above
+# Homebrew PATH configuration
 export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.cache/.bun/bin:$PATH"

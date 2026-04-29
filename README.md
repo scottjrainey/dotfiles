@@ -1,30 +1,28 @@
 # Dotfiles
 
-A collection of configuration files for a cross-platform development environment, managed with mise and Homebrew.
-
-Supports both **macOS** and **Linux** (including devcontainers and VMs for isolated agentic work).
+A collection of configuration files for a macOS development environment, managed with Homebrew.
 
 ## What's Included
 
 ### Shell Environment
 - **zsh**: Shell configuration with Oh My Zsh
-- **starship**: Cross-shell prompt (managed by mise)
-- **fzf**: Fuzzy finder integration (managed by mise)
+- **starship**: Cross-shell prompt
+- **fzf**: Fuzzy finder integration
 
 ### Terminal & Editor
-- **ghostty**: Terminal emulator (macOS only)
-- **neovim**: Neovim with LazyVim configuration (managed by mise)
+- **ghostty**: Terminal emulator
+- **neovim**: Neovim with LazyVim configuration
 - **tmux**: Terminal multiplexer
 
-### Window Management (macOS only)
+### Window Management
 - **aerospace**: Tiling window manager for macOS
 - **karabiner-elements**: Keyboard customization
 
-### Development Tools (managed by mise)
-- **CLI Tools**: bat, bat-extras, delta, eza, fd, fzf, jqp, lazygit, neovim, ripgrep, starship, xh, yq
+### Development Tools (via Homebrew)
+- **CLI Tools**: bat, bat-extras, delta, eza, fd, fzf, jq, jqp, lazygit, neovim, node, ripgrep, starship, uv, xh, yq
 
 ### Additional Tools (via Homebrew)
-- **Utilities**: git-filter-repo, mprocs, nmap, nushell, pipx, shellcheck, tectonic, codecrafters
+- **Utilities**: git-filter-repo, just, mprocs, nmap, nushell, shellcheck, tectonic, codecrafters
 - **Apps**: Claude Code
 - **Fonts**: Fira Code Nerd Font, Iosevka Term Nerd Font, Symbols Only Nerd Font
 - **Dependencies**: ghostscript, luarocks
@@ -34,15 +32,11 @@ Supports both **macOS** and **Linux** (including devcontainers and VMs for isola
 
 ### Prerequisites
 
-**macOS:**
 Install Homebrew if you haven't already:
 
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
-
-**Linux:**
-Homebrew is optional on Linux. You can install mise and other tools using your system's package manager, or install [Homebrew on Linux](https://docs.brew.sh/Homebrew-on-Linux).
 
 ### Installation Steps
 
@@ -56,13 +50,9 @@ cd ~/repos/dotfiles
 
 2. Install dependencies:
 
-**macOS with Homebrew:**
 ```sh
 brew bundle --file=Brewfile
 ```
-
-**Linux:**
-Install mise and other required tools using your package manager. Core requirements: mise, zsh, git.
 
 3. Install Oh My Zsh if not already installed:
 
@@ -76,35 +66,19 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/too
 git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
 ```
 
-5. Install mise-managed tools:
-
-```sh
-mise install
-```
-
-6. Symlink configuration files (automatically detects OS and links appropriate configs):
+5. Symlink configuration files (symlinks configuration files into ~/.config and ~):
 
 ```sh
 ./install.sh
 ```
 
-7. Restart your terminal or source the new configuration:
+6. Restart your terminal or source the new configuration:
 
 ```sh
 source ~/.zshrc
 ```
 
 ## Notes
-
-### Cross-Platform Support
-
-The dotfiles work on both macOS and Linux environments. The installation script automatically detects the operating system and only links platform-specific configurations when appropriate.
-
-**Platform-specific tools:**
-- **macOS only**: ghostty, aerospace, karabiner-elements
-- **All platforms**: zsh, starship, fzf, neovim, tmux, mise-managed tools
-
-On Linux systems (including devcontainers and VMs), the macOS-specific configurations are skipped entirely, allowing you to use the same dotfiles repository across different environments.
 
 ### Repository Location
 
@@ -126,8 +100,6 @@ export DOTFILES_TARGET="$HOME/repos/dotfiles"
 ### What Gets Symlinked
 
 The `install.sh` script creates symlinks for:
-- `~/.config/mise/config.toml` → `_mise.toml`
-- `~/.config/mise/mise.lock` → `_mise.lock`
 - `~/.config/aerospace/aerospace.toml` → `aerospace.toml`
 - `~/.config/ghostty/config` → `ghostty.config`
 - `~/.config/nvim` → `nvim/`
@@ -135,9 +107,5 @@ The `install.sh` script creates symlinks for:
 - `~/.config/starship.toml` → `starship.toml`
 - `~/.config/tmux/tmux.conf` → `tmux.conf`
 - `~/.zshrc` → `zshrc`
-- `~/.claude/settings.json` → `claude/settings.json`
-- `~/.claude/commands` → `claude/commands/`
-- `~/.claude/plugins/installed_plugins.json` → `claude/plugins/installed_plugins.json`
-- `~/.claude/plugins/known_marketplaces.json` → `claude/plugins/known_marketplaces.json`
 - `~/.oh-my-zsh/custom/plugins/*` → `oh-my-zsh-plugins/*`
 - `~/.local/bin` → `bin/`
