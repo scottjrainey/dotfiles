@@ -1,0 +1,76 @@
+#!/usr/bin/env sh
+
+# yabai config — translated from aerospace.toml as faithfully as possible.
+# Companion file: skhdrc (keybindings — yabai itself has no hotkey support).
+#
+# Symlink with: ln -sf "$DOTFILES_TARGET/yabairc" ~/.yabairc
+
+# Scripting addition. The sudoers hash must match the current yabai binary;
+# regenerate after every `brew upgrade yabai`. See:
+# https://github.com/asmvik/yabai/wiki/Installing-yabai-(latest-release)#configure-scripting-addition
+yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
+sudo yabai --load-sa
+
+# ── Global settings ──────────────────────────────────────────────────────────
+yabai -m config layout                     bsp
+yabai -m config split_type                 auto
+yabai -m config split_ratio                0.50
+yabai -m config auto_balance               off
+yabai -m config window_placement           second_child
+yabai -m config window_zoom_persist        on
+
+# Aerospace: on-focused-monitor-changed = move-mouse monitor-lazy-center
+#            on-focus-changed           = move-mouse window-lazy-center
+# Closest yabai analog — moves cursor when focus changes via yabai commands.
+yabai -m config mouse_follows_focus        on
+yabai -m config focus_follows_mouse        off
+
+# Aerospace gaps were 5px on all sides; preserved here.
+yabai -m config top_padding                5
+yabai -m config bottom_padding             5
+yabai -m config left_padding               5
+yabai -m config right_padding              5
+yabai -m config window_gap                 5
+
+# Mouse: fn+drag to move, fn+right-drag to resize. Aerospace had no equivalent;
+# this is a yabai convenience worth keeping.
+yabai -m config mouse_modifier             fn
+yabai -m config mouse_action1              move
+yabai -m config mouse_action2              resize
+yabai -m config mouse_drop_action          swap
+
+# ── Space labels ─────────────────────────────────────────────────────────────
+# Replaces aerospace's letter workspaces (B/C/E/M/N/T). Requires 6 macOS
+# spaces created in advance via Mission Control — yabai can no longer create
+# spaces under SIP-restricted macOS. Order in Mission Control's Spaces Bar
+# determines the index; rearrange there to change.
+yabai -m space 1 --label browser  2>/dev/null
+yabai -m space 2 --label calendar 2>/dev/null
+yabai -m space 3 --label editor   2>/dev/null
+yabai -m space 4 --label mail     2>/dev/null
+yabai -m space 5 --label notes    2>/dev/null
+yabai -m space 6 --label terminal 2>/dev/null
+
+# ── App → space assignments ──────────────────────────────────────────────────
+# Mirrors aerospace's [[on-window-detected]] blocks. Yabai applies rules at
+# window-create time; no separate "during startup" flag is needed.
+yabai -m rule --add app="^Google Chrome$"   space=browser
+yabai -m rule --add app="^Cursor$"          space=editor
+yabai -m rule --add app="^Ghostty$"         space=terminal
+yabai -m rule --add app="^Obsidian$"        space=notes
+yabai -m rule --add app="^Calendar$"        space=calendar
+
+# ── Float by default ─────────────────────────────────────────────────────────
+# Aerospace floated EVERY window by default and selectively tiled five apps.
+# Yabai's idiom is the opposite (tile everything, float the misbehaving ones),
+# so this list grows organically — add apps that don't tile well.
+yabai -m rule --add app="^System Settings$" manage=off
+yabai -m rule --add app="^System Information$" manage=off
+yabai -m rule --add app="^Calculator$"      manage=off
+yabai -m rule --add app="^Archive Utility$" manage=off
+yabai -m rule --add app="^Finder$" title="(Copy|Move|Delete|Info|Preferences)" manage=off
+yabai -m rule --add app="^App Store$"       manage=off
+yabai -m rule --add app="^Activity Monitor$" manage=off
+yabai -m rule --add app="^Software Update$" manage=off
+
+echo "yabai configuration loaded.."
