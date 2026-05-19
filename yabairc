@@ -11,6 +11,14 @@
 yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
 sudo yabai --load-sa
 
+# After every space change, explicitly focus a window so macOS activates the
+# owning app for keyboard input. Without this, `space --focus` switches the
+# visible space but leaves the previously-active app as macOS's frontmost,
+# so Cmd-T / Cmd-N etc. go nowhere until you click the window.
+yabai -m signal --add event=space_changed \
+  action='yabai -m window --focus "$(yabai -m query --windows --space \
+    | jq -re "map(select(.\"is-visible\" and (.\"is-floating\" | not))) | .[0].id // empty")" 2>/dev/null'
+
 # ── Global settings ──────────────────────────────────────────────────────────
 yabai -m config layout                     bsp
 yabai -m config split_type                 auto
@@ -54,11 +62,36 @@ yabai -m space 6 --label terminal 2>/dev/null
 # ── App → space assignments ──────────────────────────────────────────────────
 # Mirrors aerospace's [[on-window-detected]] blocks. Yabai applies rules at
 # window-create time; no separate "during startup" flag is needed.
-yabai -m rule --add app="^Google Chrome$"   space=browser
 yabai -m rule --add app="^Cursor$"          space=editor
 yabai -m rule --add app="^Ghostty$"         space=terminal
 yabai -m rule --add app="^Obsidian$"        space=notes
 yabai -m rule --add app="^Calendar$"        space=calendar
+
+# Chrome gets special handling: a blanket `space=browser` rule would also catch
+# OAuth popups and `open https://...` launches from other apps, dragging them
+# off the originating space. Instead:
+#   1. application_launched moves Chrome's first window to browser space only
+#      when its title is "New Tab" (i.e. cold launch with no URL passed in).
+#      If Chrome was launched via `open URL`, the first window loads that URL
+#      and gets a different title — we leave it on whichever space spawned it.
+#   2. window_created floats small Chrome windows in place — catches OAuth
+#      popups, account chooser dialogs, etc., which are typically <1000px wide.
+yabai -m signal --add event=application_launched app="^Google Chrome$" \
+  action='for _ in 1 2 3 4 5 6 7 8 9 10; do
+    w=$(yabai -m query --windows 2>/dev/null \
+      | jq -r "[.[] | select(.app == \"Google Chrome\")][0] // empty")
+    if [ -n "$w" ]; then
+      [ "$(echo "$w" | jq -r ".title")" = "New Tab" ] \
+        && yabai -m window "$(echo "$w" | jq -r ".id")" --space browser
+      break
+    fi
+    sleep 0.1
+  done'
+
+yabai -m signal --add event=window_created app="^Google Chrome$" \
+  action='yabai -m query --windows --window "$YABAI_WINDOW_ID" 2>/dev/null \
+    | jq -e ".frame.w < 1000 and (.\"is-floating\" | not)" >/dev/null \
+    && yabai -m window "$YABAI_WINDOW_ID" --toggle float'
 
 # ── Float by default ─────────────────────────────────────────────────────────
 # Aerospace floated EVERY window by default and selectively tiled five apps.
