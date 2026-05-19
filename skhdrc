@@ -78,6 +78,32 @@ alt + shift - m : yabai -m window --space mail     ; yabai -m space --focus mail
 alt + shift - n : yabai -m window --space notes    ; yabai -m space --focus notes
 alt + shift - t : yabai -m window --space terminal ; yabai -m space --focus terminal
 
+# ── Chrome: detach active tab to new window ──────────────────────────────────
+# Pops the focused Chrome tab into its own tiled window on the current space
+# and makes that window the active tile. Pair with the alt+shift+{1..6,
+# b,c,e,m,n,t} bindings above to then send it on to a target space.
+#
+# Two failsafes after creation, since AppleScript races with yabai's signals:
+#   1. The popup-float rule at yabairc:91 may float the new window if it's
+#      born narrower than 1000px. We re-tile it if so.
+#   2. macOS sometimes doesn't fully transfer focus to AppleScript-created
+#      windows (same class of issue as the space_changed workaround at
+#      yabairc:18). We focus the new window explicitly.
+# Newest Chrome window id == highest id, since yabai allocates monotonically.
+alt + shift - o : osascript -e 'tell application "Google Chrome"' \
+                            -e 'set u to URL of active tab of front window' \
+                            -e 'close active tab of front window' \
+                            -e 'set newWin to make new window' \
+                            -e 'set URL of active tab of newWin to u' \
+                            -e 'end tell' && sleep 0.15 && \
+                  w=$(yabai -m query --windows \
+                      | jq -r '[.[] | select(.app=="Google Chrome")] | sort_by(.id) | last | .id') && \
+                  [ -n "$w" ] && { \
+                    yabai -m query --windows --window "$w" \
+                      | jq -e '."is-floating"' >/dev/null \
+                      && yabai -m window "$w" --toggle float ; \
+                    yabai -m window --focus "$w" ; }
+
 # ── Fullscreen ───────────────────────────────────────────────────────────────
 # Aerospace: alt-shift-f = fullscreen (zoom-out without leaving the workspace)
 # Yabai's zoom-fullscreen matches that semantic; native-fullscreen creates a

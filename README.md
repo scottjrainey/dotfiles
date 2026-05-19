@@ -15,7 +15,8 @@ A collection of configuration files for a macOS development environment, managed
 - **tmux**: Terminal multiplexer
 
 ### Window Management
-- **aerospace**: Tiling window manager for macOS
+- **yabai**: Tiling window manager for macOS (replaces aerospace)
+- **skhd**: Hotkey daemon paired with yabai (yabai has no built-in hotkey support)
 - **karabiner-elements**: Keyboard customization
 
 ### Development Tools (via Homebrew)
@@ -100,7 +101,8 @@ export DOTFILES_TARGET="$HOME/repos/dotfiles"
 ### What Gets Symlinked
 
 The `install.sh` script creates symlinks for:
-- `~/.config/aerospace/aerospace.toml` → `aerospace.toml`
+- `~/.yabairc` → `yabairc`
+- `~/.skhdrc` → `skhdrc`
 - `~/.config/ghostty/config` → `ghostty.config`
 - `~/.config/nvim` → `nvim/`
 - `~/.config/ripgrep/config` → `ripgreprc`
