@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>PayloadContent</key>
+  <array>
+    <dict>
+      <key>PayloadDisplayName</key>
+      <string>Google Chrome Extension Policy</string>
+      <key>PayloadIdentifier</key>
+      <string>engineer.scottjrainey.dotfiles.chrome.extensions</string>
+      <key>PayloadType</key>
+      <string>com.google.Chrome</string>
+      <key>PayloadUUID</key>
+      <string>3C9A87F4-F6D8-4A8F-A694-0BC663BDAD3F</string>
+      <key>PayloadVersion</key>
+      <integer>1</integer>
+      <key>ExtensionInstallForcelist</key>
+      <array>
+        <string>ghbmnnjooekpmoecnnnilnnbdlolhkhi;https://clients2.google.com/service/update2/crx</string>
+        <string>dbepggeogbaibhgnhhndojpepiihcmeb;https://clients2.google.com/service/update2/crx</string>
+      </array>
+    </dict>
+  </array>
+  <key>PayloadDescription</key>
+  <string>Installs and manages Chrome extensions from dotfiles.</string>
+  <key>PayloadDisplayName</key>
+  <string>Chrome Extensions</string>
+  <key>PayloadIdentifier</key>
+  <string>engineer.scottjrainey.dotfiles.chrome</string>
+  <key>PayloadOrganization</key>
+  <string>Personal Dotfiles</string>
+  <key>PayloadRemovalDisallowed</key>
+  <false/>
+  <key>PayloadScope</key>
+  <string>System</string>
+  <key>PayloadType</key>
+  <string>Configuration</string>
+  <key>PayloadUUID</key>
+  <string>A24B9011-9294-47BB-B5D7-2C9C7737F18D</string>
+  <key>PayloadVersion</key>
+  <integer>1</integer>
+</dict>
+</plist>
