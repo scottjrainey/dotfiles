@@ -103,11 +103,13 @@ export DOTFILES_TARGET="$HOME/repos/dotfiles"
 ### What Gets Symlinked
 
 The `scripts/install.sh` script creates symlinks for:
-- `~/.yabairc` → `yabairc`
 - `~/.skhdrc` → `skhdrc`
+- `~/.yabairc` → `yabairc`
+- `~/.zprofile` → `zprofile`
 - `~/.zshrc` → `zshrc`
-- `~/.config/ghostty/config` → `ghostty.config`
+- `~/.config/btop/btop.conf` → `btop.conf`
 - `~/.config/ccstatusline` → `ccstatusline/`
+- `~/.config/ghostty/config` → `ghostty.config`
 - `~/.config/nvim` → `nvim/`
 - `~/.config/ripgrep/config` → `ripgreprc`
 - `~/.config/starship.toml` → `starship.toml`

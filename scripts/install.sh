@@ -8,21 +8,24 @@ set -euo pipefail
 
 # Link dotfiles to home directory
 CONFIG_DIR="$HOME/.config"
+mkdir -p "$CONFIG_DIR/btop"
+mkdir -p "$CONFIG_DIR/ghostty"
 mkdir -p "$CONFIG_DIR/ripgrep"
 mkdir -p "$CONFIG_DIR/tmux"
 #mkdir -p "$CONFIG_DIR/aerospace"
-mkdir -p "$CONFIG_DIR/ghostty"
 mkdir -p "$ZSH_CUSTOM/plugins"
 
 #ln -sf "$DOTFILES_TARGET/aerospace.toml" "$CONFIG_DIR/aerospace/aerospace.toml"
-ln -sf  "$DOTFILES_TARGET/ghostty.config" "$CONFIG_DIR/ghostty/config"
+ln -sf  "$DOTFILES_TARGET/btop.conf"      "$CONFIG_DIR/btop/btop.conf"
 ln -sfn "$DOTFILES_TARGET/ccstatusline"   "$CONFIG_DIR/ccstatusline"
+ln -sf  "$DOTFILES_TARGET/ghostty.config" "$CONFIG_DIR/ghostty/config"
 ln -sfn "$DOTFILES_TARGET/nvim"           "$CONFIG_DIR/nvim"
 ln -sf  "$DOTFILES_TARGET/ripgreprc"      "$CONFIG_DIR/ripgrep/config"
 ln -sf  "$DOTFILES_TARGET/starship.toml"  "$CONFIG_DIR/starship.toml"
 ln -sf  "$DOTFILES_TARGET/tmux.conf"      "$CONFIG_DIR/tmux/tmux.conf"
-ln -sf  "$DOTFILES_TARGET/yabairc"        "$HOME/.yabairc"
 ln -sf  "$DOTFILES_TARGET/skhdrc"         "$HOME/.skhdrc"
+ln -sf  "$DOTFILES_TARGET/yabairc"        "$HOME/.yabairc"
+ln -sf  "$DOTFILES_TARGET/zprofile"       "$HOME/.zprofile"
 ln -sf  "$DOTFILES_TARGET/zshrc"          "$HOME/.zshrc"
 
 # -n on dir links keeps re-runs from nesting (otherwise the second run
