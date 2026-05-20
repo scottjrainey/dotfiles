@@ -70,8 +70,10 @@ git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-m
 5. Symlink configuration files (symlinks configuration files into ~/.config and ~):
 
 ```sh
-./install.sh
+./scripts/install.sh
 ```
+
+If a sibling `~/repos/dotfiles-private` repo is present, the installer dispatches into it automatically to layer on personal/private symlinks (e.g. `~/.gitconfig`, `~/.claude/`).
 
 6. Restart your terminal or source the new configuration:
 
@@ -100,14 +102,16 @@ export DOTFILES_TARGET="$HOME/repos/dotfiles"
 
 ### What Gets Symlinked
 
-The `install.sh` script creates symlinks for:
+The `scripts/install.sh` script creates symlinks for:
 - `~/.yabairc` → `yabairc`
 - `~/.skhdrc` → `skhdrc`
+- `~/.zshrc` → `zshrc`
 - `~/.config/ghostty/config` → `ghostty.config`
+- `~/.config/ccstatusline` → `ccstatusline/`
 - `~/.config/nvim` → `nvim/`
 - `~/.config/ripgrep/config` → `ripgreprc`
 - `~/.config/starship.toml` → `starship.toml`
 - `~/.config/tmux/tmux.conf` → `tmux.conf`
-- `~/.zshrc` → `zshrc`
 - `~/.oh-my-zsh/custom/plugins/*` → `oh-my-zsh-plugins/*`
-- `~/.local/bin` → `bin/`
+
+If a sibling `~/repos/dotfiles-private` is present, `scripts/install.sh` then runs `dotfiles-private/scripts/install.sh`, which layers on private symlinks (`~/.gitconfig`, curated entries under `~/.claude/`, etc.).

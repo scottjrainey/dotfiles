@@ -15,18 +15,20 @@ mkdir -p "$CONFIG_DIR/ghostty"
 mkdir -p "$ZSH_CUSTOM/plugins"
 
 #ln -sf "$DOTFILES_TARGET/aerospace.toml" "$CONFIG_DIR/aerospace/aerospace.toml"
-ln -sf "$DOTFILES_TARGET/ghostty.config" "$CONFIG_DIR/ghostty/config"
-ln -sf "$DOTFILES_TARGET/ccstatusline" "$CONFIG_DIR/ccstatusline"
-ln -sf "$DOTFILES_TARGET/nvim" "$CONFIG_DIR/nvim"
-ln -sf "$DOTFILES_TARGET/ripgreprc" "$CONFIG_DIR/ripgrep/config"
-ln -sf "$DOTFILES_TARGET/starship.toml" "$CONFIG_DIR/starship.toml"
-ln -sf "$DOTFILES_TARGET/tmux.conf" "$CONFIG_DIR/tmux/tmux.conf"
-ln -sf "$DOTFILES_TARGET/yabairc" "$HOME/.yabairc"
-ln -sf "$DOTFILES_TARGET/skhdrc" "$HOME/.skhdrc"
-ln -sf "$DOTFILES_TARGET/zshrc" "$HOME/.zshrc"
+ln -sf  "$DOTFILES_TARGET/ghostty.config" "$CONFIG_DIR/ghostty/config"
+ln -sfn "$DOTFILES_TARGET/ccstatusline"   "$CONFIG_DIR/ccstatusline"
+ln -sfn "$DOTFILES_TARGET/nvim"           "$CONFIG_DIR/nvim"
+ln -sf  "$DOTFILES_TARGET/ripgreprc"      "$CONFIG_DIR/ripgrep/config"
+ln -sf  "$DOTFILES_TARGET/starship.toml"  "$CONFIG_DIR/starship.toml"
+ln -sf  "$DOTFILES_TARGET/tmux.conf"      "$CONFIG_DIR/tmux/tmux.conf"
+ln -sf  "$DOTFILES_TARGET/yabairc"        "$HOME/.yabairc"
+ln -sf  "$DOTFILES_TARGET/skhdrc"         "$HOME/.skhdrc"
+ln -sf  "$DOTFILES_TARGET/zshrc"          "$HOME/.zshrc"
 
+# -n on dir links keeps re-runs from nesting (otherwise the second run
+# follows the existing symlink and creates a link inside it).
 for file in "$DOTFILES_TARGET/oh-my-zsh-plugins"/*; do
-  ln -sf "$file" "$ZSH_CUSTOM/plugins/"
+  ln -sfn "$file" "$ZSH_CUSTOM/plugins/$(basename "$file")"
 done
 
 mkdir -p "$HOME/.local"
@@ -37,3 +39,12 @@ if ! command -v claude &>/dev/null; then
 fi
 
 echo "Dotfiles linked"
+
+# Dispatch into the private dotfiles repo if it's checked out as a sibling
+# of this one. Silently skips when absent so the public installer remains
+# usable on fresh machines before the private repo is cloned.
+PRIVATE_DIR="$(cd "$DOTFILES_TARGET/.." 2>/dev/null && pwd)/dotfiles-private"
+if [ -x "$PRIVATE_DIR/scripts/install.sh" ]; then
+  echo "Found private dotfiles at $PRIVATE_DIR — running"
+  DOTFILES_PRIVATE_TARGET="$PRIVATE_DIR" bash "$PRIVATE_DIR/scripts/install.sh"
+fi
