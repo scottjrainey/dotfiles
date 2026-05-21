@@ -61,21 +61,15 @@ brew bundle --file=Brewfile
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
 
-4. Install zsh-autosuggestions plugin:
-
-```sh
-git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-```
-
-5. Symlink configuration files (symlinks configuration files into ~/.config and ~):
+4. Symlink configuration files (symlinks configuration files into ~/.config and ~):
 
 ```sh
 ./scripts/install.sh
 ```
 
-If a sibling `~/repos/dotfiles-private` repo is present, the installer dispatches into it automatically to layer on personal/private symlinks (e.g. `~/.gitconfig`, `~/.claude/`).
+The installer also clones third-party oh-my-zsh plugins listed in `ZSH_PLUGINS_THIRD_PARTY` (currently `zsh-autosuggestions`) into `~/.oh-my-zsh/custom/plugins/`. If a sibling `~/repos/dotfiles-private` repo is present, it dispatches into that to layer on personal/private symlinks (e.g. `~/.gitconfig`, `~/.claude/`).
 
-6. Restart your terminal or source the new configuration:
+5. Restart your terminal or source the new configuration:
 
 ```sh
 source ~/.zshrc

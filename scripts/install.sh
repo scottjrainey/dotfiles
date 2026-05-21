@@ -34,6 +34,23 @@ for file in "$DOTFILES_TARGET/oh-my-zsh-plugins"/*; do
   ln -sfn "$file" "$ZSH_CUSTOM/plugins/$(basename "$file")"
 done
 
+# Third-party oh-my-zsh plugins referenced by zshrc but not authored here.
+# Cloned directly into $ZSH_CUSTOM/plugins/ — oh-my-zsh's native location —
+# rather than vendored into this repo. Existing checkouts are left alone;
+# a failed clone emits a warning and install proceeds.
+ZSH_PLUGINS_THIRD_PARTY=(
+  "https://github.com/zsh-users/zsh-autosuggestions"
+)
+for url in "${ZSH_PLUGINS_THIRD_PARTY[@]}"; do
+  name="$(basename "$url" .git)"
+  dest="$ZSH_CUSTOM/plugins/$name"
+  if [ ! -d "$dest" ]; then
+    echo "Cloning oh-my-zsh plugin: $name"
+    git clone "$url" "$dest" \
+      || echo "WARNING: could not clone $name (plugin may not load)"
+  fi
+done
+
 mkdir -p "$HOME/.local"
 
 # Install Claude Code if not already installed
