@@ -115,8 +115,9 @@ alt + shift - f : yabai -m window --toggle zoom-fullscreen
 alt - tab : yabai -m space --focus recent
 
 # Aerospace: alt-shift-tab = move-workspace-to-monitor --wrap-around next
-# Yabai moves the focused SPACE to the next display (wraps naturally).
-alt + shift - tab : yabai -m space --display next || yabai -m space --display first
+# Disabled for the labelled-space setup: moving a whole macOS Space between
+# displays makes labels feel less stable, especially with menu bar indicators.
+# alt + shift - tab : yabai -m space --display next || yabai -m space --display first
 
 # ── Mode entry ───────────────────────────────────────────────────────────────
 # Aerospace: alt-shift-semicolon = mode service
@@ -143,6 +144,15 @@ service < r : yabai -m space --balance
 # exclusive layouts on a space.
 service < f : [[ "$(yabai -m query --spaces --space | jq -r .type)" == "bsp" ]] && \
               yabai -m space --layout float || yabai -m space --layout bsp
+
+# Repair labels after manually arranging Mission Control's Spaces Bar into the
+# intended order: 1 browser, 2 calendar, 3 editor, 4 mail, 5 notes, 6 terminal.
+service < s : yabai -m space 1 --label browser  ; \
+              yabai -m space 2 --label calendar ; \
+              yabai -m space 3 --label editor   ; \
+              yabai -m space 4 --label mail     ; \
+              yabai -m space 5 --label notes    ; \
+              yabai -m space 6 --label terminal
 
 # Aerospace: backspace = close-all-windows-but-current
 service < backspace : yabai -m query --windows --space \

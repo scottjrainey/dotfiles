@@ -49,15 +49,52 @@ yabai -m config mouse_drop_action          swap
 
 # ── Space labels ─────────────────────────────────────────────────────────────
 # Replaces aerospace's letter workspaces (B/C/E/M/N/T). Requires 6 macOS
-# spaces created in advance via Mission Control — yabai can no longer create
-# spaces under SIP-restricted macOS. Order in Mission Control's Spaces Bar
-# determines the index; rearrange there to change.
-yabai -m space 1 --label browser  2>/dev/null
-yabai -m space 2 --label calendar 2>/dev/null
-yabai -m space 3 --label editor   2>/dev/null
-yabai -m space 4 --label mail     2>/dev/null
-yabai -m space 5 --label notes    2>/dev/null
-yabai -m space 6 --label terminal 2>/dev/null
+# spaces created in advance via Mission Control. Labels are attached to macOS
+# Space objects, so avoid blindly relabeling by index after macOS has shuffled
+# the Spaces Bar. Use the skhd service-mode repair binding after manually
+# arranging spaces if labels ever need to be reset.
+EXPECTED_SPACE_LABELS="browser calendar editor mail notes terminal"
+
+label_spaces_by_index() {
+  i=1
+  for label in $EXPECTED_SPACE_LABELS; do
+    yabai -m space "$i" --label "$label" 2>/dev/null
+    i=$((i + 1))
+  done
+}
+
+init_space_labels_if_needed() {
+  spaces_json="$(yabai -m query --spaces 2>/dev/null)" || return 0
+  label_state="$(printf '%s\n' "$spaces_json" | jq -r --arg labels "$EXPECTED_SPACE_LABELS" '
+    ($labels | split(" ")) as $expected
+    | [ .[] | select(."is-native-fullscreen" == false) ] as $regular
+    | [ $regular[].label ] as $current
+    | if ($regular | length) != ($expected | length) then
+        "unsafe-shape"
+      elif ([ $current[] | select(. != "" and (($expected | index(.)) | not)) ] | length) > 0 then
+        "unexpected-label"
+      elif ([ $expected[] as $label | $current | index($label) ] | all(. != null)) then
+        "already-labelled"
+      else
+        "needs-init"
+      end
+  ')"
+
+  case "$label_state" in
+    already-labelled)
+      echo "space labels already present; leaving existing Space identity alone"
+      ;;
+    needs-init)
+      label_spaces_by_index
+      ;;
+    *)
+      osascript -e 'display notification "Skipped yabai space relabeling; check Mission Control order and repair manually if needed." with title "yabai"' >/dev/null 2>&1
+      echo "skipped space relabeling: $label_state"
+      ;;
+  esac
+}
+
+init_space_labels_if_needed
 
 # ── App → space assignments ──────────────────────────────────────────────────
 # Mirrors aerospace's [[on-window-detected]] blocks. Yabai applies rules at
