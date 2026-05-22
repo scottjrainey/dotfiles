@@ -1,0 +1,133 @@
+{
+  "bundleId" : "io.gechr.WhichSpace",
+  "settings" : {
+    "clickToSwitchSpaces" : false,
+    "dimInactiveSpaces" : true,
+    "hideEmptySpaces" : false,
+    "hideFullscreenApps" : false,
+    "hideSingleSpace" : false,
+    "launchAtLogin" : false,
+    "localSpaceNumbers" : false,
+    "paddingScale" : 100,
+    "showAllDisplays" : false,
+    "showAllSpaces" : true,
+    "sizeScale" : 100,
+    "soundName" : "",
+    "uniqueIconsPerDisplay" : false
+  },
+  "spacePreferences" : {
+    "badges" : {
+      "1" : {
+        "character" : "B",
+        "position" : "topLeft"
+      },
+      "2" : {
+        "character" : "C",
+        "position" : "topLeft"
+      },
+      "3" : {
+        "character" : "E",
+        "position" : "topLeft"
+      },
+      "4" : {
+        "character" : "M",
+        "position" : "topLeft"
+      },
+      "5" : {
+        "character" : "N",
+        "position" : "topLeft"
+      },
+      "6" : {
+        "character" : "T",
+        "position" : "topLeft"
+      }
+    },
+    "colors" : {
+      "1" : {
+        "background" : {
+          "alpha" : 1,
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
+        },
+        "foreground" : {
+          "alpha" : 1,
+          "blue" : 0.37265488505363464,
+          "green" : 0.37265488505363464,
+          "red" : 0.37265488505363464
+        }
+      },
+      "2" : {
+        "background" : {
+          "alpha" : 1,
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
+        },
+        "foreground" : {
+          "alpha" : 1,
+          "blue" : 0.37265488505363464,
+          "green" : 0.37265488505363464,
+          "red" : 0.37265488505363464
+        }
+      },
+      "3" : {
+        "background" : {
+          "alpha" : 1,
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
+        },
+        "foreground" : {
+          "alpha" : 1,
+          "blue" : 0.37265488505363464,
+          "green" : 0.37265488505363464,
+          "red" : 0.37265488505363464
+        }
+      },
+      "4" : {
+        "background" : {
+          "alpha" : 1,
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
+        },
+        "foreground" : {
+          "alpha" : 1,
+          "blue" : 0.37265488505363464,
+          "green" : 0.37265488505363464,
+          "red" : 0.37265488505363464
+        }
+      },
+      "5" : {
+        "background" : {
+          "alpha" : 1,
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
+        },
+        "foreground" : {
+          "alpha" : 1,
+          "blue" : 0.37265488505363464,
+          "green" : 0.37265488505363464,
+          "red" : 0.37265488505363464
+        }
+      },
+      "6" : {
+        "background" : {
+          "alpha" : 1,
+          "blue" : 1,
+          "green" : 1,
+          "red" : 1
+        },
+        "foreground" : {
+          "alpha" : 1,
+          "blue" : 0.37265488505363464,
+          "green" : 0.37265488505363464,
+          "red" : 0.37265488505363464
+        }
+      }
+    }
+  },
+  "version" : "0.18.2"
+}

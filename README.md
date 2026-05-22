@@ -17,6 +17,7 @@ A collection of configuration files for a macOS development environment, managed
 ### Window Management
 - **yabai**: Tiling window manager for macOS (replaces aerospace)
 - **skhd**: Hotkey daemon paired with yabai (yabai has no built-in hotkey support)
+- **WhichSpace**: Menu bar Space indicator settings export
 - **karabiner-elements**: Keyboard customization
 
 ### Development Tools (via Homebrew)
@@ -75,6 +76,14 @@ The installer also clones third-party oh-my-zsh plugins listed in `ZSH_PLUGINS_T
 source ~/.zshrc
 ```
 
+6. Import WhichSpace settings:
+
+Open the WhichSpace menu bar menu, choose **Import Settings…**, and select:
+
+```text
+~/repos/dotfiles/whichspace/WhichSpaceSettings.json
+```
+
 ## Notes
 
 ### Repository Location
@@ -111,3 +120,7 @@ The `scripts/install.sh` script creates symlinks for:
 - `~/.oh-my-zsh/custom/plugins/*` → `oh-my-zsh-plugins/*`
 
 If a sibling `~/repos/dotfiles-private` is present, `scripts/install.sh` then runs `dotfiles-private/scripts/install.sh`, which layers on private symlinks (`~/.gitconfig`, curated entries under `~/.claude/`, etc.).
+
+### WhichSpace Settings
+
+WhichSpace settings are tracked as an app-supported JSON export at `whichspace/WhichSpaceSettings.json`. Re-import it manually through the WhichSpace menu bar app after installing dependencies and running the dotfiles installer.
