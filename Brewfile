@@ -1,23 +1,45 @@
+# Audit drift between this file and what's actually installed:
+#   brew bundle check --verbose                       # listed here but not installed
+#   brew bundle cleanup --file=Brewfile --dry-run     # installed but not listed here
+
+tap "asmvik/formulae"
+tap "codecrafters-io/tap"
+tap "gechr/tap"
 tap "nikitabobko/tap"
+tap "supabase/tap"
+tap "withgraphite/tap"
 
 # === Terminal, window manager, fonts (human) ===
 # UI-facing tools. Agents don't care about these.
 cask "ghostty"
 cask "nikitabobko/tap/aerospace"
+brew "asmvik/formulae/yabai"
+brew "asmvik/formulae/skhd"
+cask "gechr/tap/whichspace"
 cask "font-fira-code-nerd-font"
 cask "font-iosevka-term-nerd-font"
 cask "font-symbols-only-nerd-font"
+
+# === Shells (human) ===
+# Interactive shells. Agents run whatever non-interactive shell they're handed.
+brew "zsh"
+brew "nushell"
 
 # === Shell prompt & interactive helpers (human) ===
 # Make the human shell experience nice. Agents run non-interactive shells.
 brew "starship"
 brew "fzf"
 brew "eza"
+brew "yazi"
 
 # === Pretty viewers (human) ===
 # Visual replacements for cat. Agents read files directly.
 brew "bat"
 brew "bat-extras"
+
+# === System monitor (human) ===
+# TUI process/resource viewer. Agents read /proc-equivalents or ps directly.
+brew "btop"
 
 # === Terminal multiplexers (human) ===
 brew "tmux"
@@ -39,20 +61,28 @@ brew "jq"
 brew "yq"
 brew "jqp"
 
-# === Git tooling (human) ===
-# Human-driven UX over git. Agents call `git` directly.
-brew "lazygit"
-brew "git-delta"
+# === Git tooling (human + agent) ===
+# `git` itself (brewed, not system) plus human-driven UX wrappers.
+# Agents call `git`/`gh` directly; humans use lazygit/delta/graphite.
+brew "git"
 brew "gh"
+brew "git-delta"
+brew "git-filter-repo"
+brew "lazygit"
+brew "withgraphite/tap/graphite"
 
 # === HTTP client (human + agent) ===
 brew "xh"
+
+# === Network diagnostics (human + agent) ===
+brew "nmap"
 
 # === Language runtimes & version managers (human + agent) ===
 # Agents run scripts via uv/node; mise is available for project-level pinning.
 brew "mise"
 brew "uv"
-brew "node@22"
+brew "node@22", link: true
+npm "corepack"
 
 # === Linting & code quality (human + agent) ===
 brew "shellcheck"
@@ -63,3 +93,30 @@ brew "just"
 
 # === Issue tracking (human) ===
 brew "beads"
+
+# === Document & typesetting (human) ===
+# tectonic compiles LaTeX; ghostscript handles PostScript/PDF pipeline bits.
+brew "tectonic"
+brew "ghostscript"
+
+# === Containers & cloud (human + agent) ===
+# Local container runtime and cloud CLIs. Agents shell into these for ops work.
+cask "docker-desktop"
+cask "gcloud-cli"
+brew "supabase/tap/supabase"
+
+# === AI desktop apps (human) ===
+cask "claude"
+cask "codex-app"
+
+# === Browser (human) ===
+cask "google-chrome"
+
+# === Notes (human) ===
+cask "obsidian"
+
+# === Communication (human) ===
+cask "zoom"
+
+# === Learning (human) ===
+brew "codecrafters-io/tap/codecrafters"
