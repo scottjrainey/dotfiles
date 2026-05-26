@@ -96,13 +96,21 @@ init_space_labels_if_needed() {
 
 init_space_labels_if_needed
 
-# ── App → space assignments ──────────────────────────────────────────────────
-# Mirrors aerospace's [[on-window-detected]] blocks. Yabai applies rules at
-# window-create time; no separate "during startup" flag is needed.
-yabai -m rule --add app="^Cursor$"          space=editor
-yabai -m rule --add app="^Ghostty$"         space=terminal
-yabai -m rule --add app="^Obsidian$"        space=notes
-yabai -m rule --add app="^Calendar$"        space=calendar
+# ── App → space assignments (opt-in tiling) ──────────────────────────────────
+# Float-by-default model: the catch-all rule floats every window, then named
+# apps opt back in with manage=on. Later rules override earlier ones, so the
+# per-app lines below take precedence over the catch-all. Grow this list
+# organically as you find apps that tile well.
+yabai -m rule --add app=".*"                manage=off
+yabai -m rule --add app="^Cursor$"          manage=on space=editor
+yabai -m rule --add app="^Claude$"          manage=on space=editor
+yabai -m rule --add app="^Codex$"           manage=on space=editor
+yabai -m rule --add app="^Ghostty$"         manage=on space=terminal
+yabai -m rule --add app="^Terminal$"        manage=on space=terminal
+yabai -m rule --add app="^Obsidian$"        manage=on space=notes
+yabai -m rule --add app="^Calendar$"        manage=on space=calendar
+yabai -m rule --add app="^Messages$"        manage=on space=mail
+yabai -m rule --add app="^Google Chrome$"   manage=on
 
 # Chrome gets special handling: a blanket `space=browser` rule would also catch
 # OAuth popups and `open https://...` launches from other apps, dragging them
@@ -152,18 +160,5 @@ yabai -m signal --add app="^(Ghostty|Terminal)$" event=window_created \
   action='yabai -m space --layout bsp'
 yabai -m signal --add app="^(Ghostty|Terminal)$" event=window_destroyed \
   action='yabai -m space --layout bsp'
-
-# ── Float by default ─────────────────────────────────────────────────────────
-# Aerospace floated EVERY window by default and selectively tiled five apps.
-# Yabai's idiom is the opposite (tile everything, float the misbehaving ones),
-# so this list grows organically — add apps that don't tile well.
-yabai -m rule --add app="^System Settings$" manage=off
-yabai -m rule --add app="^System Information$" manage=off
-yabai -m rule --add app="^Calculator$"      manage=off
-yabai -m rule --add app="^Archive Utility$" manage=off
-yabai -m rule --add app="^Finder$" title="(Copy|Move|Delete|Info|Preferences)" manage=off
-yabai -m rule --add app="^App Store$"       manage=off
-yabai -m rule --add app="^Activity Monitor$" manage=off
-yabai -m rule --add app="^Software Update$" manage=off
 
 echo "yabai configuration loaded.."

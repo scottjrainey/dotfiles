@@ -110,6 +110,12 @@ alt + shift - o : osascript -e 'tell application "Google Chrome"' \
 # new macOS space and breaks tiling. Stick with zoom-fullscreen.
 alt + shift - f : yabai -m window --toggle zoom-fullscreen
 
+# ── Float / tile toggle ──────────────────────────────────────────────────────
+# Float-by-default model (yabairc) means new apps open floating unless they
+# have an explicit manage=on rule. This binding pulls the focused window into
+# the bsp tree on demand (or pops it back out). Matches i3/sway convention.
+alt + shift - 0x31 : yabai -m window --toggle float    # 0x31 = space
+
 # ── Workspace navigation ─────────────────────────────────────────────────────
 # Aerospace: alt-tab = workspace-back-and-forth
 alt - tab : yabai -m space --focus recent
