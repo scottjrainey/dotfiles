@@ -53,6 +53,22 @@ done
 
 mkdir -p "$HOME/.local"
 
+# Register WhichSpace as a per-user LaunchAgent so it starts at login.
+# Symlinking the plist keeps this repo as the source of truth; bootstrap
+# loads it now, kickstart -k handles re-runs where it's already loaded.
+LAUNCH_AGENTS="$HOME/Library/LaunchAgents"
+mkdir -p "$LAUNCH_AGENTS"
+ln -sf "$DOTFILES_TARGET/whichspace/io.gechr.WhichSpace.plist" \
+       "$LAUNCH_AGENTS/io.gechr.WhichSpace.plist"
+if [ -d /Applications/WhichSpace.app ]; then
+  launchctl bootstrap "gui/$(id -u)" \
+    "$LAUNCH_AGENTS/io.gechr.WhichSpace.plist" 2>/dev/null \
+    || launchctl kickstart -k "gui/$(id -u)/io.gechr.WhichSpace" 2>/dev/null \
+    || echo "WARNING: could not load WhichSpace LaunchAgent"
+else
+  echo "WhichSpace.app not found in /Applications — skipping LaunchAgent load (run \`brew bundle\` first)"
+fi
+
 # Install Claude Code if not already installed
 if ! command -v claude &>/dev/null; then
   curl -fsSL https://claude.ai/install.sh | bash
