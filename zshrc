@@ -144,4 +144,6 @@ source <(fzf --zsh)
 # Homebrew PATH configuration
 export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/.cache/.bun/bin:$PATH"
+
+# mise: project-scoped toolchain activation (directory-aware)
+eval "$(mise activate zsh)"
