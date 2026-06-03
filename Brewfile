@@ -1,6 +1,11 @@
 # Audit drift between this file and what's actually installed:
 #   brew bundle check --verbose                       # listed here but not installed
 #   brew bundle cleanup --file=Brewfile --dry-run     # installed but not listed here
+#
+# HOMEBREW_REQUIRE_TAP_TRUST=1 (set in zprofile) makes Homebrew ignore the
+# third-party taps below unless they're trusted. `brew bundle` can't express
+# trust, so scripts/install.sh regenerates ~/.config/homebrew/trust.json from
+# this file — every tap-qualified (user/tap/name) entry below gets trusted.
 
 tap "asmvik/formulae"
 tap "codecrafters-io/tap"

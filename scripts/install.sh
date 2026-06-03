@@ -69,6 +69,22 @@ else
   echo "WhichSpace.app not found in /Applications — skipping LaunchAgent load (run \`brew bundle\` first)"
 fi
 
+# Trust the third-party taps the Brewfile pulls from. HOMEBREW_REQUIRE_TAP_TRUST
+# (exported in zprofile) makes Homebrew ignore untrusted taps; trust.json is
+# generated state, so regenerate it here from the Brewfile rather than tracking
+# the file. Any brew/cask entry written as user/tap/name (two slashes) is
+# tap-qualified and needs trusting; bare names (e.g. "ghostty") are core taps.
+if command -v brew &>/dev/null; then
+  while IFS= read -r line; do
+    kind="${line%% *}"
+    name="$(printf '%s' "$line" | sed -E 's/^[a-z]+ +"([^"]+)".*/\1/')"
+    case "$kind" in
+      brew) brew trust --formula "$name" >/dev/null ;;
+      cask) brew trust --cask    "$name" >/dev/null ;;
+    esac
+  done < <(grep -E '^(brew|cask) +"[^"]+/[^"]+/[^"]+"' "$DOTFILES_TARGET/Brewfile")
+fi
+
 # Install Claude Code if not already installed
 if ! command -v claude &>/dev/null; then
   curl -fsSL https://claude.ai/install.sh | bash
