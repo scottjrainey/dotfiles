@@ -121,6 +121,8 @@ cask "google-chrome"
 cask "obsidian"
 
 # === Communication (human) ===
+cask "discord"
+cask "slack"
 cask "zoom"
 
 # === Learning (human) ===

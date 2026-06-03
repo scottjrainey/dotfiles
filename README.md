@@ -20,7 +20,7 @@ A collection of configuration files for a macOS development environment, managed
 - **WhichSpace**: Menu bar Space indicator settings export
 - **karabiner-elements**: Keyboard customization
 
-Window management assumes **6 macOS Spaces created in a specific order** — yabai labels them by index, WhichSpace badges them by index, and several `yabai -m rule` lines pin apps to those labels. See [First-time Spaces setup](#first-time-spaces-setup) below.
+Window management assumes **6 macOS Spaces created in a specific order** — yabai labels them by index, WhichSpace badges them by index, and several `yabai -m rule` lines pin apps to those labels. Spaces are organized by interruption profile: `comms` (Messages + Slack + Discord) is for synchronous, interrupt-driven chat; `planning` (Calendar + Email) is for async, check-on-your-schedule triage. Slack and Discord are native casks (`brew bundle` installs them) pinned to the `comms` space. See [First-time Spaces setup](#first-time-spaces-setup) below.
 
 ### Development Tools (via Homebrew)
 - **CLI Tools**: bat, bat-extras, delta, eza, fd, fzf, jq, jqp, lazygit, neovim, node, ripgrep, starship, uv, xh, yq
@@ -66,14 +66,14 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/too
 
 4. Create the 6 macOS Spaces (Mission Control). The default install has 1 Space — yabai and WhichSpace both need 6, in this order:
 
-   | Index | Label | WhichSpace badge |
-   |-------|-----------|---|
-   | 1     | browser   | B |
-   | 2     | calendar  | C |
-   | 3     | editor    | E |
-   | 4     | mail      | M |
-   | 5     | notes     | N |
-   | 6     | terminal  | T |
+   | Index | Label | WhichSpace badge | Apps |
+   |-------|-----------|---|---|
+   | 1     | browser   | B | Google Chrome (general) |
+   | 2     | comms     | C | Messages + Slack + Discord |
+   | 3     | editor    | E | Cursor / Claude / Codex |
+   | 4     | notes     | N | Obsidian |
+   | 5     | planning  | P | Calendar + Email (Gmail + Proton tabs) |
+   | 6     | terminal  | T | Ghostty |
 
    Open Mission Control (Ctrl+↑ or three-finger swipe up), hover the Spaces bar at the top, and click the **+** five times. macOS exposes no CLI for this — see [First-time Spaces setup](#first-time-spaces-setup) for details and how to recover if the order gets out of sync.
 
@@ -141,10 +141,10 @@ If a sibling `~/repos/dotfiles-private` is present, `scripts/install.sh` then ru
 
 macOS ships with one Space by default. This setup needs six, in a specific order, because:
 
-- `yabairc` labels Spaces **by index** on first run (`browser` → 1, `calendar` → 2, …, `terminal` → 6). Those labels are referenced by `yabai -m rule --add app=... space=editor` and similar lines, so wrong order means apps land on the wrong Space.
-- `whichspace/WhichSpaceSettings.json` hardcodes badges (B, C, E, M, N, T) against indexes 1–6.
+- `yabairc` labels Spaces **by index** on first run (`browser` → 1, `comms` → 2, …, `terminal` → 6). Those labels are referenced by `yabai -m rule --add app=... space=editor` and similar lines, so wrong order means apps land on the wrong Space.
+- `whichspace/WhichSpaceSettings.json` hardcodes badges (B, C, E, N, P, T) against indexes 1–6.
 
-**Create them via Mission Control**: there is no public macOS API to add Spaces — yabai can't create them under SIP on Apple Silicon either. Open Mission Control (Ctrl+↑ or three-finger swipe up), hover the Spaces bar, and click **+** until you have six. Drag them into `browser, calendar, editor, mail, notes, terminal` order.
+**Create them via Mission Control**: there is no public macOS API to add Spaces — yabai can't create them under SIP on Apple Silicon either. Open Mission Control (Ctrl+↑ or three-finger swipe up), hover the Spaces bar, and click **+** until you have six. Drag them into `browser, comms, editor, notes, planning, terminal` order.
 
 **Once yabai applies labels, it won't re-label**: `init_space_labels_if_needed` in `yabairc` is intentionally one-shot — if all six labels are already present, it leaves Space identity alone so you can rearrange Spaces in Mission Control without losing them. If you ever need to reset (e.g. after recreating Spaces), unlabel them and let yabai relabel on its next start:
 
@@ -153,7 +153,7 @@ for i in 1 2 3 4 5 6; do yabai -m space "$i" --label "" 2>/dev/null; done
 yabai --restart-service   # or: brew services restart yabai
 ```
 
-If yabai logs `skipped space relabeling: ...` and emits a notification on startup, that means it found a partial/mismatched label state and refused to overwrite — usually because the Spaces order in Mission Control no longer matches `browser, calendar, editor, mail, notes, terminal`. Fix the order (or clear labels as above) and restart yabai.
+If yabai logs `skipped space relabeling: ...` and emits a notification on startup, that means it found a partial/mismatched label state and refused to overwrite — usually because the Spaces order in Mission Control no longer matches `browser, comms, editor, notes, planning, terminal`. Fix the order (or clear labels as above) and restart yabai.
 
 ### WhichSpace
 
@@ -167,3 +167,7 @@ To disable auto-launch:
 launchctl bootout "gui/$(id -u)/io.gechr.WhichSpace"
 rm ~/Library/LaunchAgents/io.gechr.WhichSpace.plist
 ```
+
+### Slack & Discord
+
+Slack and Discord are native casks in the `Brewfile` (under **Communication**), installed by `brew bundle`. `yabairc` pins both — alongside Messages — to the `comms` space, and skhd's app mode jumps to them (`alt+shift+return` then `s` / `d`). Both are bare `homebrew/cask` entries, so they need no tap trust under `HOMEBREW_REQUIRE_TAP_TRUST` and the `install.sh` trust step skips them automatically.

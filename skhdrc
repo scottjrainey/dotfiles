@@ -47,17 +47,17 @@ alt - 0x18 : yabai -m window --resize right:50:0  || yabai -m window --resize le
 
 # ── Workspaces (labelled spaces — letters and numbers point at the same 6) ───
 alt - 1 : yabai -m space --focus browser
-alt - 2 : yabai -m space --focus calendar
+alt - 2 : yabai -m space --focus comms
 alt - 3 : yabai -m space --focus editor
-alt - 4 : yabai -m space --focus mail
-alt - 5 : yabai -m space --focus notes
+alt - 4 : yabai -m space --focus notes
+alt - 5 : yabai -m space --focus planning
 alt - 6 : yabai -m space --focus terminal
 
 alt - b : yabai -m space --focus browser
-alt - c : yabai -m space --focus calendar
+alt - c : yabai -m space --focus comms
 alt - e : yabai -m space --focus editor
-alt - m : yabai -m space --focus mail
 alt - n : yabai -m space --focus notes
+alt - p : yabai -m space --focus planning
 alt - t : yabai -m space --focus terminal
 
 # ── Move window to workspace ─────────────────────────────────────────────────
@@ -65,23 +65,23 @@ alt - t : yabai -m space --focus terminal
 # default. Yabai's `--space` flag only moves the window; chain `space --focus`
 # to match aerospace semantics.
 alt + shift - 1 : yabai -m window --space browser  ; yabai -m space --focus browser
-alt + shift - 2 : yabai -m window --space calendar ; yabai -m space --focus calendar
+alt + shift - 2 : yabai -m window --space comms    ; yabai -m space --focus comms
 alt + shift - 3 : yabai -m window --space editor   ; yabai -m space --focus editor
-alt + shift - 4 : yabai -m window --space mail     ; yabai -m space --focus mail
-alt + shift - 5 : yabai -m window --space notes    ; yabai -m space --focus notes
+alt + shift - 4 : yabai -m window --space notes    ; yabai -m space --focus notes
+alt + shift - 5 : yabai -m window --space planning ; yabai -m space --focus planning
 alt + shift - 6 : yabai -m window --space terminal ; yabai -m space --focus terminal
 
 alt + shift - b : yabai -m window --space browser  ; yabai -m space --focus browser
-alt + shift - c : yabai -m window --space calendar ; yabai -m space --focus calendar
+alt + shift - c : yabai -m window --space comms    ; yabai -m space --focus comms
 alt + shift - e : yabai -m window --space editor   ; yabai -m space --focus editor
-alt + shift - m : yabai -m window --space mail     ; yabai -m space --focus mail
 alt + shift - n : yabai -m window --space notes    ; yabai -m space --focus notes
+alt + shift - p : yabai -m window --space planning ; yabai -m space --focus planning
 alt + shift - t : yabai -m window --space terminal ; yabai -m space --focus terminal
 
 # ── Chrome: detach active tab to new window ──────────────────────────────────
 # Pops the focused Chrome tab into its own tiled window on the current space
 # and makes that window the active tile. Pair with the alt+shift+{1..6,
-# b,c,e,m,n,t} bindings above to then send it on to a target space.
+# b,c,e,n,p,t} bindings above to then send it on to a target space.
 #
 # Two failsafes after creation, since AppleScript races with yabai's signals:
 #   1. The popup-float rule at yabairc:91 may float the new window if it's
@@ -152,12 +152,12 @@ service < f : [[ "$(yabai -m query --spaces --space | jq -r .type)" == "bsp" ]] 
               yabai -m space --layout float || yabai -m space --layout bsp
 
 # Repair labels after manually arranging Mission Control's Spaces Bar into the
-# intended order: 1 browser, 2 calendar, 3 editor, 4 mail, 5 notes, 6 terminal.
+# intended order: 1 browser, 2 comms, 3 editor, 4 notes, 5 planning, 6 terminal.
 service < s : yabai -m space 1 --label browser  ; \
-              yabai -m space 2 --label calendar ; \
+              yabai -m space 2 --label comms    ; \
               yabai -m space 3 --label editor   ; \
-              yabai -m space 4 --label mail     ; \
-              yabai -m space 5 --label notes    ; \
+              yabai -m space 4 --label notes    ; \
+              yabai -m space 5 --label planning ; \
               yabai -m space 6 --label terminal
 
 # Aerospace: backspace = close-all-windows-but-current
@@ -196,8 +196,28 @@ app < escape ; default
 
 app < b : open -na "Google Chrome"
 app < e : open -a "Cursor"
-app < m : open -na "Google Chrome" --args --new-window "https://mail.google.com" "https://mail.proton.me"
 app < n : open -a "Obsidian"
 app < t : open -na "Ghostty"
+
+# Comms apps (all pinned to the comms space via yabairc rules).
+# open -a focuses the app if it's already running, else launches it.
+app < s : open -a "Slack"
+app < d : open -a "Discord"
+app < m : open -a "Messages"     # m = Messages (was the mail-Chrome launcher)
+
+# Planning apps.
+app < a : open -a "Calendar"     # a = agenda
+
+# Email: open Gmail + Proton as two tabs in one Chrome window, then send that
+# window to the planning space. A URL-launched Chrome window keeps its origin
+# space (the application_launched signal in yabairc only routes "New Tab" cold
+# launches to browser), so we move it explicitly. Newest Chrome window == highest
+# id, same idiom as the alt+shift-o detach binding above.
+app < g : open -na "Google Chrome" --args --new-window \
+            "https://mail.google.com" "https://mail.proton.me" && sleep 0.3 && \
+          w=$(yabai -m query --windows \
+              | jq -r '[.[] | select(.app=="Google Chrome")] | sort_by(.id) | last | .id') && \
+          [ -n "$w" ] && yabai -m window "$w" --space planning ; \
+          yabai -m space --focus planning
 
 # Default mode is implicit — no `::` declaration needed for the entry mode.

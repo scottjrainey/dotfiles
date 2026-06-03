@@ -53,7 +53,7 @@ yabai -m config mouse_drop_action          swap
 # Space objects, so avoid blindly relabeling by index after macOS has shuffled
 # the Spaces Bar. Use the skhd service-mode repair binding after manually
 # arranging spaces if labels ever need to be reset.
-EXPECTED_SPACE_LABELS="browser calendar editor mail notes terminal"
+EXPECTED_SPACE_LABELS="browser comms editor notes planning terminal"
 
 label_spaces_by_index() {
   i=1
@@ -108,8 +108,12 @@ yabai -m rule --add app="^Codex$"           manage=on space=editor
 yabai -m rule --add app="^Ghostty$"         manage=on space=terminal
 yabai -m rule --add app="^Terminal$"        manage=on space=terminal
 yabai -m rule --add app="^Obsidian$"        manage=on space=notes
-yabai -m rule --add app="^Calendar$"        manage=on space=calendar
-yabai -m rule --add app="^Messages$"        manage=on space=mail
+yabai -m rule --add app="^Calendar$"        manage=on space=planning
+yabai -m rule --add app="^Messages$"        manage=on space=comms
+# Slack and Discord are native casks (see Brewfile, "Communication" section),
+# pinned alongside Messages on the comms space.
+yabai -m rule --add app="^Slack$"           manage=on space=comms
+yabai -m rule --add app="^Discord$"         manage=on space=comms
 yabai -m rule --add app="^Google Chrome$"   manage=on
 
 # Chrome gets special handling: a blanket `space=browser` rule would also catch
