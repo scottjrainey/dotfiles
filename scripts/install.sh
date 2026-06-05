@@ -72,9 +72,13 @@ fi
 # Trust the third-party taps the Brewfile pulls from. HOMEBREW_REQUIRE_TAP_TRUST
 # (exported in zprofile) makes Homebrew ignore untrusted taps; trust.json is
 # generated state, so regenerate it here from the Brewfile rather than tracking
-# the file. Any brew/cask entry written as user/tap/name (two slashes) is
-# tap-qualified and needs trusting; bare names (e.g. "ghostty") are core taps.
+# the file. Tap-level trust is needed for `brew update` to pull from the tap;
+# formula/cask-level trust is needed to actually install from it.
 if command -v brew &>/dev/null; then
+  while IFS= read -r line; do
+    tapname="$(printf '%s' "$line" | sed -E 's/^tap +"([^"]+)".*/\1/')"
+    brew trust "$tapname" >/dev/null 2>&1
+  done < <(grep -E '^tap ' "$DOTFILES_TARGET/Brewfile")
   while IFS= read -r line; do
     kind="${line%% *}"
     name="$(printf '%s' "$line" | sed -E 's/^[a-z]+ +"([^"]+)".*/\1/')"
