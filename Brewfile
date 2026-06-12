@@ -104,15 +104,18 @@ brew "beads"
 brew "tectonic"
 brew "ghostscript"
 
-# === Containers & cloud (human + agent) ===
-# Local container runtime and cloud CLIs. Agents shell into these for ops work.
+# === Containers, cloud & networking (human + agent) ===
+# Local container runtime, cloud CLIs, and VPN. Agents shell into these for ops work.
 cask "docker-desktop"
 cask "gcloud-cli"
+cask "tailscale-app"
 brew "supabase/tap/supabase"
 
 # === AI desktop apps (human) ===
 cask "claude"
 cask "codex-app"
+cask "cursor"
+cask "lm-studio"
 
 # === Browser (human) ===
 cask "google-chrome"

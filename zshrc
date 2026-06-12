@@ -147,3 +147,8 @@ export PATH="$HOME/.local/bin:$PATH"
 
 # mise: project-scoped toolchain activation (directory-aware)
 eval "$(mise activate zsh)"
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/scottjrainey/.lmstudio/bin"
+# End of LM Studio CLI section
+
