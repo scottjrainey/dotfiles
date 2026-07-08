@@ -83,7 +83,7 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/too
 ./scripts/install.sh
 ```
 
-The installer also clones third-party oh-my-zsh plugins listed in `ZSH_PLUGINS_THIRD_PARTY` (currently `zsh-autosuggestions`) into `~/.oh-my-zsh/custom/plugins/`, and regenerates `~/.config/homebrew/trust.json` by trusting every tap-qualified (`user/tap/name`) entry in the `Brewfile` — required because `zprofile` sets `HOMEBREW_REQUIRE_TAP_TRUST=1`, which makes Homebrew ignore untrusted third-party taps. If a sibling `~/repos/dotfiles-private` repo is present, it dispatches into that to layer on personal/private symlinks (e.g. `~/.gitconfig`, `~/.claude/`).
+The installer also clones third-party oh-my-zsh plugins listed in `ZSH_PLUGINS_THIRD_PARTY` (currently `zsh-autosuggestions`) into `~/.oh-my-zsh/custom/plugins/`, and regenerates `~/.config/homebrew/trust.json` by trusting every tap-qualified (`user/tap/name`) entry in the `Brewfile` — required because `zprofile` sets `HOMEBREW_REQUIRE_TAP_TRUST=1`, which makes Homebrew ignore untrusted third-party taps. If a sibling `~/repos/dotfiles-private` repo is present, it dispatches into that to layer on personal/private symlinks (e.g. `~/.gitconfig`, curated `~/.claude/` and `~/.codex/` entries).
 
 6. Restart your terminal or source the new configuration:
 
@@ -135,7 +135,7 @@ The `scripts/install.sh` script creates symlinks for:
 - `~/.oh-my-zsh/custom/plugins/*` → `oh-my-zsh-plugins/*`
 - `~/Library/LaunchAgents/io.gechr.WhichSpace.plist` → `whichspace/io.gechr.WhichSpace.plist`
 
-If a sibling `~/repos/dotfiles-private` is present, `scripts/install.sh` then runs `dotfiles-private/scripts/install.sh`, which layers on private symlinks (`~/.gitconfig`, curated entries under `~/.claude/`, etc.).
+If a sibling `~/repos/dotfiles-private` is present, `scripts/install.sh` then runs `dotfiles-private/scripts/install.sh`, which layers on private symlinks (`~/.gitconfig`, curated entries under `~/.claude/` and `~/.codex/`, etc.).
 
 ### First-time Spaces setup
 
