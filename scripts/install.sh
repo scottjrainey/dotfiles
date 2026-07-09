@@ -94,6 +94,11 @@ if ! command -v claude &>/dev/null; then
   curl -fsSL https://claude.ai/install.sh | bash
 fi
 
+# Install Pi (earendil-works/pi coding agent) if not already installed
+if ! command -v pi &>/dev/null; then
+  curl -fsSL https://pi.dev/install.sh | sh
+fi
+
 echo "Dotfiles linked"
 
 # Dispatch into the private dotfiles repo if it's checked out as a sibling

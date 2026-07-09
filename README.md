@@ -11,6 +11,7 @@ A collection of configuration files for a macOS development environment, managed
 
 ### Terminal & Editor
 - **ghostty**: Terminal emulator
+- **cmux**: Ghostty-based terminal with vertical tabs and notifications for AI coding agents (reads your `ghostty` config for themes/fonts)
 - **neovim**: Neovim with LazyVim configuration
 - **tmux**: Terminal multiplexer
 
@@ -26,8 +27,9 @@ Window management assumes **6 macOS Spaces created in a specific order** — yab
 - **CLI Tools**: bat, bat-extras, delta, eza, fd, fzf, jq, jqp, lazygit, neovim, node, ripgrep, starship, uv, xh, yq
 
 ### Additional Tools (via Homebrew)
-- **Utilities**: git-filter-repo, just, mprocs, nmap, nushell, shellcheck, tectonic, codecrafters
+- **Utilities**: git-filter-repo, just, mprocs, nmap, nushell, shellcheck, tectonic, pandoc, poppler, codecrafters
 - **Apps**: Claude Code
+- **AI coding agents (CLI)**: codex, opencode, pi (Claude Code and Pi are installed by `scripts/install.sh` via their own curl installers, not Homebrew)
 - **Fonts**: Fira Code Nerd Font, Iosevka Term Nerd Font, Symbols Only Nerd Font
 - **Dependencies**: ghostscript, luarocks
 - **Cloud**: Google Cloud CLI

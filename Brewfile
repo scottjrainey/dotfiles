@@ -7,6 +7,7 @@
 # trust, so scripts/install.sh regenerates ~/.config/homebrew/trust.json from
 # this file — every tap-qualified (user/tap/name) entry below gets trusted.
 
+tap "anomalyco/tap"
 tap "asmvik/formulae"
 tap "codecrafters-io/tap"
 tap "gechr/tap"
@@ -17,6 +18,7 @@ tap "withgraphite/tap"
 # === Terminal, window manager, fonts (human) ===
 # UI-facing tools. Agents don't care about these.
 cask "ghostty"
+cask "cmux"
 cask "nikitabobko/tap/aerospace"
 brew "asmvik/formulae/yabai"
 brew "asmvik/formulae/skhd"
@@ -100,9 +102,12 @@ brew "just"
 brew "beads"
 
 # === Document & typesetting (human) ===
-# tectonic compiles LaTeX; ghostscript handles PostScript/PDF pipeline bits.
+# tectonic compiles LaTeX; ghostscript handles PostScript/PDF pipeline bits;
+# pandoc converts between document formats; poppler renders/extracts PDFs.
 brew "tectonic"
 brew "ghostscript"
+brew "pandoc"
+brew "poppler"
 
 # === Containers, cloud & networking (human + agent) ===
 # Local container runtime, cloud CLIs, and VPN. Agents shell into these for ops work.
@@ -116,6 +121,12 @@ cask "claude"
 cask "codex-app"
 cask "cursor"
 cask "lm-studio"
+
+# === AI coding agents, CLI (human + agent) ===
+# codex is OpenAI's terminal coding agent; codex-app above is the separate
+# desktop app. opencode is another terminal-based coding agent.
+cask "codex"
+brew "anomalyco/tap/opencode"
 
 # === Browser (human) ===
 cask "google-chrome"
