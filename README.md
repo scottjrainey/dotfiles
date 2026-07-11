@@ -1,175 +1,100 @@
-# Dotfiles
+# dotfiles
 
-A collection of configuration files for a macOS development environment, managed with Homebrew.
+Scott's personal macOS setup, managed with nix-darwin, home-manager, and nix-homebrew.
+The repo keeps hand-written dotfiles as real files under `home/` and links them into place.
 
-## What's Included
+## What you get
 
-### Shell Environment
-- **zsh**: Shell configuration with Oh My Zsh
-- **starship**: Cross-shell prompt
-- **fzf**: Fuzzy finder integration
+Running the switch builds:
 
-### Terminal & Editor
-- **ghostty**: Terminal emulator
-- **cmux**: Ghostty-based terminal with vertical tabs and notifications for AI coding agents (reads your `ghostty` config for themes/fonts)
-- **neovim**: Neovim with LazyVim configuration
-- **tmux**: Terminal multiplexer
+- macOS defaults for dark mode, keyboard repeat, Dock autohide, Finder, and trackpad tapping.
+- Nix CLI packages for shell, editor, search, Git, document tooling, runtimes, and agents' common command-line dependencies.
+- Homebrew casks for GUI apps, fonts, and macOS app bundles.
+- Homebrew formulae for tapped packages, macOS services, and formulae intentionally left in Homebrew.
+- Scott's existing oh-my-zsh, Starship, Neovim, Ghostty, tmux, ripgrep, btop, yabai, skhd, and ccstatusline configs as edit-in-place symlinks.
+- One shared `home/AGENTS.md` installed for Claude, Codex, and opencode.
 
-### Window Management
-- **yabai**: Tiling window manager for macOS (replaces aerospace)
-- **skhd**: Hotkey daemon paired with yabai (yabai has no built-in hotkey support)
-- **WhichSpace**: Menu bar Space indicator settings export
-- **karabiner-elements**: Keyboard customization
+## Prerequisites
 
-Window management assumes **6 macOS Spaces created in a specific order** — yabai labels them by index, WhichSpace badges them by index, and several `yabai -m rule` lines pin apps to those labels. Spaces are organized by interruption profile: `comms` (Messages + Slack + Discord) is for synchronous, interrupt-driven chat; `planning` (Calendar + Email) is for async, check-on-your-schedule triage. Slack and Discord are native casks (`brew bundle` installs them) pinned to the `comms` space. See [First-time Spaces setup](#first-time-spaces-setup) below.
+- Apple Silicon Mac by default.
+- Intel Mac: change `nixpkgs.hostPlatform = "x86_64-darwin";` in `configuration.nix`.
+- A clone of this repo. `bootstrap.sh` installs Determinate Nix if it is missing.
 
-### Development Tools (via Homebrew)
-- **CLI Tools**: bat, bat-extras, delta, eza, fd, fzf, jq, jqp, lazygit, neovim, node, ripgrep, starship, uv, xh, yq
+## Fresh-machine setup
 
-### Additional Tools (via Homebrew)
-- **Utilities**: git-filter-repo, just, mprocs, nmap, nushell, shellcheck, tectonic, pandoc, poppler, codecrafters
-- **Apps**: Claude Code
-- **AI coding agents (CLI)**: codex, opencode, pi (Claude Code and Pi are installed by `scripts/install.sh` via their own curl installers, not Homebrew)
-- **Fonts**: Fira Code Nerd Font, Iosevka Term Nerd Font, Symbols Only Nerd Font
-- **Dependencies**: ghostscript, luarocks
-- **Cloud**: Google Cloud CLI
-
-## Installation
-
-### Prerequisites
-
-Install Homebrew if you haven't already:
+From a bare clone:
 
 ```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+cd dotfiles
+./bootstrap.sh
 ```
 
-### Installation Steps
+`bootstrap.sh` does these steps:
 
-1. Clone this repository to `~/repos/dotfiles`:
+1. Installs Determinate Nix if `nix` is missing.
+2. Symlinks this checkout to `~/.dotfiles`.
+3. Checks the configured flake user against the current macOS username and offers to rewrite it.
+4. Installs oh-my-zsh and `zsh-autosuggestions` if missing.
+5. Installs Claude Code and Pi if their commands are missing.
+6. Runs a sibling `dotfiles-private/scripts/install.sh` if that repo exists.
+7. Runs the first `darwin-rebuild switch --flake .#mac`.
+
+## Daily use
+
+Edit files in this repo, then apply system or package changes:
 
 ```sh
-mkdir -p ~/repos
-git clone <your-repo-url> ~/repos/dotfiles
-cd ~/repos/dotfiles
+./rebuild.sh
 ```
 
-2. Install dependencies:
+Most files under `home/` are linked directly into `$HOME`, so changes to shell, editor, terminal, and tool config are visible without a rebuild unless the target symlink itself changes.
 
-```sh
-brew bundle --file=Brewfile
-```
+## Make it yours
 
-3. Install Oh My Zsh if not already installed:
+- Username: change the single `user = "scottjrainey";` line in `flake.nix`, or let `bootstrap.sh` offer to update it.
+- Host label: the machine is named `mac` in `flake.nix`, `bootstrap.sh`, and `rebuild.sh`.
+- CPU architecture: change `nixpkgs.hostPlatform` in `configuration.nix` for Intel Macs.
 
-```sh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-```
+Homebrew cleanup warning: `configuration.nix` sets `homebrew.onActivation.cleanup = "zap"`.
+On each switch, Homebrew removes packages and casks not listed in `configuration.nix`.
+Review the `brews` and `casks` arrays before the first switch.
 
-4. Create the 6 macOS Spaces (Mission Control). The default install has 1 Space — yabai and WhichSpace both need 6, in this order:
+Scott's shell is not generated by Home Manager.
+The `.zshrc`, `.zprofile`, Starship config, oh-my-zsh custom plugin, and related files stay as symlinked dotfiles so the existing oh-my-zsh setup remains the source of truth.
 
-   | Index | Label | WhichSpace badge | Apps |
-   |-------|-----------|---|---|
-   | 1     | browser   | B | Google Chrome (general) |
-   | 2     | comms     | C | Messages + Slack + Discord |
-   | 3     | editor    | E | Cursor / Claude / Codex |
-   | 4     | notes     | N | Obsidian |
-   | 5     | planning  | P | Calendar + Email (Gmail + Proton tabs) |
-   | 6     | terminal  | T | Ghostty |
+## Repo tour
 
-   Open Mission Control (Ctrl+↑ or three-finger swipe up), hover the Spaces bar at the top, and click the **+** five times. macOS exposes no CLI for this — see [First-time Spaces setup](#first-time-spaces-setup) for details and how to recover if the order gets out of sync.
+- `flake.nix` wires nixpkgs, nix-darwin, home-manager, and nix-homebrew together.
+- `configuration.nix` holds system defaults, nix-homebrew, Homebrew taps, formulae, and casks.
+- `home.nix` holds Nix CLI packages, environment variables, and all Home Manager symlinks.
+- `home/` mirrors the target home-directory tree.
+- `bootstrap.sh` handles first-machine setup.
+- `rebuild.sh` reapplies the flake after bootstrap.
+- `MIGRATION.md` records the package split and every legacy symlink.
+- `Brewfile` is retained as the original inventory for audit purposes; nix-homebrew is now authoritative.
+- `chrome/`, `scripts/*.mjs`, `bin/`, `whichspace/WhichSpaceSettings.json`, and `LICENSE` remain versioned assets outside the symlink tree.
 
-5. Symlink configuration files (symlinks configuration files into ~/.config and ~):
+## How the symlinks work
 
-```sh
-./scripts/install.sh
-```
+`bootstrap.sh` and `rebuild.sh` link this repo to `~/.dotfiles`.
+`home.nix` then uses `mkOutOfStoreSymlink` so targets such as `~/.config/nvim` point at files under `~/.dotfiles/home/.config/nvim`.
+This keeps the repo as the source of truth while allowing normal edit-in-place workflows.
 
-The installer also clones third-party oh-my-zsh plugins listed in `ZSH_PLUGINS_THIRD_PARTY` (currently `zsh-autosuggestions`) into `~/.oh-my-zsh/custom/plugins/`, and regenerates `~/.config/homebrew/trust.json` by trusting every tap-qualified (`user/tap/name`) entry in the `Brewfile` — required because `zprofile` sets `HOMEBREW_REQUIRE_TAP_TRUST=1`, which makes Homebrew ignore untrusted third-party taps. If a sibling `~/repos/dotfiles-private` repo is present, it dispatches into that to layer on personal/private symlinks (e.g. `~/.gitconfig`, curated `~/.claude/` and `~/.codex/` entries).
+The WhichSpace LaunchAgent is installed by symlinking `home/Library/LaunchAgents/io.gechr.WhichSpace.plist` into `~/Library/LaunchAgents`.
+The plist is present at login; if immediate loading is needed after a manual edit, use `launchctl` or log out and back in.
 
-6. Restart your terminal or source the new configuration:
-
-```sh
-source ~/.zshrc
-```
-
-7. Import WhichSpace settings (badges only align if step 4 was completed first):
-
-Open the WhichSpace menu bar menu, choose **Import Settings…**, and select:
-
-```text
-~/repos/dotfiles/whichspace/WhichSpaceSettings.json
-```
+`home/.config/aerospace/aerospace.toml` is preserved but not linked.
+The old installer had the Aerospace symlink commented out, and `home.nix` keeps that behavior with a commented example line.
 
 ## Notes
 
-### Repository Location
+CLI tools are biased toward Nix when the nixpkgs attribute is clear.
+GUI apps, fonts, tap-qualified packages, macOS services, and uncertain formulae stay in Homebrew.
+The three Nerd Font casks stay as Homebrew casks to match the current setup.
 
-This dotfiles repository should be placed in `~/repos/dotfiles` rather than `~/dotfiles` or `~/Documents`. macOS applies stricter privacy controls (TCC) to directories like `~/Documents`, `~/Desktop`, and `~/Downloads`.
+`nodejs_22` provides Node 22 and the Corepack command; there is no separate npm-managed `corepack` install in the Nix setup.
 
-Apps—especially sandboxed ones, like Aerospace—must request explicit user permission to access these locations, even if the file path is valid and the file exists. When a config file is symlinked to somewhere inside `~/Documents`, macOS sees it as an access to a protected location and may deny access silently or log it.
+## License
 
-Placing `dotfiles` in a less restricted path like `~/repos/dotfiles` avoids these privacy controls, and apps can freely follow symlinks without triggering System Policy denials.
-
-### Custom Location
-
-The `install.sh` script defaults to `DOTFILES_TARGET="$HOME/.dotfiles"`. If your dotfiles are at `~/repos/dotfiles` (recommended), set the variable before running:
-
-```sh
-export DOTFILES_TARGET="$HOME/repos/dotfiles"
-./install.sh
-```
-
-### What Gets Symlinked
-
-The `scripts/install.sh` script creates symlinks for:
-- `~/.skhdrc` → `skhdrc`
-- `~/.yabairc` → `yabairc`
-- `~/.zprofile` → `zprofile`
-- `~/.zshrc` → `zshrc`
-- `~/.config/btop/btop.conf` → `btop.conf`
-- `~/.config/ccstatusline` → `ccstatusline/`
-- `~/.config/ghostty/config` → `ghostty.config`
-- `~/.config/nvim` → `nvim/`
-- `~/.config/ripgrep/config` → `ripgreprc`
-- `~/.config/starship.toml` → `starship.toml`
-- `~/.config/tmux/tmux.conf` → `tmux.conf`
-- `~/.oh-my-zsh/custom/plugins/*` → `oh-my-zsh-plugins/*`
-- `~/Library/LaunchAgents/io.gechr.WhichSpace.plist` → `whichspace/io.gechr.WhichSpace.plist`
-
-If a sibling `~/repos/dotfiles-private` is present, `scripts/install.sh` then runs `dotfiles-private/scripts/install.sh`, which layers on private symlinks (`~/.gitconfig`, curated entries under `~/.claude/` and `~/.codex/`, etc.).
-
-### First-time Spaces setup
-
-macOS ships with one Space by default. This setup needs six, in a specific order, because:
-
-- `yabairc` labels Spaces **by index** on first run (`browser` → 1, `comms` → 2, …, `terminal` → 6). Those labels are referenced by `yabai -m rule --add app=... space=editor` and similar lines, so wrong order means apps land on the wrong Space.
-- `whichspace/WhichSpaceSettings.json` hardcodes badges (B, C, E, N, P, T) against indexes 1–6.
-
-**Create them via Mission Control**: there is no public macOS API to add Spaces — yabai can't create them under SIP on Apple Silicon either. Open Mission Control (Ctrl+↑ or three-finger swipe up), hover the Spaces bar, and click **+** until you have six. Drag them into `browser, comms, editor, notes, planning, terminal` order.
-
-**Once yabai applies labels, it won't re-label**: `init_space_labels_if_needed` in `yabairc` is intentionally one-shot — if all six labels are already present, it leaves Space identity alone so you can rearrange Spaces in Mission Control without losing them. If you ever need to reset (e.g. after recreating Spaces), unlabel them and let yabai relabel on its next start:
-
-```sh
-for i in 1 2 3 4 5 6; do yabai -m space "$i" --label "" 2>/dev/null; done
-yabai --restart-service   # or: brew services restart yabai
-```
-
-If yabai logs `skipped space relabeling: ...` and emits a notification on startup, that means it found a partial/mismatched label state and refused to overwrite — usually because the Spaces order in Mission Control no longer matches `browser, comms, editor, notes, planning, terminal`. Fix the order (or clear labels as above) and restart yabai.
-
-### WhichSpace
-
-The app is installed via `brew bundle` (cask `gechr/tap/whichspace`) and `scripts/install.sh` symlinks a per-user LaunchAgent at `~/Library/LaunchAgents/io.gechr.WhichSpace.plist` so WhichSpace starts at login. The installer also `launchctl bootstrap`s it immediately, so you don't need to log out to pick it up.
-
-Settings are tracked as an app-supported JSON export at `whichspace/WhichSpaceSettings.json`. Re-import them manually through the WhichSpace menu bar app after the installer runs (the app has no CLI for this).
-
-To disable auto-launch:
-
-```sh
-launchctl bootout "gui/$(id -u)/io.gechr.WhichSpace"
-rm ~/Library/LaunchAgents/io.gechr.WhichSpace.plist
-```
-
-### Slack & Discord
-
-Slack and Discord are native casks in the `Brewfile` (under **Communication**), installed by `brew bundle`. `yabairc` pins both — alongside Messages — to the `comms` space, and skhd's app mode jumps to them (`alt+shift+return` then `s` / `d`). Both are bare `homebrew/cask` entries, so they need no tap trust under `HOMEBREW_REQUIRE_TAP_TRUST` and the `install.sh` trust step skips them automatically.
+This repo is licensed under MIT No Attribution.
+See `LICENSE`.
