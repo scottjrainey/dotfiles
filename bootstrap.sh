@@ -94,20 +94,25 @@ else
   echo "    pi already installed, skipping"
 fi
 
-echo "==> Step 6: private dotfiles hook"
+echo "==> Step 6: symlink sibling dotfiles-private to ~/.dotfiles-private"
 PRIVATE_DIR="$(cd "$DIR/.." && pwd -P)/dotfiles-private"
-if [ -x "$PRIVATE_DIR/scripts/install.sh" ]; then
-  echo "    Found private dotfiles at $PRIVATE_DIR, running"
-  DOTFILES_PRIVATE_TARGET="$PRIVATE_DIR" bash "$PRIVATE_DIR/scripts/install.sh"
+if [ -d "$PRIVATE_DIR" ]; then
+  if [ -e "$HOME/.dotfiles-private" ] && [ ! -L "$HOME/.dotfiles-private" ]; then
+    echo "    $HOME/.dotfiles-private exists and is not a symlink."
+    echo "    Move it aside or link the private repo there before continuing."
+    exit 1
+  fi
+  ln -sfn "$PRIVATE_DIR" "$HOME/.dotfiles-private"
+  echo "    Linked $PRIVATE_DIR -> $HOME/.dotfiles-private"
 else
-  echo "    No sibling dotfiles-private installer found, skipping"
+  echo "    No sibling dotfiles-private checkout found, skipping"
 fi
 
 echo "==> Step 7: first darwin-rebuild switch"
 NIX_BIN="$(command -v nix)"
 cd "$DIR"
 sudo "$NIX_BIN" run github:nix-darwin/nix-darwin/nix-darwin-26.05#darwin-rebuild -- \
-  switch --flake .#mac
+  switch --flake .#mac --impure
 
 echo "==> Step 8: trust Homebrew taps"
 if [ -x /opt/homebrew/bin/brew ]; then

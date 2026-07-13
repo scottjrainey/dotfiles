@@ -1,10 +1,21 @@
-{ config, pkgs, user, ... }:
+{ config, pkgs, lib, user, ... }:
 
 let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
+  # NOT config.home.homeDirectory here: imports is resolved before config is
+  # available, so referencing config while computing imports is an infinite
+  # recursion. user (a plain function argument) is safe.
+  privateModule = "/Users/${user}/.dotfiles-private/home-module.nix";
 in
 
 {
+  # Optional private companion module (see dotfiles-private/home-module.nix).
+  # Guarded so this flake still evaluates/builds on a machine where the
+  # private repo isn't checked out. Reading a path outside this flake's own
+  # source tree is impure: darwin-rebuild/nix must be invoked with --impure,
+  # or pathExists silently returns false and this import is always skipped.
+  imports = lib.optional (builtins.pathExists privateModule) privateModule;
+
   home.username = user;
   home.homeDirectory = "/Users/${user}";
   home.stateVersion = "24.11";

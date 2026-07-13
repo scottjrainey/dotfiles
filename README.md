@@ -36,8 +36,8 @@ cd dotfiles
 3. Checks the configured flake user against the current macOS username and offers to rewrite it.
 4. Installs oh-my-zsh and `zsh-autosuggestions` if missing.
 5. Installs Claude Code and Pi if their commands are missing.
-6. Runs a sibling `dotfiles-private/scripts/install.sh` if that repo exists.
-7. Runs the first `darwin-rebuild switch --flake .#mac`.
+6. Symlinks a sibling `dotfiles-private` checkout to `~/.dotfiles-private` if that repo exists.
+7. Runs the first `darwin-rebuild switch --flake .#mac --impure`.
 
 ## Daily use
 
@@ -85,6 +85,16 @@ The plist is present at login; if immediate loading is needed after a manual edi
 
 `home/.config/aerospace/aerospace.toml` is preserved but not linked.
 The old installer had the Aerospace symlink commented out, and `home.nix` keeps that behavior with a commented example line.
+
+## Private dotfiles
+
+`bootstrap.sh` and `rebuild.sh` also link a sibling `dotfiles-private` checkout (if present) to `~/.dotfiles-private`.
+If that repo has a `home-module.nix` at its root, `home.nix` imports it automatically — no script to run, no separate install step.
+The import is guarded with `builtins.pathExists`, so this flake evaluates and builds cleanly on a machine where the private repo isn't cloned.
+
+This is why every `nix`/`darwin-rebuild` invocation in this repo passes `--impure`: reading a path outside this flake's own source tree (the sibling private checkout) is an impure operation. Without `--impure`, `builtins.pathExists` doesn't error — it silently returns `false`, so the private module would appear absent with no indication why.
+
+`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, and `~/.config/opencode/AGENTS.md` are always owned by this repo (they point at the shared `home/AGENTS.md`). The private module does not declare those paths.
 
 ## Notes
 

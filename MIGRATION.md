@@ -111,3 +111,15 @@ This records the one-shot move from `scripts/install.sh` plus `Brewfile` to nix-
 - The three Nerd Font casks stayed in Homebrew to preserve the current installation path and cask behavior.
 - `node@22` maps to `nodejs_22`; Corepack is provided by that Node package and documented rather than installed through npm.
 - `homebrew.onActivation.cleanup = "zap"` is intentionally preserved. Packages outside `configuration.nix` may be removed on switch.
+
+## Follow-on: private dotfiles as a Home Manager module
+
+`bootstrap.sh` step 6 no longer executes `dotfiles-private/scripts/install.sh` directly. It now symlinks the sibling checkout to `~/.dotfiles-private`, and `home.nix` conditionally imports `~/.dotfiles-private/home-module.nix` if present (`builtins.pathExists`-guarded, so this repo still builds without the private one cloned).
+
+This requires `--impure` on every `nix`/`darwin-rebuild` invocation: this machine has `pure-eval = true` set globally (Determinate Nix), and reading a path outside the flake's own source tree — like the private checkout — is impure. Without `--impure`, `builtins.pathExists` silently returns `false` rather than erroring, so the private module would appear absent with no diagnostic.
+
+`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, and `~/.config/opencode/AGENTS.md` remain permanently owned by this repo's `home.nix`. The private module intentionally does not declare `home.file` entries for those three paths.
+
+`dotfiles-private/scripts/install.sh` is retained for now rather than deleted immediately, mirroring how this repo's own old `scripts/install.sh` was kept until the new mechanism was verified. It should be removed in a follow-up once a real `darwin-rebuild switch --flake .#mac --impure` has been run and confirmed to reproduce parity.
+
+Two live-state conflicts were found on this machine that will block an actual `switch` (not fixed as part of this follow-on, since it only covers build-only verification): `~/.claude/settings.json` has diverged from `dotfiles-private/claude/settings.json` (live `PostToolUse`/`PreToolUse` hooks and a different `effortLevel` aren't in the tracked copy), and `~/.codex/AGENTS.md` is a real empty file that collides with this repo's own `home.file` declaration for that path. Neither `home.file` entry sets `force = true`, so Home Manager will hard-error on these instead of silently discarding local state — that's intentional, but both need reconciling by hand before a real switch will succeed.
