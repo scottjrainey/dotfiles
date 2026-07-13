@@ -1,5 +1,11 @@
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
+# brew shellenv's path_helper call rebuilds PATH from /etc/paths(.d), which
+# know nothing about nix-darwin and drops it entirely. Re-add the system and
+# per-user Nix profile paths - this is where darwin-rebuild and every
+# nix-darwin/home-manager-installed package live.
+export PATH="$PATH:/run/current-system/sw/bin:/etc/profiles/per-user/$USER/bin"
+
 # Opt into Homebrew's upcoming default: only load formulae/casks/commands from
 # trusted taps. Third-party taps used by this machine are trusted via `brew
 # trust` (stored in ~/.config/homebrew/trust.json) — see Brewfile header.
