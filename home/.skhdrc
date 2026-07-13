@@ -15,68 +15,68 @@
 # ── Layout toggles ───────────────────────────────────────────────────────────
 # Aerospace: alt-slash = layout tiles horizontal vertical
 # Closest yabai: rotate the tree 90° so root split flips orientation.
-alt - 0x2C : yabai -m space --rotate 90    # 0x2C = slash
+alt - 0x2C : /opt/homebrew/bin/yabai -m space --rotate 90    # 0x2C = slash
 
 # Aerospace: alt-comma = layout accordion horizontal vertical
 # Yabai has no per-space accordion layout. Closest concept is the `stack`
 # layout (one window visible at a time, like accordion collapsed), but it
 # applies to the whole space, not a sub-container. See gap analysis.
-alt - 0x2B : yabai -m space --layout stack    # 0x2B = comma
+alt - 0x2B : /opt/homebrew/bin/yabai -m space --layout stack    # 0x2B = comma
 
 # ── Window focus (commented in aerospace; uncomment if wanted) ───────────────
-# alt - h : yabai -m window --focus west
-# alt - j : yabai -m window --focus south
-# alt - k : yabai -m window --focus north
-# alt - l : yabai -m window --focus east
+# alt - h : /opt/homebrew/bin/yabai -m window --focus west
+# alt - j : /opt/homebrew/bin/yabai -m window --focus south
+# alt - k : /opt/homebrew/bin/yabai -m window --focus north
+# alt - l : /opt/homebrew/bin/yabai -m window --focus east
 
 # ── Window move ──────────────────────────────────────────────────────────────
 # Aerospace: alt-shift-{h,j,k,l} = move {left,down,up,right}
 # Yabai: --swap moves and keeps positions clean; --warp re-inserts at target.
 # Using --swap for cleaner bsp-tree behavior.
-alt + shift - h : yabai -m window --swap west
-alt + shift - j : yabai -m window --swap south
-alt + shift - k : yabai -m window --swap north
-alt + shift - l : yabai -m window --swap east
+alt + shift - h : /opt/homebrew/bin/yabai -m window --swap west
+alt + shift - j : /opt/homebrew/bin/yabai -m window --swap south
+alt + shift - k : /opt/homebrew/bin/yabai -m window --swap north
+alt + shift - l : /opt/homebrew/bin/yabai -m window --swap east
 
 # ── Window resize ────────────────────────────────────────────────────────────
 # Aerospace: alt-minus / alt-equal = resize smart -50 / +50
 # Yabai resize is directional; "smart" picks based on parent split. Approximate
 # by resizing the right/bottom edge — works when window is left or top child.
-alt - 0x1B : yabai -m window --resize right:-50:0 || yabai -m window --resize left:-50:0    # 0x1B = minus
-alt - 0x18 : yabai -m window --resize right:50:0  || yabai -m window --resize left:50:0     # 0x18 = equal
+alt - 0x1B : /opt/homebrew/bin/yabai -m window --resize right:-50:0 || /opt/homebrew/bin/yabai -m window --resize left:-50:0    # 0x1B = minus
+alt - 0x18 : /opt/homebrew/bin/yabai -m window --resize right:50:0  || /opt/homebrew/bin/yabai -m window --resize left:50:0     # 0x18 = equal
 
 # ── Workspaces (labelled spaces — letters and numbers point at the same 6) ───
-alt - 1 : yabai -m space --focus browser
-alt - 2 : yabai -m space --focus comms
-alt - 3 : yabai -m space --focus editor
-alt - 4 : yabai -m space --focus notes
-alt - 5 : yabai -m space --focus planning
-alt - 6 : yabai -m space --focus terminal
+alt - 1 : /opt/homebrew/bin/yabai -m space --focus browser
+alt - 2 : /opt/homebrew/bin/yabai -m space --focus comms
+alt - 3 : /opt/homebrew/bin/yabai -m space --focus editor
+alt - 4 : /opt/homebrew/bin/yabai -m space --focus notes
+alt - 5 : /opt/homebrew/bin/yabai -m space --focus planning
+alt - 6 : /opt/homebrew/bin/yabai -m space --focus terminal
 
-alt - b : yabai -m space --focus browser
-alt - c : yabai -m space --focus comms
-alt - e : yabai -m space --focus editor
-alt - n : yabai -m space --focus notes
-alt - p : yabai -m space --focus planning
-alt - t : yabai -m space --focus terminal
+alt - b : /opt/homebrew/bin/yabai -m space --focus browser
+alt - c : /opt/homebrew/bin/yabai -m space --focus comms
+alt - e : /opt/homebrew/bin/yabai -m space --focus editor
+alt - n : /opt/homebrew/bin/yabai -m space --focus notes
+alt - p : /opt/homebrew/bin/yabai -m space --focus planning
+alt - t : /opt/homebrew/bin/yabai -m space --focus terminal
 
 # ── Move window to workspace ─────────────────────────────────────────────────
 # Aerospace's `move-node-to-workspace` follows focus to the destination by
 # default. Yabai's `--space` flag only moves the window; chain `space --focus`
 # to match aerospace semantics.
-alt + shift - 1 : yabai -m window --space browser  ; yabai -m space --focus browser
-alt + shift - 2 : yabai -m window --space comms    ; yabai -m space --focus comms
-alt + shift - 3 : yabai -m window --space editor   ; yabai -m space --focus editor
-alt + shift - 4 : yabai -m window --space notes    ; yabai -m space --focus notes
-alt + shift - 5 : yabai -m window --space planning ; yabai -m space --focus planning
-alt + shift - 6 : yabai -m window --space terminal ; yabai -m space --focus terminal
+alt + shift - 1 : /opt/homebrew/bin/yabai -m window --space browser  ; /opt/homebrew/bin/yabai -m space --focus browser
+alt + shift - 2 : /opt/homebrew/bin/yabai -m window --space comms    ; /opt/homebrew/bin/yabai -m space --focus comms
+alt + shift - 3 : /opt/homebrew/bin/yabai -m window --space editor   ; /opt/homebrew/bin/yabai -m space --focus editor
+alt + shift - 4 : /opt/homebrew/bin/yabai -m window --space notes    ; /opt/homebrew/bin/yabai -m space --focus notes
+alt + shift - 5 : /opt/homebrew/bin/yabai -m window --space planning ; /opt/homebrew/bin/yabai -m space --focus planning
+alt + shift - 6 : /opt/homebrew/bin/yabai -m window --space terminal ; /opt/homebrew/bin/yabai -m space --focus terminal
 
-alt + shift - b : yabai -m window --space browser  ; yabai -m space --focus browser
-alt + shift - c : yabai -m window --space comms    ; yabai -m space --focus comms
-alt + shift - e : yabai -m window --space editor   ; yabai -m space --focus editor
-alt + shift - n : yabai -m window --space notes    ; yabai -m space --focus notes
-alt + shift - p : yabai -m window --space planning ; yabai -m space --focus planning
-alt + shift - t : yabai -m window --space terminal ; yabai -m space --focus terminal
+alt + shift - b : /opt/homebrew/bin/yabai -m window --space browser  ; /opt/homebrew/bin/yabai -m space --focus browser
+alt + shift - c : /opt/homebrew/bin/yabai -m window --space comms    ; /opt/homebrew/bin/yabai -m space --focus comms
+alt + shift - e : /opt/homebrew/bin/yabai -m window --space editor   ; /opt/homebrew/bin/yabai -m space --focus editor
+alt + shift - n : /opt/homebrew/bin/yabai -m window --space notes    ; /opt/homebrew/bin/yabai -m space --focus notes
+alt + shift - p : /opt/homebrew/bin/yabai -m window --space planning ; /opt/homebrew/bin/yabai -m space --focus planning
+alt + shift - t : /opt/homebrew/bin/yabai -m window --space terminal ; /opt/homebrew/bin/yabai -m space --focus terminal
 
 # ── Chrome: detach active tab to new window ──────────────────────────────────
 # Pops the focused Chrome tab into its own tiled window on the current space
@@ -96,34 +96,34 @@ alt + shift - o : osascript -e 'tell application "Google Chrome"' \
                             -e 'set newWin to make new window' \
                             -e 'set URL of active tab of newWin to u' \
                             -e 'end tell' && sleep 0.15 && \
-                  w=$(yabai -m query --windows \
+                  w=$(/opt/homebrew/bin/yabai -m query --windows \
                       | jq -r '[.[] | select(.app=="Google Chrome")] | sort_by(.id) | last | .id') && \
                   [ -n "$w" ] && { \
-                    yabai -m query --windows --window "$w" \
+                    /opt/homebrew/bin/yabai -m query --windows --window "$w" \
                       | jq -e '."is-floating"' >/dev/null \
-                      && yabai -m window "$w" --toggle float ; \
-                    yabai -m window --focus "$w" ; }
+                      && /opt/homebrew/bin/yabai -m window "$w" --toggle float ; \
+                    /opt/homebrew/bin/yabai -m window --focus "$w" ; }
 
 # ── Fullscreen ───────────────────────────────────────────────────────────────
 # Aerospace: alt-shift-f = fullscreen (zoom-out without leaving the workspace)
 # Yabai's zoom-fullscreen matches that semantic; native-fullscreen creates a
 # new macOS space and breaks tiling. Stick with zoom-fullscreen.
-alt + shift - f : yabai -m window --toggle zoom-fullscreen
+alt + shift - f : /opt/homebrew/bin/yabai -m window --toggle zoom-fullscreen
 
 # ── Float / tile toggle ──────────────────────────────────────────────────────
 # Float-by-default model (yabairc) means new apps open floating unless they
 # have an explicit manage=on rule. This binding pulls the focused window into
 # the bsp tree on demand (or pops it back out). Matches i3/sway convention.
-alt + shift - 0x31 : yabai -m window --toggle float    # 0x31 = space
+alt + shift - 0x31 : /opt/homebrew/bin/yabai -m window --toggle float    # 0x31 = space
 
 # ── Workspace navigation ─────────────────────────────────────────────────────
 # Aerospace: alt-tab = workspace-back-and-forth
-alt - tab : yabai -m space --focus recent
+alt - tab : /opt/homebrew/bin/yabai -m space --focus recent
 
 # Aerospace: alt-shift-tab = move-workspace-to-monitor --wrap-around next
 # Disabled for the labelled-space setup: moving a whole macOS Space between
 # displays makes labels feel less stable, especially with menu bar indicators.
-# alt + shift - tab : yabai -m space --display next || yabai -m space --display first
+# alt + shift - tab : /opt/homebrew/bin/yabai -m space --display next || /opt/homebrew/bin/yabai -m space --display first
 
 # ── Mode entry ───────────────────────────────────────────────────────────────
 # Aerospace: alt-shift-semicolon = mode service
@@ -143,43 +143,43 @@ service < escape ; default
 # Aerospace: r = flatten-workspace-tree (reset layout)
 # Yabai equivalent: --balance redistributes window sizes evenly. Not a literal
 # tree flatten, but the user-visible result is the same: "fix this layout".
-service < r : yabai -m space --balance
+service < r : /opt/homebrew/bin/yabai -m space --balance
 
 # Aerospace: f = layout floating tiling (toggle)
 # Yabai per-space layout toggle requires a script — bsp/float are mutually
 # exclusive layouts on a space.
-service < f : [[ "$(yabai -m query --spaces --space | jq -r .type)" == "bsp" ]] && \
-              yabai -m space --layout float || yabai -m space --layout bsp
+service < f : [[ "$(/opt/homebrew/bin/yabai -m query --spaces --space | jq -r .type)" == "bsp" ]] && \
+              /opt/homebrew/bin/yabai -m space --layout float || /opt/homebrew/bin/yabai -m space --layout bsp
 
 # Repair labels after manually arranging Mission Control's Spaces Bar into the
 # intended order: 1 browser, 2 comms, 3 editor, 4 notes, 5 planning, 6 terminal.
-service < s : yabai -m space 1 --label browser  ; \
-              yabai -m space 2 --label comms    ; \
-              yabai -m space 3 --label editor   ; \
-              yabai -m space 4 --label notes    ; \
-              yabai -m space 5 --label planning ; \
-              yabai -m space 6 --label terminal
+service < s : /opt/homebrew/bin/yabai -m space 1 --label browser  ; \
+              /opt/homebrew/bin/yabai -m space 2 --label comms    ; \
+              /opt/homebrew/bin/yabai -m space 3 --label editor   ; \
+              /opt/homebrew/bin/yabai -m space 4 --label notes    ; \
+              /opt/homebrew/bin/yabai -m space 5 --label planning ; \
+              /opt/homebrew/bin/yabai -m space 6 --label terminal
 
 # Aerospace: backspace = close-all-windows-but-current
-service < backspace : yabai -m query --windows --space \
+service < backspace : /opt/homebrew/bin/yabai -m query --windows --space \
                       | jq -r '.[] | select(."has-focus"==false) | .id' \
-                      | xargs -I{} yabai -m window {} --close
+                      | xargs -I{} /opt/homebrew/bin/yabai -m window {} --close
 
 # Aerospace: h/j/k/l = focus left/down/up/right
-service < h : yabai -m window --focus west
-service < j : yabai -m window --focus south
-service < k : yabai -m window --focus north
-service < l : yabai -m window --focus east
+service < h : /opt/homebrew/bin/yabai -m window --focus west
+service < j : /opt/homebrew/bin/yabai -m window --focus south
+service < k : /opt/homebrew/bin/yabai -m window --focus north
+service < l : /opt/homebrew/bin/yabai -m window --focus east
 
 # Aerospace: alt-shift-{h,j,k,l} = join-with {left,down,up,right}
 # NO YABAI EQUIVALENT — aerospace's join-with creates an explicit container
 # between two windows. Yabai's bsp tree doesn't expose container joining.
 # Closest behavior: --warp inserts the focused window into the neighbour's
 # split, which collapses to the same visual result in most cases.
-service < alt + shift - h : yabai -m window --warp west
-service < alt + shift - j : yabai -m window --warp south
-service < alt + shift - k : yabai -m window --warp north
-service < alt + shift - l : yabai -m window --warp east
+service < alt + shift - h : /opt/homebrew/bin/yabai -m window --warp west
+service < alt + shift - j : /opt/homebrew/bin/yabai -m window --warp south
+service < alt + shift - k : /opt/homebrew/bin/yabai -m window --warp north
+service < alt + shift - l : /opt/homebrew/bin/yabai -m window --warp east
 
 # Aerospace: down/up = volume down/up, shift-down = mute
 # Out of yabai scope — handled via osascript.
@@ -215,9 +215,9 @@ app < a : open -a "Calendar"     # a = agenda
 # id, same idiom as the alt+shift-o detach binding above.
 app < g : open -na "Google Chrome" --args --new-window \
             "https://mail.google.com" "https://mail.proton.me" && sleep 0.3 && \
-          w=$(yabai -m query --windows \
+          w=$(/opt/homebrew/bin/yabai -m query --windows \
               | jq -r '[.[] | select(.app=="Google Chrome")] | sort_by(.id) | last | .id') && \
-          [ -n "$w" ] && yabai -m window "$w" --space planning ; \
-          yabai -m space --focus planning
+          [ -n "$w" ] && /opt/homebrew/bin/yabai -m window "$w" --space planning ; \
+          /opt/homebrew/bin/yabai -m space --focus planning
 
 # Default mode is implicit — no `::` declaration needed for the entry mode.
