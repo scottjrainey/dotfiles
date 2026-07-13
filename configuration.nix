@@ -35,6 +35,14 @@
   nix-homebrew = {
     enable = true;
     inherit user;
+    # This Mac has a pre-existing standalone Homebrew install. Without this,
+    # nix-homebrew halts activation and asks whether to uninstall it (data
+    # loss) or migrate it. autoMigrate only removes files tracked in
+    # Homebrew's own core git repo (the brew program itself) and replaces
+    # them with a Nix-store symlink; taps/Cellar/Caskroom/installed binaries
+    # are untouched. Safe to leave set - the migration is one-time and this
+    # is a no-op on every switch after the first.
+    autoMigrate = true;
   };
 
   homebrew = {
