@@ -64,7 +64,7 @@ This repo is tailored to Scott's machine, username, and package choices, so it i
 - `rebuild.sh` reapplies the flake after bootstrap.
 - `MIGRATION.md` records the package split and every legacy symlink.
 - `Brewfile` is retained as the original inventory for audit purposes; nix-homebrew is now authoritative.
-- `chrome/`, `scripts/*.mjs`, `bin/`, `whichspace/WhichSpaceSettings.json`, and `LICENSE` remain versioned assets outside the symlink tree.
+- `chrome/`, `scripts/*.mjs`, `whichspace/WhichSpaceSettings.json`, and `LICENSE` remain versioned assets outside the symlink tree.
 
 ## How the symlinks work
 
