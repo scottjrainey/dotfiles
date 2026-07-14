@@ -1,22 +1,8 @@
-# Agent Policy
+# global agent instructions
 
-This file is shared by Claude, Codex, and opencode on Scott's machine.
-
-## Operating rules
-
-- Treat this repository as personal infrastructure. Preserve existing behavior unless a task explicitly asks for a change.
-- Prefer small, reviewable edits that match the surrounding style.
-- Do not drop configuration, package entries, or local scripts silently. Document intentional removals.
-- Read the relevant files before editing them.
-- Avoid destructive commands unless the task explicitly calls for them.
-
-## Dotfiles
-
-- Files under `home/` mirror paths in the macOS home directory.
-- Home Manager links those files with `mkOutOfStoreSymlink`, so editing a file under `home/` edits the live config target.
-- Scott's shell setup is hand-maintained through oh-my-zsh. Preserve `.zshrc`, `.zprofile`, Starship, and related config files as symlinked files instead of generated Home Manager program modules.
-
-## Verification
-
-- Run the narrowest useful check before finishing a change.
-- If a check cannot be run locally, state that clearly and explain the remaining risk.
+- Never use the em dash "—". Use plain dash "-" instead
+- Never manually modify CHANGELOG.md files or any files that are marked as auto-generated
+- When making technical decisions, do not give much weight to development cost. Instead, prefer quality, simplicity, robustness, scalability, and long term maintainability.
+- When doing bug fixes, always start with reproducing the bug in an E2E setting as closely aligned with how an end user would experience it as possible. This makes sure you find the real problem so your fix will actually solve it.
+- When end-to-end testing a product, be picky about the UI you see and be obsessed with pixel perfection. If something clearly looks off, even if it is not directly related to what you are doing, try to get it fixed along the way.
+- Apply that same high standard to engineering excellence: lint, test failures, and test flakiness. If you see one, even if it is not caused by what you are working on right now, still get it fixed.
