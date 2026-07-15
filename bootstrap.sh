@@ -62,24 +62,7 @@ else
   echo "    flake.nix already matches \"$REAL_USER\", nothing to do."
 fi
 
-echo "==> Step 4: oh-my-zsh and plugins"
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-  omz_installer="$(download_to_temp https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-  RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh "$omz_installer"
-else
-  echo "    oh-my-zsh already installed, skipping"
-fi
-
-ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-mkdir -p "$ZSH_CUSTOM/plugins"
-autosuggestions_dir="$ZSH_CUSTOM/plugins/zsh-autosuggestions"
-if [ ! -d "$autosuggestions_dir" ]; then
-  git clone https://github.com/zsh-users/zsh-autosuggestions "$autosuggestions_dir"
-else
-  echo "    zsh-autosuggestions already installed, skipping"
-fi
-
-echo "==> Step 5: external agent installers"
+echo "==> Step 4: external agent installers"
 if ! command -v claude >/dev/null 2>&1; then
   claude_installer="$(download_to_temp https://claude.ai/install.sh)"
   bash "$claude_installer"
@@ -94,7 +77,7 @@ else
   echo "    pi already installed, skipping"
 fi
 
-echo "==> Step 6: symlink sibling dotfiles-private to ~/.dotfiles-private"
+echo "==> Step 5: symlink sibling dotfiles-private to ~/.dotfiles-private"
 PRIVATE_DIR="$(cd "$DIR/.." && pwd -P)/dotfiles-private"
 if [ -d "$PRIVATE_DIR" ]; then
   if [ -e "$HOME/.dotfiles-private" ] && [ ! -L "$HOME/.dotfiles-private" ]; then
@@ -108,13 +91,13 @@ else
   echo "    No sibling dotfiles-private checkout found, skipping"
 fi
 
-echo "==> Step 7: first darwin-rebuild switch"
+echo "==> Step 6: first darwin-rebuild switch"
 NIX_BIN="$(command -v nix)"
 cd "$DIR"
 sudo "$NIX_BIN" run github:nix-darwin/nix-darwin/nix-darwin-26.05#darwin-rebuild -- \
   switch --flake .#mac --impure
 
-echo "==> Step 8: trust Homebrew taps"
+echo "==> Step 7: trust Homebrew taps"
 if [ -x /opt/homebrew/bin/brew ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
@@ -137,7 +120,7 @@ else
   echo "    brew not found, skipping tap trust"
 fi
 
-echo "==> Step 9: load WhichSpace LaunchAgent"
+echo "==> Step 8: load WhichSpace LaunchAgent"
 WHICHSPACE_PLIST="$HOME/Library/LaunchAgents/io.gechr.WhichSpace.plist"
 if [ -d /Applications/WhichSpace.app ]; then
   launchctl bootstrap "gui/$(id -u)" "$WHICHSPACE_PLIST" 2>/dev/null \
