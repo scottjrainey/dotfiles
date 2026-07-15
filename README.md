@@ -62,8 +62,7 @@ This repo is tailored to Scott's machine, username, and package choices, so it i
 - `home/` mirrors the target home-directory tree.
 - `bootstrap.sh` handles first-machine setup.
 - `rebuild.sh` reapplies the flake after bootstrap.
-- `MIGRATION.md` records the package split and every legacy symlink.
-- `Brewfile` is retained as the original inventory for audit purposes; nix-homebrew is now authoritative.
+- `Brewfile` is not just a historical record: `bootstrap.sh` Step 8 parses it directly to `brew trust` every tap and every tap-qualified formula/cask, which `HOMEBREW_REQUIRE_TAP_TRUST=1` (set in `zprofile`) requires. `configuration.nix` is authoritative for what gets installed, but `Brewfile` must be kept in sync by hand - any tap or tap-qualified formula/cask added to `configuration.nix` needs the matching line added to `Brewfile`, or a fresh-machine bootstrap will fail to trust it.
 - `chrome/`, `scripts/*.mjs`, `whichspace/WhichSpaceSettings.json`, and `LICENSE` remain versioned assets outside the symlink tree.
 
 ## How the symlinks work
