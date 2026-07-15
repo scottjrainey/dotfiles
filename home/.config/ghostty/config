@@ -44,3 +44,24 @@
 # theme = tokyonight_moon
 keybind = shift+enter=text:\x1b\r
 shell-integration-features = ssh-terminfo,ssh-env
+
+# ── Appearance ───────────────────────────────────────────────────────────────
+# Translucent + blurred background so the desktop wallpaper reads through the
+# terminal. background-opacity only takes effect after a full Ghostty restart,
+# and macOS disables it in native fullscreen (cmd+enter) - yabai's
+# zoom-fullscreen (alt+shift+f, skhdrc) keeps it.
+background-opacity = 0.82
+background-blur = 20
+
+# Hide the titlebar while keeping the window frame, rounded corners, and shadow
+# (window-decoration = none would square the corners instead). Native macOS
+# tabs need a titlebar, so this disables them: cmd+T now opens a real window,
+# which yabai tiles - see the Terminal-only native-tab signal in yabairc.
+# Dragging a floating Ghostty window: use fn+drag (yabai mouse_modifier).
+macos-titlebar-style = hidden
+
+# Inner breathing room between frame and first cell. yabai's padding supplies
+# the outer margin; this is the inner one.
+window-padding-x = 14
+window-padding-y = 12
+window-padding-balance = true

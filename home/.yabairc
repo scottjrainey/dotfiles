@@ -33,11 +33,22 @@ yabai -m config window_zoom_persist        on
 yabai -m config mouse_follows_focus        on
 yabai -m config focus_follows_mouse        off
 
-# Aerospace gaps were 5px on all sides; tightened to 3px for a denser layout.
-yabai -m config top_padding                3
-yabai -m config bottom_padding             3
-yabai -m config left_padding               3
-yabai -m config right_padding              3
+# Padding and window_gap do deliberately different jobs here:
+#   *_padding  insets the whole tiling area from the screen edges, so the
+#              wallpaper frames a defined working area (Ghostty is translucent
+#              and blurred to match - see .config/ghostty/config).
+#   window_gap is the seam *between* adjacent windows, kept tight at 3px so
+#              windows stay densely packed inside that working area.
+# The four paddings are deliberately asymmetric, all tuned by eye:
+#   top    24  the menu bar already sits above the tiling area and contributes
+#              its own inset, so a smaller value here still reads as balanced.
+#   bottom 40  the heaviest edge; the Dock autohides into it, and a wider base
+#              keeps the working area from looking like it's sliding off screen.
+#   l/r    30  wide enough to frame the working area without wasting columns.
+yabai -m config top_padding                24
+yabai -m config bottom_padding             40
+yabai -m config left_padding               30
+yabai -m config right_padding              30
 yabai -m config window_gap                 3
 
 # Mouse: fn+drag to move, fn+right-drag to resize. Aerospace had no equivalent;
@@ -142,27 +153,32 @@ yabai -m signal --add event=window_created app="^Google Chrome$" \
     | jq -e ".frame.w < 1000 and (.\"is-floating\" | not)" >/dev/null \
     && yabai -m window "$YABAI_WINDOW_ID" --toggle float'
 
-# ── Native-tab terminal workarounds ──────────────────────────────────────────
-# Ghostty and macOS Terminal.app use AppKit's native tab system: each tab is
-# its own NSWindow as far as the Accessibility API (and therefore yabai) is
-# concerned. cmd+T fires window_created, and yabai's bsp split makes room for
-# the phantom "window" — the original pane jumps and both tabs become visible
-# as sibling tiles. Ghostty's maintainers acknowledge this as a macOS-API
-# limitation; see:
+# ── Native-tab terminal workaround (Terminal.app only) ───────────────────────
+# macOS Terminal.app uses AppKit's native tab system: each tab is its own
+# NSWindow as far as the Accessibility API (and therefore yabai) is concerned.
+# cmd+T fires window_created, and yabai's bsp split makes room for the phantom
+# "window" - the original pane jumps and both tabs become visible as sibling
+# tiles. Ghostty's maintainers acknowledge this as a macOS-API limitation; see:
 #   https://ghostty.org/docs/help/macos-tiling-wms
 #   https://github.com/ghostty-org/ghostty/issues/1011
 #
-# Workaround: rebuild the space's bsp tree on every Ghostty/Terminal window
+# Workaround: rebuild the space's bsp tree on every Terminal window
 # create+destroy. The tab still causes a brief layout pass, but the tree
 # settles to one tile per real window and the tab stays grouped.
+#
+# Ghostty is deliberately NOT in this regex any more. Native macOS tabs require
+# a titlebar, and .config/ghostty/config sets macos-titlebar-style = hidden for
+# the chrome-free look, which disables Ghostty's tabs outright. cmd+T there now
+# opens a real window that yabai tiles correctly, so there is nothing left to
+# work around. If that titlebar setting is ever reverted, restore Ghostty here.
 #
 # Other modern terminals: kitty and wezterm ship their own (non-native) tab
 # UI on macOS, so they don't trigger this and need no rule here. Alacritty
 # has no tab support at all. If a future terminal opts into AppKit native
 # tabs, add it to the regex below.
-yabai -m signal --add app="^(Ghostty|Terminal)$" event=window_created \
+yabai -m signal --add app="^Terminal$" event=window_created \
   action='yabai -m space --layout bsp'
-yabai -m signal --add app="^(Ghostty|Terminal)$" event=window_destroyed \
+yabai -m signal --add app="^Terminal$" event=window_destroyed \
   action='yabai -m space --layout bsp'
 
 echo "yabai configuration loaded.."
