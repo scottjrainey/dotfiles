@@ -15,13 +15,17 @@
 
   system.defaults = {
     NSGlobalDomain = {
-      AppleInterfaceStyle = "Dark"; # Use dark mode.
       KeyRepeat = 2; # Use fast key repeat.
       InitialKeyRepeat = 15; # Shorten the delay before key repeat starts.
       AppleShowAllExtensions = true; # Show filename extensions in Finder.
+      AppleInterfaceStyleSwitchesAutomatically = true; # Auto-switch light/dark with the time of day.
+      "com.apple.springing.delay" = 0.5; # Spring-loaded folder delay (default 1.0).
     };
     dock = {
       autohide = true; # Hide the Dock until the pointer reaches it.
+      tilesize = 41; # Dock icon size (default 64).
+      mru-spaces = false; # Don't reorder Spaces by most recent use.
+      "wvous-br-corner" = 14; # Bottom-right hot corner: Quick Note.
     };
     finder = {
       FXPreferredViewStyle = "Nlsv"; # Use list view by default.
@@ -29,6 +33,35 @@
     };
     trackpad = {
       Clicking = true; # Enable tap to click.
+      TrackpadRightClick = true; # Two-finger tap for secondary click.
+      TrackpadRotate = true; # Two-finger rotate gesture.
+      TrackpadPinch = true; # Two-finger pinch to zoom.
+      TrackpadFourFingerHorizSwipeGesture = 2; # Swipe between full-screen apps.
+      TrackpadFourFingerPinchGesture = 2; # Four-finger pinch for Desktop/Launchpad.
+      TrackpadTwoFingerDoubleTapGesture = true; # Smart zoom on double-tap.
+      TrackpadTwoFingerFromRightEdgeSwipeGesture = 3; # Swipe in from right edge for Notification Center.
+      TrackpadThreeFingerTapGesture = 0; # Disable three-finger tap (Look Up).
+    };
+    menuExtraClock = {
+      ShowAMPM = true; # Show the AM/PM label.
+      ShowDate = 0; # Show the full date only when space allows.
+      ShowDayOfWeek = true; # Show the day of week in the menu bar.
+    };
+    screencapture = {
+      location = "~/Documents/"; # Save screenshots to Documents instead of the Desktop.
+    };
+    WindowManager = {
+      EnableTiledWindowMargins = false; # No gaps between tiled windows.
+    };
+    loginwindow = {
+      GuestEnabled = false; # Disable the Guest account.
+    };
+    SoftwareUpdate = {
+      AutomaticallyInstallMacOSUpdates = true; # Auto-install macOS updates.
+    };
+    ActivityMonitor = {
+      ShowCategory = 102; # Show "My Processes" by default.
+      OpenMainWindow = false; # Don't auto-open the main window on launch.
     };
   };
 
