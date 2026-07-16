@@ -1,7 +1,7 @@
 {
   "bundleId" : "io.gechr.WhichSpace",
   "settings" : {
-    "clickToSwitchSpaces" : false,
+    "clickToSwitchSpaces" : true,
     "dimInactiveSpaces" : true,
     "hideEmptySpaces" : false,
     "hideFullscreenApps" : false,

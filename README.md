@@ -76,6 +76,8 @@ This keeps the repo as the source of truth while allowing normal edit-in-place w
 The WhichSpace LaunchAgent is installed by symlinking `home/Library/LaunchAgents/io.gechr.WhichSpace.plist` into `~/Library/LaunchAgents`.
 The plist is present at login; if immediate loading is needed after a manual edit, use `launchctl` or log out and back in.
 
+WhichSpace's own preferences (badges, per-space colors, toggles) are not managed by nix - the app stores per-space colors as binary-archived `NSColor` blobs that don't map cleanly to `system.defaults`. Instead they are captured in `whichspace/WhichSpaceSettings.json`, the app's native export. On a fresh machine, apply them once via the WhichSpace menu bar -> Import Settings -> `whichspace/WhichSpaceSettings.json`. To re-capture after changing settings, use the menu bar -> Export Settings and overwrite that file. (The Accessibility permission WhichSpace needs is a macOS TCC grant and must also be re-enabled by hand in System Settings.)
+
 `home/.config/aerospace/aerospace.toml` is preserved but not linked.
 The old installer had the Aerospace symlink commented out, and `home.nix` keeps that behavior with a commented example line.
 
