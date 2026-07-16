@@ -52,6 +52,7 @@
     };
     WindowManager = {
       EnableTiledWindowMargins = false; # No gaps between tiled windows.
+      StandardHideWidgets = true; # Hide desktop widgets (Calendar, Photos, etc.).
     };
     loginwindow = {
       GuestEnabled = false; # Disable the Guest account.
