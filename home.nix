@@ -120,6 +120,12 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/btop/btop.conf";
   home.file.".config/ccstatusline".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/ccstatusline";
+  # cmux embeds Ghostty, so terminal appearance (font, theme, transparency,
+  # blur, padding, keybinds) is inherited from ~/.config/ghostty/config below.
+  # This file only manages cmux-specific behavior. `cmux reload-config` reloads
+  # both this and the Ghostty config in place.
+  home.file.".config/cmux/cmux.json".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/cmux/cmux.json";
   # Legacy source name: ghostty.config.
   home.file.".config/ghostty/config".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/ghostty/config";
