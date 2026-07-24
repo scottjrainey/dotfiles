@@ -64,6 +64,7 @@ cask "lm-studio"
 # nix-managed ripgrep even though it's not declared here directly.
 cask "codex"
 brew "anomalyco/tap/opencode"
+brew "herdr"
 
 # === Browser ===
 cask "google-chrome"

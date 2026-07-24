@@ -104,6 +104,7 @@
       "beads"
       "supabase/tap/supabase"
       "anomalyco/tap/opencode"
+      "herdr"
       "codecrafters-io/tap/codecrafters"
     ];
 
