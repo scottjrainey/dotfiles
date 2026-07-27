@@ -14,7 +14,7 @@ Running the switch builds:
 - Homebrew casks for GUI apps, fonts, and macOS app bundles.
 - Homebrew formulae for tapped packages, macOS services, and formulae intentionally left in Homebrew.
 - Zsh, oh-my-zsh, autosuggestions, aliases, Starship, fzf, and mise shell integration declared in `home.nix` via Home Manager's `programs.*` modules (no manual install scripts, no symlinked `.zshrc`).
-- Neovim, Ghostty, tmux, ripgrep, btop, yabai, skhd, Starship's `starship.toml`, and ccstatusline configs as edit-in-place symlinks.
+- Neovim, Ghostty, tmux, herdr, ripgrep, btop, yabai, skhd, Starship's `starship.toml`, and ccstatusline configs as edit-in-place symlinks.
 - One shared `home/AGENTS.md` installed for Claude, Codex, and opencode.
 
 ## Prerequisites
