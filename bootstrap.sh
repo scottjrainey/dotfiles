@@ -130,15 +130,4 @@ else
   echo "    WhichSpace.app not found in /Applications, skipping LaunchAgent load"
 fi
 
-echo "==> Step 9: install herdr agent skill"
-if command -v npx >/dev/null 2>&1; then
-  if [ -e "$HOME/.claude/skills/herdr" ]; then
-    echo "    herdr skill already installed, skipping"
-  else
-    npx skills add ogulcancelik/herdr --skill herdr -g -y
-  fi
-else
-  echo "    npx not found, skipping herdr skill install"
-fi
-
 echo "==> Done. Use ./rebuild.sh for future changes."
