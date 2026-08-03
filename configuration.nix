@@ -110,7 +110,6 @@
 
     casks = [
       "ghostty"
-      "cmux"
       "nikitabobko/tap/aerospace"
       "whichspace"
       "font-fira-code-nerd-font"
