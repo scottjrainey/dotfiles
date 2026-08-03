@@ -21,7 +21,6 @@ tap "withgraphite/tap"
 
 # === Terminal, window manager, fonts ===
 cask "ghostty"
-cask "cmux"
 cask "nikitabobko/tap/aerospace"
 brew "asmvik/formulae/yabai"
 brew "asmvik/formulae/skhd"
