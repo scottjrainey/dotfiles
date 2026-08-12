@@ -38,6 +38,11 @@ brew "mprocs"
 # jqp is a jq TUI companion; jq itself is nix-managed.
 brew "jqp"
 
+# === Toolchain version manager ===
+# mise stays on Homebrew's rolling core index instead of nixpkgs so it
+# tracks upstream releases quickly - see README's Notes section.
+brew "mise"
+
 # === Git tooling ===
 brew "withgraphite/tap/graphite"
 

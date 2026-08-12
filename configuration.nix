@@ -100,6 +100,7 @@
       "bat-extras"
       "mprocs"
       "jqp"
+      "mise"
       "withgraphite/tap/graphite"
       "beads"
       "supabase/tap/supabase"

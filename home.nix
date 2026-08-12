@@ -50,7 +50,9 @@ in
     pandoc
     poppler
   ];
-  # starship, fzf, and mise packages come from their programs.* modules below.
+  # starship and fzf packages come from their programs.* modules below. mise
+  # is intentionally Homebrew-managed (configuration.nix's brews list), not a
+  # programs.mise package - see README's Notes section for why.
 
   fonts.fontconfig.enable = true;
 
@@ -72,7 +74,6 @@ in
 
   programs.starship.enable = true;
   programs.fzf.enable = true;
-  programs.mise.enable = true;
 
   programs.zsh = {
     enable = true;
@@ -111,6 +112,13 @@ in
         if ! infocmp >/dev/null 2>&1; then
           export TERM=xterm-256color
         fi
+      ''
+      ''
+        # mise is Homebrew-managed (not programs.mise), so its shell
+        # activation is wired here by hand instead of by a Home Manager
+        # module. .zprofile's brew shellenv already put mise on PATH by the
+        # time .zshrc runs.
+        eval "$(mise activate zsh)"
       ''
     ];
   };
