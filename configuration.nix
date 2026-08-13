@@ -120,7 +120,7 @@
       "gcloud-cli"
       "tailscale-app"
       "claude"
-      "codex-app"
+      "chatgpt"
       "cursor"
       "lm-studio"
       "codex"

@@ -57,15 +57,18 @@ brew "supabase/tap/supabase"
 
 # === AI desktop apps ===
 cask "claude"
-cask "codex-app"
+cask "chatgpt"
 cask "cursor"
 cask "lm-studio"
 
 # === AI coding agents, CLI ===
-# codex is OpenAI's terminal coding agent; codex-app above is the separate
-# desktop app. opencode is another terminal-based coding agent. Both pull in
-# ripgrep as a runtime dependency, so it stays brew-installed alongside the
-# nix-managed ripgrep even though it's not declared here directly.
+# codex is OpenAI's terminal coding agent; chatgpt above is the separate
+# desktop app - formerly the codex-app cask (OpenAI folded the standalone
+# Codex desktop app into ChatGPT's branding; codex-app is deprecated
+# upstream, disabled 2027-07-12). opencode is another terminal-based coding
+# agent. Both pull in ripgrep as a runtime dependency, so it stays
+# brew-installed alongside the nix-managed ripgrep even though it's not
+# declared here directly.
 cask "codex"
 brew "anomalyco/tap/opencode"
 brew "herdr"
