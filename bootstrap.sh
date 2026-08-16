@@ -77,6 +77,20 @@ else
   echo "    pi already installed, skipping"
 fi
 
+if ! command -v grok >/dev/null 2>&1; then
+  grok_installer="$(download_to_temp https://x.ai/cli/install.sh)"
+  bash "$grok_installer"
+else
+  echo "    grok already installed, skipping"
+fi
+
+if ! command -v prime-agent >/dev/null 2>&1; then
+  prime_agent_installer="$(download_to_temp https://app.primeintellect.ai/prime-agent/install.sh)"
+  sh "$prime_agent_installer"
+else
+  echo "    prime-agent already installed, skipping"
+fi
+
 echo "==> Step 5: symlink sibling dotfiles-private to ~/.dotfiles-private"
 PRIVATE_DIR="$(cd "$DIR/.." && pwd -P)/dotfiles-private"
 if [ -d "$PRIVATE_DIR" ]; then
