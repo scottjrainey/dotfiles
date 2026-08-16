@@ -113,27 +113,79 @@ init_space_labels_if_needed
 # per-app lines below take precedence over the catch-all. Grow this list
 # organically as you find apps that tile well.
 yabai -m rule --add app=".*"                manage=off
-yabai -m rule --add app="^Cursor$"          manage=on space=editor
-yabai -m rule --add app="^Claude$"          manage=on space=editor
-yabai -m rule --add app="^ChatGPT$"         manage=on space=editor
-yabai -m rule --add app="^Ghostty$"         manage=on space=terminal
-yabai -m rule --add app="^Terminal$"        manage=on space=terminal
-yabai -m rule --add app="^Obsidian$"        manage=on space=notes
-yabai -m rule --add app="^Calendar$"        manage=on space=planning
-yabai -m rule --add app="^Messages$"        manage=on space=comms
+yabai -m rule --add app="^Cursor$"          manage=on
+yabai -m rule --add app="^Claude$"          manage=on
+yabai -m rule --add app="^ChatGPT$"         manage=on
+yabai -m rule --add app="^Ghostty$"         manage=on
+yabai -m rule --add app="^Terminal$"        manage=on
+yabai -m rule --add app="^Obsidian$"        manage=on
+yabai -m rule --add app="^Calendar$"        manage=on
+yabai -m rule --add app="^Messages$"        manage=on
 # Slack and Discord are native casks (see Brewfile, "Communication" section),
 # pinned alongside Messages on the comms space.
-yabai -m rule --add app="^Slack$"           manage=on space=comms
-yabai -m rule --add app="^Discord$"         manage=on space=comms
+yabai -m rule --add app="^Slack$"           manage=on
+yabai -m rule --add app="^Discord$"         manage=on
 yabai -m rule --add app="^Google Chrome$"   manage=on
+
+# Space targeting is deliberately NOT a declarative `space=` on the rules
+# above. yabai (re)starts at login, after a crash (see the KeepAlive stanza in
+# the com.asmvik.yabai LaunchAgent), or after `yabai --restart-service` - and
+# at that moment every already-open window matching one of these app regexes,
+# plus anything macOS's own session restore relaunches at the same moment,
+# arrives as a burst of window_created/application_launched events. A
+# declarative `space=` would yank all of them to their assigned space at once
+# - the "auto open and place on start up" behavior this file used to have,
+# which made every login/restart jarring.
+#
+# STARTUP_STAMP_FILE records when this .yabairc run started. past_startup_grace
+# (spliced into each signal action below) only lets the move through once
+# STARTUP_GRACE_SECONDS has passed since then, so the startup burst is left
+# wherever it landed. A real app launch later in the session - the normal
+# case - still routes to its space immediately, since the grace period is
+# long over by then. Tiling itself (manage=on above) is unaffected either way
+# - only the cross-space move is gated.
+STARTUP_STAMP_FILE="$HOME/.cache/yabai-startup-stamp"
+STARTUP_GRACE_SECONDS=20
+mkdir -p "$(dirname "$STARTUP_STAMP_FILE")"
+date +%s > "$STARTUP_STAMP_FILE"
+
+# Emits a shell test, literal and unevaluated, for splicing into a
+# single-quoted signal action string (see call sites below). Only evaluated
+# later, when the action actually runs.
+past_startup_grace() {
+  printf '[ $(( $(date +%%s) - $(cat "%s" 2>/dev/null || echo 0) )) -ge %s ]' \
+    "$STARTUP_STAMP_FILE" "$STARTUP_GRACE_SECONDS"
+}
+
+yabai -m signal --add event=window_created app="^Cursor$" \
+  action="$(past_startup_grace)"' && yabai -m window "$YABAI_WINDOW_ID" --space editor'
+yabai -m signal --add event=window_created app="^Claude$" \
+  action="$(past_startup_grace)"' && yabai -m window "$YABAI_WINDOW_ID" --space editor'
+yabai -m signal --add event=window_created app="^ChatGPT$" \
+  action="$(past_startup_grace)"' && yabai -m window "$YABAI_WINDOW_ID" --space editor'
+yabai -m signal --add event=window_created app="^Ghostty$" \
+  action="$(past_startup_grace)"' && yabai -m window "$YABAI_WINDOW_ID" --space terminal'
+yabai -m signal --add event=window_created app="^Terminal$" \
+  action="$(past_startup_grace)"' && yabai -m window "$YABAI_WINDOW_ID" --space terminal'
+yabai -m signal --add event=window_created app="^Obsidian$" \
+  action="$(past_startup_grace)"' && yabai -m window "$YABAI_WINDOW_ID" --space notes'
+yabai -m signal --add event=window_created app="^Calendar$" \
+  action="$(past_startup_grace)"' && yabai -m window "$YABAI_WINDOW_ID" --space planning'
+yabai -m signal --add event=window_created app="^Messages$" \
+  action="$(past_startup_grace)"' && yabai -m window "$YABAI_WINDOW_ID" --space comms'
+yabai -m signal --add event=window_created app="^Slack$" \
+  action="$(past_startup_grace)"' && yabai -m window "$YABAI_WINDOW_ID" --space comms'
+yabai -m signal --add event=window_created app="^Discord$" \
+  action="$(past_startup_grace)"' && yabai -m window "$YABAI_WINDOW_ID" --space comms'
 
 # Chrome gets special handling: a blanket `space=browser` rule would also catch
 # OAuth popups and `open https://...` launches from other apps, dragging them
 # off the originating space. Instead:
 #   1. application_launched moves Chrome's first window to browser space only
-#      when its title is "New Tab" (i.e. cold launch with no URL passed in).
-#      If Chrome was launched via `open URL`, the first window loads that URL
-#      and gets a different title — we leave it on whichever space spawned it.
+#      when its title is "New Tab" (i.e. cold launch with no URL passed in)
+#      AND the startup grace period above has passed. If Chrome was launched
+#      via `open URL`, the first window loads that URL and gets a different
+#      title — we leave it on whichever space spawned it.
 #   2. window_created floats small Chrome windows in place — catches OAuth
 #      popups, account chooser dialogs, etc., which are typically <1000px wide.
 yabai -m signal --add event=application_launched app="^Google Chrome$" \
@@ -141,8 +193,9 @@ yabai -m signal --add event=application_launched app="^Google Chrome$" \
     w=$(yabai -m query --windows 2>/dev/null \
       | jq -r "[.[] | select(.app == \"Google Chrome\")][0] // empty")
     if [ -n "$w" ]; then
-      [ "$(echo "$w" | jq -r ".title")" = "New Tab" ] \
-        && yabai -m window "$(echo "$w" | jq -r ".id")" --space browser
+      if [ "$(echo "$w" | jq -r ".title")" = "New Tab" ] && '"$(past_startup_grace)"'; then
+        yabai -m window "$(echo "$w" | jq -r ".id")" --space browser
+      fi
       break
     fi
     sleep 0.1
