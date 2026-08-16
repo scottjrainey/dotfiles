@@ -17,7 +17,7 @@
     NSGlobalDomain = {
       KeyRepeat = 2; # Use fast key repeat.
       InitialKeyRepeat = 15; # Shorten the delay before key repeat starts.
-      AppleShowAllExtensions = true; # Show filename extensions in Finder.
+      AppleShowAllExtensions = false; # Hide filename extensions in Finder and Spotlight.
       AppleInterfaceStyleSwitchesAutomatically = true; # Auto-switch light/dark with the time of day.
       "com.apple.springing.delay" = 0.5; # Spring-loaded folder delay (default 1.0).
     };
