@@ -1,0 +1,21 @@
+# gh-dash is installed as a gh CLI extension (see bootstrap.sh Step 7), not
+# via Homebrew or Nix. This file only overrides keybindings.prs; omitted
+# top-level keys (prSections, issuesSections, etc.) keep gh-dash's built-in
+# defaults - gh-dash merges a partial config.yml over its defaults rather
+# than replacing them, and custom keybindings are unioned with the built-in
+# ones instead of replacing them.
+#
+# `i` was picked for the tuicr binding because gh-dash's defaults already
+# claim every other easy mnemonic letter on the PR view: global keys use
+# j/k/g/G/p/P/o/r/R/l/h/y/Y/q, and the PR view itself uses v/a/A/L/c/d/C/x/
+# e/X/W/m/u/w/V/t/s. Re-check both before reassigning this key.
+#
+# tuicr (https://tuicr.dev/) takes the PR straight from GitHub via its own
+# `pr` subcommand and --repo-url, so this doesn't need a local clone or a
+# repoPaths entry - it works for any repo the dashboard shows, not just the
+# ones checked out locally.
+keybindings:
+  prs:
+    - key: i
+      name: tuicr review
+      command: tuicr pr {{.PrNumber}} --repo-url https://github.com/{{.RepoName}}

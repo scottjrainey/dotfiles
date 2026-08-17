@@ -128,6 +128,8 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/btop/btop.conf";
   home.file.".config/ccstatusline".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/ccstatusline";
+  home.file.".config/gh-dash/config.yml".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/gh-dash/config.yml";
   # Legacy source name: ghostty.config.
   home.file.".config/ghostty/config".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/ghostty/config";
