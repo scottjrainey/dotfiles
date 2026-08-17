@@ -142,6 +142,8 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/starship.toml";
   home.file.".config/tmux/tmux.conf".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/tmux/tmux.conf";
+  home.file.".local/bin".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin";
   home.file.".skhdrc".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.skhdrc";
   home.file.".yabairc".source =
