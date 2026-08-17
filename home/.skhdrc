@@ -38,6 +38,46 @@ alt + shift - j : /opt/homebrew/bin/yabai -m window --swap south
 alt + shift - k : /opt/homebrew/bin/yabai -m window --swap north
 alt + shift - l : /opt/homebrew/bin/yabai -m window --swap east
 
+# ── Window stacking (Option C: task-relevant stacks within the 6 purpose
+# spaces - see yabai-space-stacking-options and yabai-stack-within-spaces
+# reports) ────────────────────────────────────────────────────────────────
+# This is yabai's real window-to-window stacking primitive (mechanism 2 in
+# the report: `--insert stack` / `--stack`), not the whole-space
+# `--layout stack` bound above at alt+comma - that binding stays as-is
+# (broken/unbound in practice, per the report; not repurposed here).
+#
+# Add focused window to a stack - one-shot `--stack <DIR_SEL>`, not the
+# `--insert stack` + `--warp` two-step. `--stack` merges the focused window
+# with a directional neighbour in a single keypress and already accepts
+# west/south/north/east directly, matching this file's existing
+# directional-hjkl convention (--swap above, --warp in service mode below)
+# with no separate "mark a target" step first. `--insert stack` + `--warp`
+# remains available for ad hoc/mouse-driven use (`--insert stack` on a
+# window, then `--warp <dir>` from another) but isn't bound here - the
+# one-shot covers the keybinding case with one command per addition instead
+# of two, and there's no interactive/mouse-driven use case in this file to
+# justify the extra binding.
+#
+# Cycle within a stack - wraps `--focus stack.next`/`stack.prev` via
+# yabai-stack-focus (home/.local/bin/): yabai's native STACK_SEL doesn't
+# wrap at the ends of a stack (confirmed upstream limitation; a third-party
+# CLI exists solely to patch this). The wrapper also fires a "N of M"
+# notification, since yabai exposes stack position via query only and this
+# repo has no status bar or border tool to show it ambiently - see the
+# needs-decision on a persistent visual-feedback tool in the PR for this
+# work.
+#
+# New "alt+ctrl" modifier lane, reserved for stacking verbs specifically -
+# avoids the commented-out `alt - h/j/k/l` directional-focus lines above
+# (still unbound, but reserved) and every other existing chord in this file.
+alt + ctrl - j : $HOME/.local/bin/yabai-stack-focus next
+alt + ctrl - k : $HOME/.local/bin/yabai-stack-focus prev
+
+alt + ctrl + shift - h : /opt/homebrew/bin/yabai -m window --stack west  && $HOME/.local/bin/yabai-stack-focus status
+alt + ctrl + shift - j : /opt/homebrew/bin/yabai -m window --stack south && $HOME/.local/bin/yabai-stack-focus status
+alt + ctrl + shift - k : /opt/homebrew/bin/yabai -m window --stack north && $HOME/.local/bin/yabai-stack-focus status
+alt + ctrl + shift - l : /opt/homebrew/bin/yabai -m window --stack east  && $HOME/.local/bin/yabai-stack-focus status
+
 # ── Window resize ────────────────────────────────────────────────────────────
 # Aerospace: alt-minus / alt-equal = resize smart -50 / +50
 # Yabai resize is directional; "smart" picks based on parent split. Approximate
@@ -176,6 +216,15 @@ service < l : /opt/homebrew/bin/yabai -m window --focus east
 # between two windows. Yabai's bsp tree doesn't expose container joining.
 # Closest behavior: --warp inserts the focused window into the neighbour's
 # split, which collapses to the same visual result in most cases.
+#
+# Doubles as "pop out of stack": per yabai's own documented behavior, any
+# --warp on a stacked window unstacks it (see the alt+ctrl+shift-hjkl
+# --stack bindings above). Kept as the intended pop-out mechanism rather
+# than adding a dedicated unstack key - yabai has no unstack primitive
+# other than warp (there's no "leave the stack, position unspecified"
+# command to bind instead), and requiring service mode first already adds
+# the deliberateness a structural action like this warrants, same as it
+# does for --warp's existing bsp-reinsert behavior.
 service < alt + shift - h : /opt/homebrew/bin/yabai -m window --warp west
 service < alt + shift - j : /opt/homebrew/bin/yabai -m window --warp south
 service < alt + shift - k : /opt/homebrew/bin/yabai -m window --warp north

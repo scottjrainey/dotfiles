@@ -28,6 +28,12 @@ Project-scoped instructions for working in this dotfiles repo.
 - Personal Claude Code skills come from `dotfiles-private/claude/skills/` via home-manager, resolving through a Nix store symlink into `~/.claude/skills/<name>`.
 - `bootstrap.sh` must not shell out to `npx skills add ... -g` (or otherwise install a skill globally). A prior version did this for `herdr`; it was removed because global skill installs bypass the Nix-managed symlink convention and aren't reproducible across machines.
 
+## Window management (yabai/skhd)
+
+- `home/.local/bin/` holds standalone helper scripts referenced by `.skhdrc`/`.yabairc` (e.g. `yabai-stack-focus`) for logic too non-trivial to duplicate inline across multiple bindings. Reference them by `$HOME/...` path, matching `.skhdrc`'s existing absolute-path convention for the `yabai` binary - skhd's LaunchAgent PATH can't be assumed to include anything beyond system defaults.
+- `.skhdrc`'s `alt+ctrl` modifier combo is reserved for window-stacking verbs (cycle/add-to-stack); `alt+ctrl+shift` for the directional add-to-stack bindings. Check there before claiming a new chord.
+- To empirically test a `.skhdrc` change without touching the live `skhd`/`yabai` services (never do that - see any task brief's safety rules): skhd's pid-file path is hardcoded to `/tmp/skhd_$USER.pid` with no CLI override, so a second real instance for the same `$USER` always fails to start. Run it with a distinct fake `USER=` env var instead (e.g. `USER=skhd-isotest-$$ skhd -c <scratch-config>`) to get a genuinely isolated process/pid-file. Parse errors print to stdout/stderr as `#<line>:<col> <message>`; a clean config produces no output and the process just keeps running - it won't self-exit, so kill it explicitly rather than `wait`ing on it, and press no keys during the test (a valid config still grabs real global hotkeys in that same login session).
+
 ## Verification
 
 - Run the narrowest useful check before finishing a change.

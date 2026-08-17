@@ -1,0 +1,65 @@
+#!/usr/bin/env sh
+# yabai-stack-focus - wrapped stack navigation + "N of M" feedback.
+#
+# yabai's native STACK_SEL (`--focus stack.next`/`stack.prev`) does not wrap
+# at the ends of a stack: press next on the last window and it's a no-op,
+# same for prev on the first. This wrapper adds the wraparound and, since
+# this repo has no status bar or border tool to show "which stack, which
+# position" (see the yabai-stack-within-spaces report), fires a macOS
+# notification with the new position - the same osascript-notification
+# pattern already used elsewhere in this repo's yabairc/skhdrc.
+#
+# Usage:
+#   yabai-stack-focus next     move to the next window in the stack, wrapping
+#   yabai-stack-focus prev     move to the previous window in the stack, wrapping
+#   yabai-stack-focus status   report the current position without moving
+#
+# A window that isn't part of a multi-window stack (stack-index 0, or the
+# lone member of one) is a silent no-op, same as directional focus at a bsp
+# edge.
+#
+# Uses `yabai -m query --windows --space` (not `--windows --window`) to find
+# the focused window and its stack siblings. That scoped-to-space query is
+# proven in this repo already (see the service<backspace> binding in
+# skhdrc), and its return shape (an array) is unambiguous - unlike
+# `--windows --window` with no argument, whose single-object-vs-array return
+# shape isn't spelled out in the man page and wasn't safe to assume without
+# running it against a live yabai instance.
+
+set -eu
+
+YABAI="${YABAI:-/opt/homebrew/bin/yabai}"
+cmd="${1:?usage: yabai-stack-focus next|prev|status}"
+
+windows="$("$YABAI" -m query --windows --space 2>/dev/null)" || exit 0
+me="$(printf '%s' "$windows" | jq -c '[.[] | select(."has-focus")] | first // empty')"
+[ -z "$me" ] && exit 0
+
+cur_index="$(printf '%s' "$me" | jq -r '."stack-index" // 0')"
+[ "$cur_index" = "0" ] && exit 0
+
+frame="$(printf '%s' "$me" | jq -c '.frame')"
+total="$(printf '%s' "$windows" | jq --argjson f "$frame" '[.[] | select(.frame == $f)] | length')"
+
+case "$cmd" in
+  status)
+    target="$cur_index"
+    ;;
+  next)
+    target=$((cur_index + 1))
+    [ "$target" -gt "$total" ] && target=1
+    "$YABAI" -m window --focus "stack.$target"
+    ;;
+  prev)
+    target=$((cur_index - 1))
+    [ "$target" -lt 1 ] && target="$total"
+    "$YABAI" -m window --focus "stack.$target"
+    ;;
+  *)
+    echo "usage: yabai-stack-focus next|prev|status" >&2
+    exit 1
+    ;;
+esac
+
+# Backgrounded so the calling skhd hotkey doesn't block on osascript.
+osascript -e "display notification \"$target of $total\" with title \"yabai stack\"" >/dev/null 2>&1 &
