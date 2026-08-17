@@ -63,9 +63,11 @@ alt + shift - l : /opt/homebrew/bin/yabai -m window --swap east
 # wrap at the ends of a stack (confirmed upstream limitation; a third-party
 # CLI exists solely to patch this). The wrapper also fires a "N of M"
 # notification, since yabai exposes stack position via query only and this
-# repo has no status bar or border tool to show it ambiently - see the
-# needs-decision on a persistent visual-feedback tool in the PR for this
-# work.
+# repo has no status bar or border tool to show it ambiently. Captain
+# decision: notification-only is sufficient for now - no persistent
+# status-bar/border tool (e.g. SketchyBar, JankyBorders) is being added on
+# top of this; revisit only if the transient notification proves
+# insufficient in practice.
 #
 # New "alt+ctrl" modifier lane, reserved for stacking verbs specifically -
 # avoids the commented-out `alt - h/j/k/l` directional-focus lines above
