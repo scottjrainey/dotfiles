@@ -32,7 +32,7 @@ YABAI="${YABAI:-/opt/homebrew/bin/yabai}"
 cmd="${1:?usage: yabai-stack-focus next|prev|status}"
 
 windows="$("$YABAI" -m query --windows --space 2>/dev/null)" || exit 0
-me="$(printf '%s' "$windows" | jq -c '[.[] | select(."has-focus")] | first // empty')"
+me="$(printf '%s' "$windows" | jq -c '[.[] | select(."has-focus")] | first // empty' 2>/dev/null)" || exit 0
 [ -z "$me" ] && exit 0
 
 cur_index="$(printf '%s' "$me" | jq -r '."stack-index" // 0')"
