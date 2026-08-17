@@ -111,7 +111,21 @@ cd "$DIR"
 sudo "$NIX_BIN" run github:nix-darwin/nix-darwin/nix-darwin-26.05#darwin-rebuild -- \
   switch --flake .#mac --impure
 
-echo "==> Step 7: trust Homebrew taps"
+echo "==> Step 7: install the gh-dash GitHub CLI extension"
+# No Homebrew tap/formula exists for gh-dash (dlvhdr/homebrew-formulae only
+# ships diffnav); its only real distribution mechanism is a gh extension.
+# gh itself is nix-managed (home.nix) and lands on PATH via Step 6's switch.
+if command -v gh >/dev/null 2>&1; then
+  if gh extension list 2>/dev/null | grep -q "dlvhdr/gh-dash"; then
+    echo "    gh-dash already installed, skipping"
+  else
+    gh extension install dlvhdr/gh-dash
+  fi
+else
+  echo "    gh not on PATH yet - re-run bootstrap.sh in a new shell to install gh-dash"
+fi
+
+echo "==> Step 8: trust Homebrew taps"
 if [ -x /opt/homebrew/bin/brew ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
@@ -134,7 +148,7 @@ else
   echo "    brew not found, skipping tap trust"
 fi
 
-echo "==> Step 8: load WhichSpace LaunchAgent"
+echo "==> Step 9: load WhichSpace LaunchAgent"
 WHICHSPACE_PLIST="$HOME/Library/LaunchAgents/io.gechr.WhichSpace.plist"
 if [ -d /Applications/WhichSpace.app ]; then
   launchctl bootstrap "gui/$(id -u)" "$WHICHSPACE_PLIST" 2>/dev/null \
