@@ -1,9 +1,9 @@
 # gh-dash is installed as a gh CLI extension (see bootstrap.sh Step 7), not
-# via Homebrew or Nix. This file only overrides keybindings.prs; omitted
-# top-level keys (prSections, issuesSections, etc.) keep gh-dash's built-in
-# defaults - gh-dash merges a partial config.yml over its defaults rather
-# than replacing them, and custom keybindings are unioned with the built-in
-# ones instead of replacing them.
+# via Homebrew or Nix. This file only overrides repoPaths and
+# keybindings.prs; omitted top-level keys (prSections, issuesSections, etc.)
+# keep gh-dash's built-in defaults - gh-dash merges a partial config.yml
+# over its defaults rather than replacing them, and custom keybindings are
+# unioned with the built-in ones instead of replacing them.
 #
 # `i` was picked for the tuicr binding because gh-dash's defaults already
 # claim every other easy mnemonic letter on the PR view: global keys use
@@ -14,6 +14,15 @@
 # `pr` subcommand and --repo-url, so this doesn't need a local clone or a
 # repoPaths entry - it works for any repo the dashboard shows, not just the
 # ones checked out locally.
+#
+# repoPaths maps owner/repo to a local clone so gh-dash's *other* built-in
+# actions (checkout, etc.) know where to operate - gh-dash does not fall
+# back to the launch directory when a repo is missing here, it just errors.
+# See https://gh-dash.dev/configuration/repo-paths.
+repoPaths:
+  scottjrainey/dotfiles: /Users/scottjrainey/repos/dotfiles
+  scottjrainey/dotfiles-private: /Users/scottjrainey/repos/dotfiles-private
+  scottjrainey/ringer: /Users/scottjrainey/repos/ringer
 keybindings:
   prs:
     - key: i
