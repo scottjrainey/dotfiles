@@ -10,7 +10,6 @@
 # ── Mode declarations (must precede any reference) ───────────────────────────
 :: default
 :: service @
-:: app     @
 
 # ── Layout toggles ───────────────────────────────────────────────────────────
 # Aerospace: alt-slash = layout tiles horizontal vertical
@@ -169,15 +168,33 @@ alt - tab : /opt/homebrew/bin/yabai -m space --focus recent
 
 # ── Mode entry ───────────────────────────────────────────────────────────────
 # Aerospace: alt-shift-semicolon = mode service
-#            alt-shift-enter      = mode app
 alt + shift - 0x29 ; service     # 0x29 = semicolon
-alt + shift - return ; app
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Service mode — matches aerospace [mode.service.binding]
 # ─────────────────────────────────────────────────────────────────────────────
 # Captures all keys with `@`. Unbound keys do nothing (don't leak to apps).
 # (Mode declared at top of file.)
+#
+# One-shot leader key: every binding below ends its command with
+# `; /opt/homebrew/bin/skhd -k "escape"`. That synthesizes an Escape keydown
+# that skhd's own event tap immediately re-intercepts, matching it against
+# `service < escape ; default` below and returning to default mode - so
+# alt+shift+; behaves like a single keychord (press leader, press action,
+# done) instead of a mode you have to remember to back out of by hand.
+#
+# skhd has no native "run a command, then switch mode" syntax - confirmed by
+# reading skhd's own parser (src/parse.c: parse_hotkey() treats ':' <command>
+# and ';' <mode> as mutually exclusive actions on a hotkey) and by an
+# isolated local build/run (own process, own config, own pid-file, never the
+# live service) that exercised this exact chain end-to-end and logged the
+# expected result. Full method and evidence in the scout report.
+#
+# Chained with `;`, not `&&`: the escape must fire even when the real command
+# fails (e.g. --focus west with no window further west), or the mode would
+# stay stuck on exactly the failures this exists to avoid. Because `service`
+# captures all keys (`@`), the synthetic Escape never leaks to whatever app
+# is focused - skhd swallows it like any other service-mode keypress.
 
 # Exit back to default mode.
 service < escape ; default
@@ -185,13 +202,14 @@ service < escape ; default
 # Aerospace: r = flatten-workspace-tree (reset layout)
 # Yabai equivalent: --balance redistributes window sizes evenly. Not a literal
 # tree flatten, but the user-visible result is the same: "fix this layout".
-service < r : /opt/homebrew/bin/yabai -m space --balance
+service < r : /opt/homebrew/bin/yabai -m space --balance ; /opt/homebrew/bin/skhd -k "escape"
 
 # Aerospace: f = layout floating tiling (toggle)
 # Yabai per-space layout toggle requires a script — bsp/float are mutually
 # exclusive layouts on a space.
 service < f : [[ "$(/opt/homebrew/bin/yabai -m query --spaces --space | jq -r .type)" == "bsp" ]] && \
-              /opt/homebrew/bin/yabai -m space --layout float || /opt/homebrew/bin/yabai -m space --layout bsp
+              /opt/homebrew/bin/yabai -m space --layout float || /opt/homebrew/bin/yabai -m space --layout bsp ; \
+              /opt/homebrew/bin/skhd -k "escape"
 
 # Repair labels after manually arranging Mission Control's Spaces Bar into the
 # intended order: 1 browser, 2 comms, 3 editor, 4 notes, 5 planning, 6 terminal.
@@ -200,18 +218,20 @@ service < s : /opt/homebrew/bin/yabai -m space 1 --label browser  ; \
               /opt/homebrew/bin/yabai -m space 3 --label editor   ; \
               /opt/homebrew/bin/yabai -m space 4 --label notes    ; \
               /opt/homebrew/bin/yabai -m space 5 --label planning ; \
-              /opt/homebrew/bin/yabai -m space 6 --label terminal
+              /opt/homebrew/bin/yabai -m space 6 --label terminal ; \
+              /opt/homebrew/bin/skhd -k "escape"
 
 # Aerospace: backspace = close-all-windows-but-current
 service < backspace : /opt/homebrew/bin/yabai -m query --windows --space \
                       | jq -r '.[] | select(."has-focus"==false) | .id' \
-                      | xargs -I{} /opt/homebrew/bin/yabai -m window {} --close
+                      | xargs -I{} /opt/homebrew/bin/yabai -m window {} --close ; \
+                      /opt/homebrew/bin/skhd -k "escape"
 
 # Aerospace: h/j/k/l = focus left/down/up/right
-service < h : /opt/homebrew/bin/yabai -m window --focus west
-service < j : /opt/homebrew/bin/yabai -m window --focus south
-service < k : /opt/homebrew/bin/yabai -m window --focus north
-service < l : /opt/homebrew/bin/yabai -m window --focus east
+service < h : /opt/homebrew/bin/yabai -m window --focus west  ; /opt/homebrew/bin/skhd -k "escape"
+service < j : /opt/homebrew/bin/yabai -m window --focus south ; /opt/homebrew/bin/skhd -k "escape"
+service < k : /opt/homebrew/bin/yabai -m window --focus north ; /opt/homebrew/bin/skhd -k "escape"
+service < l : /opt/homebrew/bin/yabai -m window --focus east  ; /opt/homebrew/bin/skhd -k "escape"
 
 # Aerospace: alt-shift-{h,j,k,l} = join-with {left,down,up,right}
 # NO YABAI EQUIVALENT — aerospace's join-with creates an explicit container
@@ -227,48 +247,21 @@ service < l : /opt/homebrew/bin/yabai -m window --focus east
 # command to bind instead), and requiring service mode first already adds
 # the deliberateness a structural action like this warrants, same as it
 # does for --warp's existing bsp-reinsert behavior.
-service < alt + shift - h : /opt/homebrew/bin/yabai -m window --warp west
-service < alt + shift - j : /opt/homebrew/bin/yabai -m window --warp south
-service < alt + shift - k : /opt/homebrew/bin/yabai -m window --warp north
-service < alt + shift - l : /opt/homebrew/bin/yabai -m window --warp east
+service < alt + shift - h : /opt/homebrew/bin/yabai -m window --warp west  ; /opt/homebrew/bin/skhd -k "escape"
+service < alt + shift - j : /opt/homebrew/bin/yabai -m window --warp south ; /opt/homebrew/bin/skhd -k "escape"
+service < alt + shift - k : /opt/homebrew/bin/yabai -m window --warp north ; /opt/homebrew/bin/skhd -k "escape"
+service < alt + shift - l : /opt/homebrew/bin/yabai -m window --warp east  ; /opt/homebrew/bin/skhd -k "escape"
 
 # Aerospace: down/up = volume down/up, shift-down = mute
 # Out of yabai scope — handled via osascript.
-service < down       : osascript -e "set volume output volume (output volume of (get volume settings) - 10)"
-service < up         : osascript -e "set volume output volume (output volume of (get volume settings) + 10)"
-service < shift - down : osascript -e "set volume with output muted"
+service < down         : osascript -e "set volume output volume (output volume of (get volume settings) - 10)" ; /opt/homebrew/bin/skhd -k "escape"
+service < up           : osascript -e "set volume output volume (output volume of (get volume settings) + 10)" ; /opt/homebrew/bin/skhd -k "escape"
+service < shift - down : osascript -e "set volume with output muted" ; /opt/homebrew/bin/skhd -k "escape"
 
-# ─────────────────────────────────────────────────────────────────────────────
-# App mode — matches aerospace [mode.app.binding]
-# ─────────────────────────────────────────────────────────────────────────────
-# (Mode declared at top of file.)
-
-app < escape ; default
-
-app < b : open -na "Google Chrome"
-app < e : open -a "Cursor"
-app < n : open -a "Obsidian"
-app < t : open -na "Ghostty"
-
-# Comms apps (all pinned to the comms space via yabairc rules).
-# open -a focuses the app if it's already running, else launches it.
-app < s : open -a "Slack"
-app < d : open -a "Discord"
-app < m : open -a "Messages"     # m = Messages (was the mail-Chrome launcher)
-
-# Planning apps.
-app < a : open -a "Calendar"     # a = agenda
-
-# Email: open Gmail + Proton as two tabs in one Chrome window, then send that
-# window to the planning space. A URL-launched Chrome window keeps its origin
-# space (the application_launched signal in yabairc only routes "New Tab" cold
-# launches to browser), so we move it explicitly. Newest Chrome window == highest
-# id, same idiom as the alt+shift-o detach binding above.
-app < g : open -na "Google Chrome" --args --new-window \
-            "https://mail.google.com" "https://mail.proton.me" && sleep 0.3 && \
-          w=$(/opt/homebrew/bin/yabai -m query --windows \
-              | jq -r '[.[] | select(.app=="Google Chrome")] | sort_by(.id) | last | .id') && \
-          [ -n "$w" ] && /opt/homebrew/bin/yabai -m window "$w" --space planning ; \
-          /opt/homebrew/bin/yabai -m space --focus planning
+# App mode (aerospace `[mode.app.binding]` translation: single-letter app
+# launchers behind alt+shift+return) has been removed entirely per captain's
+# request - it added a second lingering mode for a handful of launchers with
+# no auto-return fix applied. If app-launcher shortcuts are wanted again,
+# they should come back as direct top-level bindings, not a new mode.
 
 # Default mode is implicit — no `::` declaration needed for the entry mode.
