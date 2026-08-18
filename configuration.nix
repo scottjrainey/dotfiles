@@ -99,6 +99,7 @@
       "asmvik/formulae/skhd"
       "bat-extras"
       "mprocs"
+      "tuicr"
       "jqp"
       "mise"
       "withgraphite/tap/graphite"
