@@ -1,9 +1,9 @@
 # gh-dash is installed as a gh CLI extension (see bootstrap.sh Step 7), not
-# via Homebrew or Nix. This file only overrides keybindings.prs; omitted
-# top-level keys (prSections, issuesSections, etc.) keep gh-dash's built-in
-# defaults - gh-dash merges a partial config.yml over its defaults rather
-# than replacing them, and custom keybindings are unioned with the built-in
-# ones instead of replacing them.
+# via Homebrew or Nix. This file only overrides repoPaths and
+# keybindings.prs; omitted top-level keys (prSections, issuesSections, etc.)
+# keep gh-dash's built-in defaults - gh-dash merges a partial config.yml
+# over its defaults rather than replacing them, and custom keybindings are
+# unioned with the built-in ones instead of replacing them.
 #
 # `i` was picked for the tuicr binding because gh-dash's defaults already
 # claim every other easy mnemonic letter on the PR view: global keys use
