@@ -44,6 +44,22 @@
 # the run exits 3; neither is ever silently skipped. Every other registry
 # problem - malformed line, failed binding validation, a symlinked registry, an
 # id colliding with the primary - still refuses the whole run.
+# That skip has one sharp edge, and it is decided by WHERE the failure is
+# detected rather than by how bad it is. The two tiers, side by side:
+#   leaf missing, parent resolvable   SKIPPED. A registered local home whose own
+#     directory is gone or renamed, or which is present but is not a usable
+#     seeded secondmate home, fails the per-home predicate in this command's own
+#     loop. It is recorded as uncaptured-home, every other home is captured and
+#     pushed, and the run exits 3.
+#   parent path unresolvable          REFUSES THE WHOLE RUN, exit 1, nothing
+#     pushed. The canonical case is an unmounted volume, where macOS removes the
+#     whole /Volumes/<name> tree, so even the home's parent directory no longer
+#     resolves. firstmate's shared registry binding validator cannot key that
+#     record and rejects the registry as a whole, which happens before this
+#     command's per-home loop is ever reached, so the skip above cannot apply.
+# The second tier is a known limitation inherited from the shared validator, not
+# a decision made here; widening it belongs in the firstmate repo, not in this
+# command. See docs/firstmate-home-backup.md.
 #
 # TARGET RESOLUTION, AND WHY IT IS NOT INSIDE A HOME
 #   <config-dir>/target   a GitHub owner/repo slug, required
@@ -131,6 +147,12 @@
 # has been verified. An interrupted apply therefore leaves
 # .fm-home-backup-restore behind holding the previous trees, and the next restore
 # refuses until that rescue copy has been dealt with rather than overwriting it.
+# A home that SNAPSHOT records as uncaptured-home still has its last successful
+# capture in the repo, because a skipped home is deliberately never wiped. The
+# plan therefore opens with a prominent warning naming that reason and saying the
+# files are of unknown age, and --apply repeats it on stderr as its last word.
+# This is a warning and never a refusal: during a real outage, stale memory beats
+# no memory, and the operator is the one who gets to weigh that.
 #
 # ENVIRONMENT
 #   FM_HOME                  primary firstmate home (overrides <config-dir>/home)
@@ -141,11 +163,14 @@
 # EXIT STATUS
 #   0  captured and pushed, clean no-op, or a plan-only restore
 #   1  refusal or failure; nothing was pushed. A restore blocked by another run's
-#      lock lands here too, so it can never read as a completed recovery
+#      lock lands here, so it can never read as a completed recovery, and so does
+#      a registered local home whose parent path cannot be resolved at all - an
+#      unmounted volume - which the shared binding validator rejects before any
+#      home is captured
 #   2  invalid use
 #   3  every capturable home was captured and pushed, but at least one registered
 #      home was missed: a remote home this version cannot read, or a local home
-#      that is not a usable secondmate home
+#      whose own directory is missing or is not a usable secondmate home
 set -eu
 
 usage() {
@@ -601,10 +626,38 @@ if [ "$MODE" = restore ]; then
       || die "$RESTORE_ID/MANIFEST entry '$kind $mode $rel' is not inside a captured tree of this home"
   done < "$MANIFEST"
 
+  # A home the last backup could not reach keeps its previous capture rather than
+  # being wiped, so the tree about to be placed can be older than the rest of the
+  # repo and nothing in MANIFEST records when it was taken. SNAPSHOT is the only
+  # place that knows, so restore reads it and says so rather than making the
+  # operator think to look.
+  STALE_HOME=
+  STALE_REASON=
+  if [ -f "$REPO/SNAPSHOT" ]; then
+    while IFS=' ' read -r kind sid shome sreason || [ -n "$kind" ]; do
+      [ "$kind" = uncaptured-home ] && [ "$sid" = "$RESTORE_ID" ] || continue
+      STALE_HOME=$shome
+      STALE_REASON=$sreason
+      break
+    done < "$REPO/SNAPSHOT"
+  fi
+
+  stale_warning() {
+    printf '  !! WARNING: home %s was NOT captured by the most recent backup.\n' "$RESTORE_ID"
+    printf '  !! SNAPSHOT records it as uncaptured-home: %s (%s)\n' \
+      "${STALE_HOME:-unrecorded path}" "${STALE_REASON:-no reason recorded}"
+    printf '  !! These files are from the last SUCCESSFUL capture and are of\n'
+    printf '  !! unknown age - nothing this tool writes carries a timestamp.\n'
+    printf '  !! Check that home before trusting what lands here.\n'
+  }
+
   printf 'restore plan for home %s from %s (%s)\n' "$RESTORE_ID" "$TARGET_SLUG" "$TARGET_VISIBILITY"
   printf '  originally captured from: %s\n' "${RESTORE_SOURCE:-unrecorded}"
   printf '  destination:              %s\n' "$RESTORE_INTO"
   printf '  trees:                    %s\n' "${TREES[*]}"
+  if [ -n "$STALE_HOME" ] || [ -n "$STALE_REASON" ]; then
+    stale_warning
+  fi
   dirs=0
   files=0
   while IFS=' ' read -r kind mode rel || [ -n "$kind" ]; do
@@ -667,10 +720,20 @@ if [ "$MODE" = restore ]; then
         ;;
     esac
   done < "$MANIFEST"
+  # Directories are chmod'ed deepest first. A tree root now carries its own mode,
+  # so applying parents first could drop the traversal bit on a directory whose
+  # children still need chmod'ing.
+  DIR_MODES="$TMP/restore-dir-modes"
+  : > "$DIR_MODES"
   while IFS=' ' read -r kind mode rel || [ -n "$kind" ]; do
     [ "$kind" = d ] || continue
-    chmod "$mode" "$STAGE/$rel" || die "could not set mode $mode on staged directory $rel"
+    printf '%s\t%s\n' "$rel" "$mode" >> "$DIR_MODES"
   done < "$MANIFEST"
+  LC_ALL=C sort -r "$DIR_MODES" > "$DIR_MODES.deepest-first"
+  while IFS=$'\t' read -r rel mode || [ -n "$rel" ]; do
+    [ -n "$rel" ] || continue
+    chmod "$mode" "$STAGE/$rel" || die "could not set mode $mode on staged directory $rel"
+  done < "$DIR_MODES.deepest-first"
 
   # Swap whole trees rather than merging into a live one, and move the existing
   # tree aside before the staged one lands rather than deleting it first, so no
@@ -688,8 +751,11 @@ if [ "$MODE" = restore ]; then
   done
 
   while IFS=' ' read -r kind mode rel || [ -n "$kind" ]; do
-    [ "$kind" = f ] || continue
-    [ -f "$RESTORE_INTO/$rel" ] || die "restore finished but $RESTORE_INTO/$rel is missing"
+    case $kind in
+      f) [ -f "$RESTORE_INTO/$rel" ] || die "restore finished but $RESTORE_INTO/$rel is missing" ;;
+      d) [ -d "$RESTORE_INTO/$rel" ] || die "restore finished but directory $RESTORE_INTO/$rel is missing" ;;
+      *) continue ;;
+    esac
     have=$(stat -f '%Lp' "$RESTORE_INTO/$rel" 2> /dev/null || stat -c '%a' "$RESTORE_INTO/$rel" 2> /dev/null || printf '?')
     [ "$have" = "$mode" ] || die "restore finished but $RESTORE_INTO/$rel has mode $have, expected $mode"
   done < "$MANIFEST"
@@ -699,6 +765,9 @@ if [ "$MODE" = restore ]; then
   RESTORE_SWAPPING=0
 
   printf 'restored %s files into %s (state/ and projects/ untouched)\n' "$files" "$RESTORE_INTO"
+  if [ -n "$STALE_HOME" ] || [ -n "$STALE_REASON" ]; then
+    stale_warning >&2
+  fi
   exit 0
 fi
 
@@ -737,10 +806,13 @@ elif [ -f "$REGISTRY" ]; then
     fi
     # A registered home that is not a usable secondmate home is recorded and
     # skipped rather than fatal. Refusing the whole run here would mean one
-    # unmounted volume or one renamed directory silently stops the primary
-    # home's memory being backed up at all, which is the outcome this command
-    # exists to prevent; the skip is loud, in SNAPSHOT and on stderr, and the run
-    # still exits 3.
+    # renamed or deleted directory silently stops the primary home's memory
+    # being backed up at all, which is the outcome this command exists to
+    # prevent; the skip is loud, in SNAPSHOT and on stderr, and the run exits 3.
+    # This reaches only homes whose parent path still resolves. A home on an
+    # unmounted volume has no resolvable parent either, so the shared binding
+    # validator above has already refused the whole run before this point - see
+    # HOME DISCOVERY in the header for that two-tier boundary.
     if ! validate_secondmate_home "$id" "$SECONDMATE_REGISTRY_HOME"; then
       printf 'uncaptured-home\t%s\t%s\t%s\n' \
         "$id" "$SECONDMATE_REGISTRY_HOME" "$VALIDATION_ERROR" >> "$UNSUPPORTED"
@@ -807,6 +879,11 @@ capture_home() { # <id> <home>
       die "$id: $src is not a directory"
     fi
     printf 'tree %s present\n' "$tree" >> "$manifest"
+    # The tree root carries a mode like every other directory. Without its own
+    # entry a 0700 config/ would come back at the restoring process's umask,
+    # widening the directory that holds the 0600 files inside it.
+    mode=$(file_mode "$src") || die "$id: could not read the mode of $src"
+    printf 'd %s %s\n' "$mode" "$tree" >> "$manifest.body"
 
     find "$src" -mindepth 1 -print0 > "$TMP/entries" 2> /dev/null \
       || die "$id: could not enumerate $src"

@@ -350,6 +350,8 @@ test_empty_directories_and_modes_survive_the_round_trip() {
   mkdir -p "$dir/homes/main/data/empty-task"
   chmod 700 "$dir/homes/main/data/empty-task"
   chmod 600 "$dir/homes/main/config/backend"
+  chmod 700 "$dir/homes/main/config"
+  chmod 750 "$dir/homes/main/data"
   run_case "$dir" backup > /dev/null 2>&1 || fail 'backup failed'
 
   into="$dir/restored"
@@ -361,7 +363,35 @@ test_empty_directories_and_modes_survive_the_round_trip() {
   [ "$mode" = 600 ] || fail "a 0600 file was restored as $mode"
   mode=$(stat -f '%Lp' "$into/data/empty-task" 2> /dev/null || stat -c '%a' "$into/data/empty-task")
   [ "$mode" = 700 ] || fail "a 0700 directory was restored as $mode"
-  pass 'fm-home-backup.sh: empty directories and exact modes survive backup and restore'
+  # The captured tree root carries its own mode too, so a private config/ does
+  # not come back world-readable at the restoring process's umask.
+  mode=$(stat -f '%Lp' "$into/config" 2> /dev/null || stat -c '%a' "$into/config")
+  [ "$mode" = 700 ] || fail "a 0700 captured tree root was restored as $mode"
+  mode=$(stat -f '%Lp' "$into/data" 2> /dev/null || stat -c '%a' "$into/data")
+  [ "$mode" = 750 ] || fail "a 0750 captured tree root was restored as $mode"
+  pass 'fm-home-backup.sh: empty directories, tree-root modes and exact file modes survive the round trip'
+}
+
+# A MANIFEST written before tree roots carried their own mode has no `d <mode>
+# <tree>` entry. It must still restore rather than failing the entry validation.
+test_a_manifest_without_tree_root_entries_still_restores() {
+  local dir out rc=0 into
+  dir=$(new_case)
+  run_case "$dir" backup > /dev/null 2>&1 || fail 'backup failed'
+  push_manifest "$dir" main '# fm-home-backup manifest v1
+home main
+source /somewhere
+tree data present
+tree config absent
+f 644 data/backlog.md
+'
+  into="$dir/restored"
+  mkdir -p "$into"
+  out=$(run_case "$dir" restore --home main --into "$into" --apply) || rc=$?
+  expect_code 0 "$rc" 'restore from a manifest with no tree-root entry'
+  assert_present "$into/data/backlog.md" 'an older manifest did not restore its files'
+  assert_absent "$into/.fm-home-backup-restore" 'the staging area was left behind'
+  pass 'fm-home-backup.sh: a MANIFEST predating tree-root modes still restores'
 }
 
 test_a_present_but_empty_tree_survives_the_round_trip() {
@@ -526,6 +556,81 @@ test_unusable_local_secondmate_is_skipped_not_fatal() {
   assert_grep 'home beta ' "$dir/snapshot.txt" \
     'SNAPSHOT does not record the healthy secondmate it did capture'
   pass 'fm-home-backup.sh: an unusable local home is skipped loudly while every other home is still pushed'
+}
+
+# The contrast half of the pair above, pinning a two-tier boundary that is easy
+# to lose by accident: the skip only reaches homes whose PARENT path still
+# resolves. A home whose parent is gone too - an unmounted volume - is rejected
+# by firstmate's shared binding validator before the per-home loop runs, so the
+# whole run refuses and nothing is pushed. That asymmetry lives in the shared
+# validator and is documented as a known limitation, not fixed here.
+test_a_home_whose_parent_path_is_gone_refuses_the_whole_run() {
+  local dir out rc=0
+  dir=$(new_case)
+  mkdir -p "$dir/homes/beta"
+  make_home "$dir/homes/beta" beta
+  printf 'beta memory\n' > "$dir/homes/beta/data/learnings.md"
+  register_secondmate "$dir" beta "$dir/homes/beta"
+  # No component of this path exists, standing in for /Volumes/<name>/... while
+  # that volume is unmounted and macOS has removed the whole tree.
+  register_secondmate "$dir" offline "$dir/unmounted-volume/homes/offline"
+
+  out=$(run_case "$dir" backup) || rc=$?
+  expect_code 1 "$rc" 'secondmate home whose parent path is gone'
+  assert_contains "$out" 'secondmate registry is unusable' \
+    'the refusal did not attribute the failure to the registry'
+  assert_contains "$out" 'unresolvable secondmate home for offline' \
+    'the refusal did not name the home it could not resolve'
+  expect_code 0 "$(remote_commits "$dir")" 'a run that refused still pushed'
+  pass 'fm-home-backup.sh: a registered home whose parent path is gone refuses the whole run and pushes nothing'
+}
+
+# --- stale homes at restore time --------------------------------------------
+
+test_restore_warns_when_the_home_was_not_captured_last_run() {
+  local dir out rc=0 into
+  dir=$(new_case)
+  mkdir -p "$dir/homes/beta"
+  make_home "$dir/homes/beta" beta
+  printf 'beta memory from the good run\n' > "$dir/homes/beta/data/learnings.md"
+  register_secondmate "$dir" beta "$dir/homes/beta"
+  run_case "$dir" backup > /dev/null 2>&1 || fail 'the first backup failed'
+  assert_contains "$(remote_files "$dir")" 'beta/data/learnings.md' 'the first backup did not store beta'
+
+  # The home goes away, so the next run records it as uncaptured but must not
+  # wipe what it already had.
+  rm -rf "$dir/homes/beta"
+  rc=0
+  run_case "$dir" backup > /dev/null 2>&1 || rc=$?
+  expect_code 3 "$rc" 'backup with beta now unusable'
+  assert_contains "$(remote_files "$dir")" 'beta/data/learnings.md' \
+    'a skipped home lost its previous capture'
+
+  into="$dir/restored"
+  mkdir -p "$into"
+  rc=0
+  out=$(run_case "$dir" restore --home beta --into "$into") || rc=$?
+  expect_code 0 "$rc" 'plan-only restore of a stale home'
+  assert_contains "$out" 'WARNING' 'the plan did not warn that the home is stale'
+  assert_contains "$out" 'NOT captured by the most recent backup' \
+    'the warning did not say the home was missed by the last run'
+  assert_contains "$out" 'unknown age' 'the warning did not say the files are of unknown age'
+  assert_contains "$out" 'not a directory' 'the warning did not name the recorded reason'
+
+  rc=0
+  out=$(run_case "$dir" restore --home beta --into "$into" --apply) || rc=$?
+  expect_code 0 "$rc" 'applied restore of a stale home'
+  assert_contains "$out" 'WARNING' 'the applied restore dropped the stale warning'
+  assert_present "$into/data/learnings.md" 'the stale warning turned into a refusal'
+  assert_grep 'beta memory from the good run' "$into/data/learnings.md" \
+    'the last successful capture was not what got placed'
+
+  # A healthy home carries no warning, so the warning stays a signal.
+  rc=0
+  out=$(run_case "$dir" restore --home main --into "$dir/homes/main" --apply --force) || rc=$?
+  expect_code 0 "$rc" 'restore of a home captured this run'
+  assert_not_contains "$out" 'WARNING' 'a freshly captured home was reported as stale'
+  pass 'fm-home-backup.sh: restore warns loudly about a home the last backup missed, and still places it'
 }
 
 # --- concurrency ------------------------------------------------------------
@@ -772,6 +877,7 @@ test_backup_never_writes_into_a_home
 test_second_run_is_a_clean_no_op
 test_dry_run_reports_without_publishing
 test_empty_directories_and_modes_survive_the_round_trip
+test_a_manifest_without_tree_root_entries_still_restores
 test_a_present_but_empty_tree_survives_the_round_trip
 test_symlink_inside_a_captured_tree_refuses
 test_credential_shaped_file_refuses_until_acknowledged
@@ -781,6 +887,8 @@ test_registry_id_colliding_with_the_primary_refuses
 test_malformed_registry_refuses
 test_remote_secondmate_is_named_not_skipped
 test_unusable_local_secondmate_is_skipped_not_fatal
+test_a_home_whose_parent_path_is_gone_refuses_the_whole_run
+test_restore_warns_when_the_home_was_not_captured_last_run
 test_a_live_lock_makes_the_run_a_no_op
 test_a_live_lock_no_ops_backup_but_refuses_restore
 test_a_stale_lock_is_broken
