@@ -30,14 +30,21 @@ Project-scoped instructions for working in this dotfiles repo.
 
 ## Window management (yabai/skhd)
 
-- `home/.local/bin/` holds standalone helper scripts referenced by `.skhdrc`/`.yabairc` (e.g. `yabai-stack-focus`) for logic too non-trivial to duplicate inline across multiple bindings. Reference them by `$HOME/...` path, matching `.skhdrc`'s existing absolute-path convention for the `yabai` binary - skhd's LaunchAgent PATH can't be assumed to include anything beyond system defaults.
+- Helper scripts referenced by `.skhdrc`/`.yabairc` (e.g. `yabai-stack-focus`) live in `home/.local/bin/` when the logic is too non-trivial to duplicate inline across bindings. Reference them by `$HOME/...` path, matching `.skhdrc`'s existing absolute-path convention for the `yabai` binary - skhd's LaunchAgent PATH can't be assumed to include anything beyond system defaults.
 - `.skhdrc`'s `alt+ctrl` modifier combo is reserved for window-stacking verbs (cycle/add-to-stack); `alt+ctrl+shift` for the directional add-to-stack bindings. Check there before claiming a new chord.
 - To empirically test a `.skhdrc` change without touching the live `skhd`/`yabai` services (never do that - see any task brief's safety rules): skhd's pid-file path is hardcoded to `/tmp/skhd_$USER.pid` with no CLI override, so a second real instance for the same `$USER` always fails to start. Run it with a distinct fake `USER=` env var instead (e.g. `USER=skhd-isotest-$$ skhd -c <scratch-config>`) to get a genuinely isolated process/pid-file. Parse errors print to stdout/stderr as `#<line>:<col> <message>`; a clean config produces no output and the process just keeps running - it won't self-exit, so kill it explicitly rather than `wait`ing on it, and press no keys during the test (a valid config still grabs real global hotkeys in that same login session).
 - Stack visual feedback is a transient osascript notification only ("N of M" on cycle/add-to-stack), by deliberate captain decision - not a placeholder for a status bar or border tool. Don't add SketchyBar/JankyBorders/etc. for this unless asked; this was a real, considered choice, not an oversight.
 
+## Scripts and scheduled jobs
+
+- `home/.local/bin/` holds standalone scripts, `home/Library/LaunchAgents/` holds the plists that schedule them, and `docs/` holds each job's operator documentation. Nothing under `home/` is auto-discovered: every file needs its own explicit `home.file` entry in `home.nix`, and a plist also needs `bootstrap.sh` to `launchctl bootstrap` it, because a `darwin-rebuild switch` places a plist without loading it.
+- launchd gives a user agent almost no PATH and does not expand variables in plist values. Run the job through `/bin/zsh -l -c` so `$HOME` and the nix/Homebrew PATH resolve at run time; that is also what keeps a machine-specific username out of this public repo.
+- `tests/` holds behavior tests, named `<subject>.test.sh` and runnable standalone. `tests/lib.sh` deliberately mirrors the firstmate repo's `tests/lib.sh` helper names and semantics so a test file moves between the two repos unchanged; `FM_BIN_DIR` is the single path difference and it is resolved there, not in each test.
+- `home/.local/bin/fm-home-backup.sh` is authored to the firstmate repo's `bin/` conventions (header owns the contract, `set -eu`, real `--help`, fail-closed arguments, shellcheck-clean) because it is expected to move there. It sources firstmate's own `bin/fm-ff-lib.sh` rather than restating the secondmate registry format or the home-safety predicate; keep it that way instead of copying those contracts into this repo.
+
 ## Verification
 
-- Run the narrowest useful check before finishing a change.
+- Run the narrowest useful check before finishing a change. For a script under `home/.local/bin/`, that is `shellcheck --norc --external-sources` plus its `tests/<subject>.test.sh`; for a `home.nix` change, `nix flake check --no-build --impure`.
 - If a check cannot be run locally, state that clearly and explain the remaining risk.
 
 ## Maintaining this file

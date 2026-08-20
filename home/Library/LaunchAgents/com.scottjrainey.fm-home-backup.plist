@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.scottjrainey.fm-home-backup</string>
+  <!--
+    Run through a login zsh rather than calling the script directly. launchd
+    hands a user agent almost no PATH and does not expand variables inside
+    plist values, so a direct invocation would have to hardcode both this
+    machine's username and the nix store's bin directories into a public repo.
+    A login shell resolves $HOME and the full nix/Homebrew PATH (git, gh) at run
+    time instead, which is also what lets this file stay user-agnostic.
+    The backup's own target and firstmate home come from ~/.config/fm-home-backup
+    (see docs/firstmate-home-backup.md), never from this plist.
+  -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-l</string>
+    <string>-c</string>
+    <string>LOG="$HOME/Library/Logs/fm-home-backup.log"; mkdir -p "$HOME/Library/Logs"; { printf -- '--- %s\n' "$(date +%Y-%m-%dT%H:%M:%S%z)"; "$HOME/.local/bin/fm-home-backup.sh" backup; } &gt;&gt; "$LOG" 2&gt;&amp;1</string>
+  </array>
+  <!--
+    Hourly rather than daily: the captured material is roughly one megabyte of
+    agent memory that changes all day, an unchanged fleet is a no-op that
+    neither commits nor pushes, and launchd runs a missed StartInterval shortly
+    after the machine wakes. RunAtLoad is false so a rebuild or a login does not
+    fire a backup into a session whose keychain and network may not be up yet.
+  -->
+  <key>StartInterval</key>
+  <integer>3600</integer>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LowPriorityIO</key>
+  <true/>
+</dict>
+</plist>
