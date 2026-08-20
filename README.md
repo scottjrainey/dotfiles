@@ -39,6 +39,10 @@ cd dotfiles
 4. Installs Claude Code and Pi if their commands are missing.
 5. Symlinks a sibling `dotfiles-private` checkout to `~/.dotfiles-private` if that repo exists.
 6. Runs the first `darwin-rebuild switch --flake .#mac --impure`.
+7. Installs the gh-dash `gh` CLI extension.
+8. Trusts every tap and tap-qualified package named in `Brewfile`.
+9. Loads the WhichSpace LaunchAgent.
+10. Loads the firstmate home backup LaunchAgent (see [docs/firstmate-home-backup.md](docs/firstmate-home-backup.md)).
 
 oh-my-zsh, zsh-autosuggestions, Starship, and fzf are Nix packages pulled in by `home.nix`'s `programs.*` modules during that switch - no separate install step. mise is installed as a Homebrew formula in the same switch instead (see Notes).
 
@@ -65,6 +69,8 @@ This repo is tailored to Scott's machine, username, and package choices, so it i
 - `bootstrap.sh` handles first-machine setup.
 - `rebuild.sh` reapplies the flake after bootstrap.
 - `Brewfile` is not just a historical record: `bootstrap.sh` Step 8 parses it directly to `brew trust` every tap and every tap-qualified formula/cask, which `HOMEBREW_REQUIRE_TAP_TRUST=1` (set in `zprofile`) requires. `configuration.nix` is authoritative for what gets installed, but `Brewfile` must be kept in sync by hand - any tap or tap-qualified formula/cask added to `configuration.nix` needs the matching line added to `Brewfile`, or a fresh-machine bootstrap will fail to trust it.
+- `docs/` holds operator documentation for the scheduled jobs this repo installs.
+- `tests/` holds behavior tests for the scripts under `home/.local/bin`; each is `<subject>.test.sh` and runs standalone.
 - `chrome/`, `scripts/*.mjs`, `whichspace/WhichSpaceSettings.json`, and `LICENSE` remain versioned assets outside the symlink tree.
 
 ## How the symlinks work
@@ -72,6 +78,9 @@ This repo is tailored to Scott's machine, username, and package choices, so it i
 `bootstrap.sh` and `rebuild.sh` link this repo to `~/.dotfiles`.
 `home.nix` then uses `mkOutOfStoreSymlink` so targets such as `~/.config/nvim` point at files under `~/.dotfiles/home/.config/nvim`.
 This keeps the repo as the source of truth while allowing normal edit-in-place workflows.
+
+The firstmate home backup LaunchAgent (`com.scottjrainey.fm-home-backup`) is installed the same way and runs `home/.local/bin/fm-home-backup.sh` hourly.
+It stays inert until a private backup repository is configured; see [docs/firstmate-home-backup.md](docs/firstmate-home-backup.md) for the one-time setup and for how to restore a home.
 
 The WhichSpace LaunchAgent is installed by symlinking `home/Library/LaunchAgents/io.gechr.WhichSpace.plist` into `~/Library/LaunchAgents`.
 The plist is present at login; if immediate loading is needed after a manual edit, use `launchctl` or log out and back in.
