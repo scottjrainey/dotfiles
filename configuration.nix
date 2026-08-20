@@ -1,4 +1,4 @@
-{ user, ... }:
+{ lib, user, ... }:
 
 {
   # Determinate Nix manages the daemon, so nix-darwin should not.
@@ -132,4 +132,36 @@
       "zoom"
     ];
   };
+
+  # nix-homebrew rebuilds HOMEBREW_REPOSITORY as a fake repo on every activation:
+  # `rm -rf` the directory, then `mkdir .git` and `touch .git/HEAD`. That stub has
+  # an empty HEAD and no objects/ or refs/, so git does not see it as a repository.
+  # Homebrew's Settings.write only checks that `.git/config` exists before shelling
+  # out to `git -C <repo> config --replace-all`, and `.git/config` appears on its
+  # own as soon as brew.sh records homebrew.devcmdrun (that write uses
+  # `git config --file=`, which needs no repository). From then on every setting
+  # write dies with "fatal: not in a git directory" / "Command failed with exit
+  # 128: git". It breaks `brew update` in a terminal, which records
+  # analyticsmessage and donationmessage when stdout is a TTY, and it can abort
+  # activation itself, because Tap#untapped writes the same way under
+  # `brew bundle --zap`. Finishing the stub into a valid empty repository is
+  # enough. No `origin` remote is added, so `brew update` still never fetches
+  # into it and Homebrew stays Nix-managed.
+  system.activationScripts.homebrew.text = lib.mkAfter ''
+    brewRepo=/opt/homebrew/Library/.homebrew-is-managed-by-nix
+    if [ -d "$brewRepo/.git" ]; then
+      /bin/mkdir -p "$brewRepo/.git/objects/info" "$brewRepo/.git/objects/pack" \
+        "$brewRepo/.git/refs/heads" "$brewRepo/.git/refs/tags"
+      if [ ! -s "$brewRepo/.git/HEAD" ]; then
+        printf 'ref: refs/heads/master\n' > "$brewRepo/.git/HEAD"
+      fi
+      # Settings.read/write both bail out early unless .git/config exists, so
+      # without this brew silently fails to remember anything and reprints its
+      # analytics and donation notices on every single `brew update`.
+      if [ ! -e "$brewRepo/.git/config" ]; then
+        printf '[core]\n\trepositoryformatversion = 0\n\tbare = false\n' > "$brewRepo/.git/config"
+      fi
+      /usr/sbin/chown -R ${user} "$brewRepo/.git"
+    fi
+  '';
 }
