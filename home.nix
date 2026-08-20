@@ -144,8 +144,13 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/starship.toml";
   home.file.".config/tmux/tmux.conf".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/tmux/tmux.conf";
-  home.file.".local/bin".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin";
+  # Link the individual script, not the directory. ~/.local/bin is a shared
+  # drop zone that uv, the Claude Code installer, grok and no-mistakes also
+  # write into, so a directory-level link would replace it with a symlink to
+  # this repo and drop every one of those binaries out of PATH. Any future
+  # script added under home/.local/bin needs its own line here.
+  home.file.".local/bin/yabai-stack-focus".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/yabai-stack-focus";
   home.file.".skhdrc".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.skhdrc";
   home.file.".yabairc".source =
