@@ -39,6 +39,10 @@ cd dotfiles
 4. Installs Claude Code and Pi if their commands are missing.
 5. Symlinks a sibling `dotfiles-private` checkout to `~/.dotfiles-private` if that repo exists.
 6. Runs the first `darwin-rebuild switch --flake .#mac --impure`.
+7. Installs the gh-dash `gh` CLI extension.
+8. Trusts every tap and tap-qualified package named in `Brewfile`.
+9. Loads the WhichSpace LaunchAgent.
+10. Loads the firstmate home backup LaunchAgent (see [docs/firstmate-home-backup.md](docs/firstmate-home-backup.md)).
 
 oh-my-zsh, zsh-autosuggestions, Starship, and fzf are Nix packages pulled in by `home.nix`'s `programs.*` modules during that switch - no separate install step. mise is installed as a Homebrew formula in the same switch instead (see Notes).
 
