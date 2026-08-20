@@ -106,6 +106,20 @@ remote_commits() { # <case-dir>
   git -C "$1/bare.git" rev-list --count refs/heads/main 2> /dev/null || printf '0\n'
 }
 
+# Replace one home's MANIFEST in the pushed remote. Restore resets its clone
+# hard to origin on every run, so this is how a case gets a manifest the tool
+# itself would never write.
+push_manifest() { # <case-dir> <home-id> <manifest-body>
+  local dir=$1 id=$2 body=$3 work
+  work=$(mktemp -d "$TMP_ROOT/tamper.XXXXXX") || fail 'could not create a tamper clone'
+  git clone -q "$dir/bare.git" "$work" 2> /dev/null || fail 'could not clone the backup remote'
+  printf '%s' "$body" > "$work/$id/MANIFEST" || fail "no $id in the backup remote to re-manifest"
+  git -C "$work" add -A
+  git -C "$work" -c user.name=t -c user.email=t@l commit -qm 'rewrite manifest'
+  git -C "$work" push -q origin HEAD:refs/heads/main
+  rm -rf "$work"
+}
+
 register_secondmate() { # <case-dir> <id> <home-dir> [host root]
   local dir=$1 id=$2 home=$3 host=${4:-} root=${5:-}
   local reg="$dir/homes/main/data/secondmates.md"
@@ -350,6 +364,22 @@ test_empty_directories_and_modes_survive_the_round_trip() {
   pass 'fm-home-backup.sh: empty directories and exact modes survive backup and restore'
 }
 
+test_a_present_but_empty_tree_survives_the_round_trip() {
+  local dir into rc=0
+  dir=$(new_case)
+  rm -f "$dir/homes/main/config/backend"
+  run_case "$dir" backup > /dev/null 2>&1 || fail 'backup failed'
+
+  into="$dir/restored"
+  mkdir -p "$into"
+  run_case "$dir" restore --home main --into "$into" --apply > /dev/null 2>&1 || rc=$?
+  expect_code 0 "$rc" 'restore of a home with an empty captured tree'
+  [ -d "$into/config" ] || fail 'a present but empty tree did not survive the round trip'
+  [ -z "$(ls -A -- "$into/config")" ] || fail 'an empty tree came back with content'
+  assert_present "$into/data/backlog.md" 'the populated tree was lost alongside the empty one'
+  pass 'fm-home-backup.sh: a captured tree that is present but empty restores as an empty tree'
+}
+
 # --- refusals on unexpected shapes ------------------------------------------
 
 test_symlink_inside_a_captured_tree_refuses() {
@@ -379,6 +409,24 @@ test_credential_shaped_file_refuses_until_acknowledged() {
   expect_code 0 "$rc" 'backup after acknowledgement'
   assert_contains "$(remote_files "$dir")" 'main/data/.env' 'an acknowledged file was still dropped'
   pass 'fm-home-backup.sh: a credential-shaped file refuses, and only an explicit ack lets it through'
+}
+
+test_envrc_refuses_until_acknowledged() {
+  local dir out rc=0
+  dir=$(new_case)
+  printf 'export AWS_SECRET_ACCESS_KEY=hunter2\n' > "$dir/homes/main/config/.envrc"
+  out=$(run_case "$dir" backup) || rc=$?
+  expect_code 1 "$rc" 'direnv file'
+  assert_contains "$out" 'credential-shaped' 'refusal did not classify the direnv file'
+  assert_contains "$out" 'main/config/.envrc' 'refusal did not print the ack line to add'
+  expect_code 0 "$(remote_commits "$dir")" 'a direnv file was pushed'
+
+  printf 'main/config/.envrc\n' > "$dir/cfg/ack"
+  rc=0
+  run_case "$dir" backup > /dev/null 2>&1 || rc=$?
+  expect_code 0 "$rc" 'backup after acknowledgement'
+  assert_contains "$(remote_files "$dir")" 'main/config/.envrc' 'an acknowledged direnv file was still dropped'
+  pass 'fm-home-backup.sh: a .envrc is credential-shaped, so it refuses until acknowledged'
 }
 
 test_backup_repo_gitignore_refuses() {
@@ -438,6 +486,48 @@ test_remote_secondmate_is_named_not_skipped() {
   pass 'fm-home-backup.sh: a remote secondmate is captured nowhere, named everywhere, and exits 3'
 }
 
+# --- unusable local secondmate homes ----------------------------------------
+
+test_unusable_local_secondmate_is_skipped_not_fatal() {
+  local dir out rc=0 files
+  dir=$(new_case)
+  mkdir -p "$dir/homes/beta"
+  make_home "$dir/homes/beta" beta
+  printf 'beta memory\n' > "$dir/homes/beta/data/learnings.md"
+  register_secondmate "$dir" beta "$dir/homes/beta"
+  # One home the captain moved away, one that exists but was never seeded.
+  register_secondmate "$dir" gone "$dir/homes/gone"
+  mkdir -p "$dir/homes/unseeded"
+  make_home "$dir/homes/unseeded"
+  register_secondmate "$dir" unseeded "$dir/homes/unseeded"
+
+  out=$(run_case "$dir" backup) || rc=$?
+  expect_code 3 "$rc" 'unusable local secondmate'
+  assert_contains "$out" 'NOT captured' 'the run did not say a home was missed'
+  assert_contains "$out" "$dir/homes/gone" 'the run did not name the missing home'
+  assert_contains "$out" "$dir/homes/unseeded" 'the run did not name the unseeded home'
+
+  files=$(remote_files "$dir")
+  assert_contains "$files" 'main/data/backlog.md' 'the primary home was dropped because one secondmate was unusable'
+  assert_contains "$files" 'main/config/backend' 'the primary config was dropped because one secondmate was unusable'
+  assert_contains "$files" 'beta/data/learnings.md' 'a healthy secondmate was dropped alongside the unusable one'
+  assert_not_contains "$files" 'gone/' 'an unusable home was captured anyway'
+  assert_not_contains "$files" 'unseeded/' 'an unseeded home was captured anyway'
+
+  git -C "$dir/bare.git" show 'refs/heads/main:SNAPSHOT' > "$dir/snapshot.txt"
+  assert_grep "uncaptured-home gone $dir/homes/gone" "$dir/snapshot.txt" \
+    'SNAPSHOT does not record the uncaptured local home'
+  assert_grep 'not a directory' "$dir/snapshot.txt" \
+    'SNAPSHOT does not record why the missing home was uncaptured'
+  assert_grep 'not a seeded secondmate home' "$dir/snapshot.txt" \
+    'SNAPSHOT does not record why the unseeded home was uncaptured'
+  assert_grep 'home main ' "$dir/snapshot.txt" \
+    'SNAPSHOT does not record the primary home it did capture'
+  assert_grep 'home beta ' "$dir/snapshot.txt" \
+    'SNAPSHOT does not record the healthy secondmate it did capture'
+  pass 'fm-home-backup.sh: an unusable local home is skipped loudly while every other home is still pushed'
+}
+
 # --- concurrency ------------------------------------------------------------
 
 test_a_live_lock_makes_the_run_a_no_op() {
@@ -452,6 +542,38 @@ test_a_live_lock_makes_the_run_a_no_op() {
   expect_code 0 "$(remote_commits "$dir")" 'a concurrent run pushed anyway'
   [ -d "$dir/work/lock" ] || fail 'the concurrent run removed a live lock'
   pass 'fm-home-backup.sh: a second concurrent run takes no action and exits 0'
+}
+
+# The two verbs answer the same live lock differently on purpose, so both halves
+# are asserted here: a scheduled backup overlapping is not a failure, but a
+# recovery that wrote nothing must never read as one that succeeded.
+test_a_live_lock_no_ops_backup_but_refuses_restore() {
+  local dir out rc=0 ident
+  dir=$(new_case)
+  run_case "$dir" backup > /dev/null 2>&1 || fail 'backup failed'
+  mkdir -p "$dir/restored"
+  mkdir -p "$dir/work/lock"
+  ident=$(ps -o lstart= -p $$ | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  printf '%s\n%s\n' "$$" "$ident" > "$dir/work/lock/owner"
+
+  out=$(run_case "$dir" backup) || rc=$?
+  expect_code 0 "$rc" 'backup under a live lock'
+  assert_contains "$out" 'another run holds' 'the concurrent backup did not explain itself'
+
+  rc=0
+  out=$(run_case "$dir" restore --home main --into "$dir/restored" --apply) || rc=$?
+  expect_code 1 "$rc" 'restore --apply under a live lock'
+  assert_contains "$out" "$dir/work/lock" 'the refusal did not name the lock'
+  assert_contains "$out" "$$" 'the refusal did not name the pid holding the lock'
+  assert_absent "$dir/restored/data" 'a refused restore wrote anyway'
+
+  rc=0
+  out=$(run_case "$dir" restore --home main --into "$dir/restored") || rc=$?
+  expect_code 1 "$rc" 'plan-only restore under a live lock'
+  assert_contains "$out" "$dir/work/lock" 'the plan-only refusal did not name the lock'
+
+  [ -d "$dir/work/lock" ] || fail 'a refused run removed a live lock'
+  pass 'fm-home-backup.sh: a live lock is a no-op for backup and a non-zero refusal for restore'
 }
 
 test_a_stale_lock_is_broken() {
@@ -531,6 +653,100 @@ test_restore_refuses_a_missing_destination_or_home() {
   pass 'fm-home-backup.sh: restore refuses an absent destination and an unknown home id'
 }
 
+test_restore_refuses_a_manifest_that_escapes_the_destination() {
+  local dir out rc=0 into
+  dir=$(new_case)
+  run_case "$dir" backup > /dev/null 2>&1 || fail 'backup failed'
+  into="$dir/restored"
+  mkdir -p "$into"
+
+  push_manifest "$dir" main '# fm-home-backup manifest v1
+home main
+source /somewhere
+tree data present
+f 644 ../escaped.md
+'
+  rc=0
+  out=$(run_case "$dir" restore --home main --into "$into" --apply --force) || rc=$?
+  expect_code 1 "$rc" 'manifest carrying a .. component'
+  assert_contains "$out" 'walks out of the destination' 'refusal did not name the traversal'
+  assert_contains "$out" '../escaped.md' 'refusal did not name the offending entry'
+  assert_absent "$dir/escaped.md" 'a traversing manifest wrote outside the destination'
+
+  push_manifest "$dir" main "# fm-home-backup manifest v1
+home main
+source /somewhere
+tree data present
+f 644 $dir/escaped-abs.md
+"
+  rc=0
+  out=$(run_case "$dir" restore --home main --into "$into" --apply --force) || rc=$?
+  expect_code 1 "$rc" 'manifest carrying an absolute path'
+  assert_contains "$out" 'is not a relative path' 'refusal did not reject the absolute path'
+  assert_absent "$dir/escaped-abs.md" 'an absolute manifest path wrote outside the destination'
+
+  push_manifest "$dir" main '# fm-home-backup manifest v1
+home main
+source /somewhere
+tree state present
+d 755 state/live
+'
+  rc=0
+  out=$(run_case "$dir" restore --home main --into "$into" --apply --force) || rc=$?
+  expect_code 1 "$rc" 'manifest claiming a tree outside the allowlist'
+  assert_contains "$out" 'never captures' 'refusal did not reject the unlisted tree'
+  assert_absent "$into/state" 'restore created a tree it never captures'
+
+  push_manifest "$dir" main '# fm-home-backup manifest v1
+home main
+source /somewhere
+tree data present
+f 644 config/backend
+'
+  rc=0
+  out=$(run_case "$dir" restore --home main --into "$into" --apply --force) || rc=$?
+  expect_code 1 "$rc" 'manifest entry outside its own captured trees'
+  assert_contains "$out" 'not inside a captured tree of this home' \
+    'refusal did not reject an entry outside the trees the manifest declared'
+  assert_absent "$into/config" 'restore placed a tree the manifest never declared'
+
+  assert_absent "$into/data" 'a refused restore wrote into the destination'
+  pass 'fm-home-backup.sh: restore refuses a MANIFEST that would write outside the destination'
+}
+
+test_restore_refuses_an_interrupted_restores_rescue_copy() {
+  local dir out rc=0 into
+  dir=$(new_case)
+  run_case "$dir" backup > /dev/null 2>&1 || fail 'backup failed'
+  into="$dir/restored"
+  mkdir -p "$into/.fm-home-backup-restore/previous/data"
+  printf 'the tree an interrupted restore moved aside\n' \
+    > "$into/.fm-home-backup-restore/previous/data/backlog.md"
+
+  out=$(run_case "$dir" restore --home main --into "$into" --apply) || rc=$?
+  expect_code 1 "$rc" 'restore over an interrupted one'
+  assert_contains "$out" '.fm-home-backup-restore' 'refusal did not name the rescue directory'
+  assert_present "$into/.fm-home-backup-restore/previous/data/backlog.md" \
+    'the refusal destroyed the rescue copy it refused over'
+  assert_absent "$into/data" 'a refused restore wrote anyway'
+  pass 'fm-home-backup.sh: restore refuses over an interrupted restore rather than overwriting its rescue copy'
+}
+
+test_restore_leaves_no_scratch_behind_on_success() {
+  local dir rc=0 into
+  dir=$(new_case)
+  run_case "$dir" backup > /dev/null 2>&1 || fail 'backup failed'
+  into="$dir/restored"
+  mkdir -p "$into/data"
+  printf 'replace me\n' > "$into/data/stale.md"
+  run_case "$dir" restore --home main --into "$into" --apply --force > /dev/null 2>&1 || rc=$?
+  expect_code 0 "$rc" 'forced restore'
+  assert_present "$into/data/backlog.md" 'the restored tree is missing'
+  assert_absent "$into/data/stale.md" 'the replaced tree was merged rather than swapped'
+  assert_absent "$into/.fm-home-backup-restore" 'a successful restore left its staging area behind'
+  pass 'fm-home-backup.sh: a successful restore removes its staging area and the tree it moved aside'
+}
+
 test_restore_reports_visibility_rather_than_gating_on_it() {
   local dir out rc=0
   dir=$(new_case)
@@ -556,16 +772,23 @@ test_backup_never_writes_into_a_home
 test_second_run_is_a_clean_no_op
 test_dry_run_reports_without_publishing
 test_empty_directories_and_modes_survive_the_round_trip
+test_a_present_but_empty_tree_survives_the_round_trip
 test_symlink_inside_a_captured_tree_refuses
 test_credential_shaped_file_refuses_until_acknowledged
+test_envrc_refuses_until_acknowledged
 test_backup_repo_gitignore_refuses
 test_registry_id_colliding_with_the_primary_refuses
 test_malformed_registry_refuses
 test_remote_secondmate_is_named_not_skipped
+test_unusable_local_secondmate_is_skipped_not_fatal
 test_a_live_lock_makes_the_run_a_no_op
+test_a_live_lock_no_ops_backup_but_refuses_restore
 test_a_stale_lock_is_broken
 test_restore_prints_the_plan_and_writes_nothing
 test_restore_refuses_a_populated_home_without_force
 test_restore_leaves_state_and_projects_alone
 test_restore_refuses_a_missing_destination_or_home
+test_restore_refuses_a_manifest_that_escapes_the_destination
+test_restore_refuses_an_interrupted_restores_rescue_copy
+test_restore_leaves_no_scratch_behind_on_success
 test_restore_reports_visibility_rather_than_gating_on_it

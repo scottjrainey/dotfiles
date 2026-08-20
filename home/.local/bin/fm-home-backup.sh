@@ -29,14 +29,21 @@
 # folder and a 0600 config file both survive the round trip.
 #
 # HOME DISCOVERY
-# The primary home is FM_HOME. Secondmates are read from that home's
-# data/secondmates.md through firstmate's own registry parser and binding
+# The primary home is FM_HOME, and it is never skippable: an FM_HOME that is not
+# a usable primary home refuses the whole run. Secondmates are read from that
+# home's data/secondmates.md through firstmate's own registry parser and binding
 # validator (bin/fm-secondmate-registry-lib.sh via bin/fm-ff-lib.sh), so adding a
 # secondmate later needs no edit here and a malformed or overlapping registry is
-# refused instead of half-read. A remote secondmate record (host:) is NOT
-# supported by this version: it is named in SNAPSHOT as unsupported-remote, every
-# local home is still captured and pushed, and the run exits 3. It is never
-# silently skipped.
+# refused instead of half-read. Exactly two per-secondmate exceptions are
+# reported rather than fatal, so that a squall never finds zero backups because
+# one home was unreachable: a remote record (host:) is NOT supported by this
+# version and is recorded as unsupported-remote, and a local record whose home
+# fails firstmate's own home-safety predicate is recorded as uncaptured-home
+# carrying that predicate's reason. In both cases every other home is still
+# captured and pushed, the missed home is named on stderr and in SNAPSHOT, and
+# the run exits 3; neither is ever silently skipped. Every other registry
+# problem - malformed line, failed binding validation, a symlinked registry, an
+# id colliding with the primary - still refuses the whole run.
 #
 # TARGET RESOLUTION, AND WHY IT IS NOT INSIDE A HOME
 #   <config-dir>/target   a GitHub owner/repo slug, required
@@ -86,10 +93,16 @@
 # Each run resets the work-dir clone hard to origin and rebuilds every captured
 # home from scratch, so an interrupted run leaves no partial state anywhere the
 # next run can inherit: nothing is published until one commit and one push at the
-# end. A second concurrent invocation takes no action and exits 0 - a scheduled
-# overlap is not a failure. The lock records its owner's pid and start time and is
-# broken automatically when that process is gone, so a killed run cannot wedge
-# every future backup.
+# end. A second concurrent `backup` takes no action and exits 0 - a scheduled
+# overlap is not a failure. `restore` under that same lock instead refuses
+# non-zero naming the lock and the pid holding it, for the plan form as much as
+# for --apply, because a recovery that quietly did nothing is the one outcome an
+# operator must never read as success. The lock records its owner's pid and start
+# time and is broken automatically when that process is gone, so a killed run
+# cannot wedge every future backup; a lock whose owner record is missing or
+# unreadable counts as held for a short grace window, so the instant between
+# creating the lock and recording its owner cannot hand one clone to two runs,
+# and a genuinely torn lock still self-heals once that window passes.
 #
 # UNEXPECTED SHAPES ARE REFUSALS
 # A symlink, a non-regular file, or a path containing a tab or newline anywhere
@@ -105,6 +118,19 @@
 # original path is never used as an implicit destination: after a squall a home
 # is often not where it was, and a "successful" restore into the wrong directory
 # is worse than a loud refusal.
+# Nothing read out of MANIFEST is trusted. A tree name outside the captured
+# allowlist, a mode that is not octal, and a relative path that is absolute,
+# carries a "." or ".." component, or is not rooted in one of that manifest's own
+# captured trees are each a refusal naming the offending entry, so a manifest can
+# only ever describe writes inside --into's data/ and config/.
+# --apply stages every tree in one scratch directory inside the destination
+# (.fm-home-backup-restore), then for each tree renames the existing tree into
+# that scratch and renames the staged tree into its place. Both are
+# same-filesystem renames, so no tree is ever half-written even when --into is on
+# another disk, and the previous copies are removed only after the whole restore
+# has been verified. An interrupted apply therefore leaves
+# .fm-home-backup-restore behind holding the previous trees, and the next restore
+# refuses until that rescue copy has been dealt with rather than overwriting it.
 #
 # ENVIRONMENT
 #   FM_HOME                  primary firstmate home (overrides <config-dir>/home)
@@ -114,10 +140,12 @@
 #
 # EXIT STATUS
 #   0  captured and pushed, clean no-op, or a plan-only restore
-#   1  refusal or failure; nothing was pushed
+#   1  refusal or failure; nothing was pushed. A restore blocked by another run's
+#      lock lands here too, so it can never read as a completed recovery
 #   2  invalid use
-#   3  every local home was captured and pushed, but at least one registered
-#      home is not supported by this version and was not captured
+#   3  every capturable home was captured and pushed, but at least one registered
+#      home was missed: a remote home this version cannot read, or a local home
+#      that is not a usable secondmate home
 set -eu
 
 usage() {
@@ -269,21 +297,20 @@ if ! TARGET_SLUG=$(config_value "$TARGET_FILE"); then
   setup_hint
   exit 1
 fi
+# One positive check, so the refusal exists exactly once and the two halves of
+# "is a slug" cannot drift apart: exactly one slash, and a non-empty owner and
+# repo drawn from GitHub's name charset on either side of it.
+slug_ok=0
 case $TARGET_SLUG in
-  */*/* | */ | /* | *[!A-Za-z0-9._/-]*)
-    printf 'fm-home-backup: %s must hold one GitHub owner/repo slug, got: %s\n' \
-      "$TARGET_FILE" "$TARGET_SLUG" >&2
-    setup_hint
-    exit 1
-    ;;
-  */*) ;;
-  *)
-    printf 'fm-home-backup: %s must hold one GitHub owner/repo slug, got: %s\n' \
-      "$TARGET_FILE" "$TARGET_SLUG" >&2
-    setup_hint
-    exit 1
-    ;;
+  */*/* | *[!A-Za-z0-9._/-]*) ;;
+  [A-Za-z0-9._-]*/[A-Za-z0-9._-]*) slug_ok=1 ;;
 esac
+if [ "$slug_ok" -eq 0 ]; then
+  printf 'fm-home-backup: %s must hold one GitHub owner/repo slug, got: %s\n' \
+    "$TARGET_FILE" "$TARGET_SLUG" >&2
+  setup_hint
+  exit 1
+fi
 
 SIBLING_ROOT=$(cd "$SCRIPT_DIR/.." && pwd -P)
 
@@ -329,7 +356,21 @@ export FM_ROOT
 
 PRIMARY_ID=main
 
+# The capture allowlist. Both verbs need it: backup decides what to read from a
+# home with it, and restore decides what a MANIFEST is allowed to describe with
+# it, so it lives above the mode branch and has exactly one definition.
+CAPTURED_TREES='data config'
+
 lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
+
+# Membership test for the space-separated tree lists used by both verbs.
+tree_listed() { # <name> <space-separated list>
+  local candidate
+  for candidate in $2; do
+    [ "$1" != "$candidate" ] || return 0
+  done
+  return 1
+}
 
 # --- target resolution and privacy verification -----------------------------
 
@@ -375,11 +416,19 @@ fi
 mkdir -p "$WORKDIR" || die "could not create work dir: $WORKDIR"
 LOCK_HELD=0
 TMP=
+# Set once restore has staged trees inside the destination. While a swap is in
+# flight that scratch directory holds the only copy of the trees it has already
+# moved aside, so cleanup must leave it for the operator instead of reaping it.
+RESTORE_SCRATCH=
+RESTORE_SWAPPING=0
 
 # shellcheck disable=SC2317,SC2329 # Reached only through the traps below.
 cleanup() {
   [ "$LOCK_HELD" -eq 0 ] || rm -rf -- "$LOCK"
   [ -z "$TMP" ] || rm -rf -- "$TMP"
+  if [ -n "$RESTORE_SCRATCH" ] && [ "$RESTORE_SWAPPING" -eq 0 ]; then
+    rm -rf -- "$RESTORE_SCRATCH"
+  fi
 }
 trap cleanup EXIT
 trap 'cleanup; exit 130' INT
@@ -392,38 +441,69 @@ proc_identity() {
   ps -o lstart= -p "$1" 2> /dev/null | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
-lock_owner_is_alive() {
-  local pid ident current
-  [ -f "$LOCK/owner" ] || return 1
-  IFS= read -r pid < "$LOCK/owner" || return 1
-  IFS= read -r ident < <(sed -n '2p' "$LOCK/owner") || ident=
-  case $pid in
-    '' | *[!0-9]*) return 1 ;;
+LOCK_GRACE_SECONDS=10
+
+# mkdir is the atomic step, but the owner record lands a moment after it. A lock
+# with no usable owner record is therefore treated as HELD until it is older than
+# the grace window, so that instant cannot be read as abandoned and hand the same
+# clone to two runs - while a lock genuinely torn by a hard kill still self-heals
+# once the window passes. An age this cannot measure counts as held: refusing a
+# scheduled run is cheap, two concurrent runs on one clone is not.
+lock_is_within_grace() {
+  local created now
+  created=$(stat -f '%m' "$LOCK" 2> /dev/null || stat -c '%Y' "$LOCK" 2> /dev/null) || return 0
+  now=$(date +%s 2> /dev/null) || return 0
+  case "$created$now" in
+    '' | *[!0-9]*) return 0 ;;
   esac
+  [ "$((now - created))" -lt "$LOCK_GRACE_SECONDS" ]
+}
+
+lock_owner_is_alive() {
+  local pid='' ident='' current
+  if [ -f "$LOCK/owner" ]; then
+    IFS= read -r pid < "$LOCK/owner" || pid=
+    ident=$(sed -n '2p' "$LOCK/owner" 2> /dev/null) || ident=
+  fi
+  case $pid in
+    *[!0-9]*) pid= ;;
+  esac
+  if [ -z "$pid" ] || [ -z "$ident" ]; then
+    lock_is_within_grace
+    return
+  fi
   current=$(proc_identity "$pid")
   [ -n "$current" ] || return 1
   [ "$current" = "$ident" ]
 }
 
+take_lock() { # <identity>
+  mkdir "$LOCK" 2> /dev/null || return 1
+  # Claimed before the record is written, so an interrupt in between still frees
+  # the lock through cleanup rather than leaving one nobody can attribute.
+  LOCK_HELD=1
+  printf '%s\n%s\n' "$$" "$1" > "$LOCK/owner" \
+    || die "could not record this run as the owner of $LOCK"
+}
+
 acquire_lock() {
-  if mkdir "$LOCK" 2> /dev/null; then
-    printf '%s\n%s\n' "$$" "$(proc_identity $$)" > "$LOCK/owner"
-    LOCK_HELD=1
-    return 0
-  fi
-  if lock_owner_is_alive; then
-    return 1
-  fi
+  local ident
+  ident=$(proc_identity $$)
+  # An empty identity could never match a later check, which would make the lock
+  # unbreakable for every future run, so it is refused rather than recorded.
+  [ -n "$ident" ] \
+    || die "could not read this run's own process start time, so its lock ownership would be unverifiable; refusing to take $LOCK"
+  take_lock "$ident" && return 0
+  lock_owner_is_alive && return 1
   rm -rf -- "$LOCK"
-  if mkdir "$LOCK" 2> /dev/null; then
-    printf '%s\n%s\n' "$$" "$(proc_identity $$)" > "$LOCK/owner"
-    LOCK_HELD=1
-    return 0
-  fi
-  return 1
+  take_lock "$ident"
 }
 
 if ! acquire_lock; then
+  if [ "$MODE" = restore ]; then
+    lock_holder=$(sed -n '1p' "$LOCK/owner" 2> /dev/null) || lock_holder=
+    die "another run holds $LOCK (pid ${lock_holder:-unknown}); refusing to restore while it is active, because a recovery that wrote nothing must never look like one that succeeded. Re-run once that run finishes."
+  fi
   printf 'fm-home-backup: another run holds %s; taking no action\n' "$LOCK"
   exit 0
 fi
@@ -483,20 +563,48 @@ if [ "$MODE" = restore ]; then
   [ -f "$MANIFEST" ] || die "$RESTORE_ID has no MANIFEST in $TARGET_SLUG; refusing to restore an unlabelled tree"
 
   RESTORE_SOURCE=
-  TREES=
+  TREES=()
   while IFS= read -r line || [ -n "$line" ]; do
     case $line in
       'source '*) RESTORE_SOURCE=${line#source } ;;
-      'tree '*' present') TREES="$TREES ${line#tree }" ;;
+      'tree '*' present')
+        tree=${line#tree }
+        tree=${tree% present}
+        tree_listed "$tree" "$CAPTURED_TREES" \
+          || die "$RESTORE_ID/MANIFEST claims a captured tree this command never captures: '$tree'. Only $CAPTURED_TREES are ever written into a home."
+        TREES+=("$tree")
+        ;;
     esac
   done < "$MANIFEST"
-  TREES=$(printf '%s' "$TREES" | sed 's/ present//g')
-  [ -n "$TREES" ] || die "$RESTORE_ID/MANIFEST records no captured trees"
+  [ "${#TREES[@]}" -gt 0 ] || die "$RESTORE_ID/MANIFEST records no captured trees"
+
+  # Everything below builds destination paths out of MANIFEST, so every entry is
+  # checked before any of it is used: a mode that is not octal would reach chmod
+  # as a flag, and a path that is absolute, carries a "." or ".." component, or
+  # is not rooted in one of this manifest's own captured trees would reach
+  # outside --into. Both are refusals naming the entry, never silent skips.
+  while IFS=' ' read -r kind mode rel || [ -n "$kind" ]; do
+    case $kind in
+      d | f) ;;
+      *) continue ;;
+    esac
+    case $mode in
+      '' | *[!0-7]*) die "$RESTORE_ID/MANIFEST entry '$kind $mode $rel' does not record an octal mode" ;;
+    esac
+    case $rel in
+      '' | /*) die "$RESTORE_ID/MANIFEST entry '$kind $mode $rel' is not a relative path" ;;
+    esac
+    case "/$rel/" in
+      */../* | */./*) die "$RESTORE_ID/MANIFEST entry '$kind $mode $rel' walks out of the destination" ;;
+    esac
+    tree_listed "${rel%%/*}" "${TREES[*]}" \
+      || die "$RESTORE_ID/MANIFEST entry '$kind $mode $rel' is not inside a captured tree of this home"
+  done < "$MANIFEST"
 
   printf 'restore plan for home %s from %s (%s)\n' "$RESTORE_ID" "$TARGET_SLUG" "$TARGET_VISIBILITY"
   printf '  originally captured from: %s\n' "${RESTORE_SOURCE:-unrecorded}"
   printf '  destination:              %s\n' "$RESTORE_INTO"
-  printf '  trees:                   %s\n' "$TREES"
+  printf '  trees:                    %s\n' "${TREES[*]}"
   dirs=0
   files=0
   while IFS=' ' read -r kind mode rel || [ -n "$kind" ]; do
@@ -527,15 +635,27 @@ if [ "$MODE" = restore ]; then
   esac
 
   if [ "$FORCE" -eq 0 ]; then
-    for tree in $TREES; do
+    for tree in "${TREES[@]}"; do
       if [ -d "$RESTORE_INTO/$tree" ] && [ -n "$(ls -A -- "$RESTORE_INTO/$tree" 2> /dev/null)" ]; then
         die "$RESTORE_INTO/$tree already has content. Re-run with --force to replace it."
       fi
     done
   fi
 
-  STAGE="$TMP/restore"
-  mkdir -p "$STAGE"
+  # Staging inside the destination is what makes both halves of the swap a
+  # same-filesystem rename even when --into is on another disk, where a copy out
+  # of the work dir would instead be interruptible half way through a tree.
+  restore_scratch="$RESTORE_INTO/.fm-home-backup-restore"
+  if [ -e "$restore_scratch" ] || [ -L "$restore_scratch" ]; then
+    die "$restore_scratch already exists, which is where an interrupted restore leaves the trees it had already moved aside. Inspect and remove it deliberately, then re-run."
+  fi
+  RESTORE_SCRATCH=$restore_scratch
+  STAGE="$RESTORE_SCRATCH/stage"
+  PREVIOUS="$RESTORE_SCRATCH/previous"
+  mkdir -p "$STAGE" "$PREVIOUS" || die "could not create the restore staging area $RESTORE_SCRATCH"
+  for tree in "${TREES[@]}"; do
+    mkdir -p "$STAGE/$tree" || die "could not stage $tree"
+  done
   while IFS=' ' read -r kind mode rel || [ -n "$kind" ]; do
     case $kind in
       d) mkdir -p "$STAGE/$rel" ;;
@@ -552,11 +672,18 @@ if [ "$MODE" = restore ]; then
     chmod "$mode" "$STAGE/$rel" || die "could not set mode $mode on staged directory $rel"
   done < "$MANIFEST"
 
-  # Swap whole trees rather than merging into a live one, so an interrupted
-  # apply leaves either the previous tree or the restored tree, never a blend.
-  for tree in $TREES; do
+  # Swap whole trees rather than merging into a live one, and move the existing
+  # tree aside before the staged one lands rather than deleting it first, so no
+  # step can leave a destination tree half-written or destroyed. From here until
+  # the restore verifies, that aside copy is the only one, so cleanup leaves the
+  # scratch directory alone.
+  RESTORE_SWAPPING=1
+  for tree in "${TREES[@]}"; do
     [ -d "$STAGE/$tree" ] || die "staged restore is missing $tree"
-    rm -rf -- "${RESTORE_INTO:?}/$tree"
+    if [ -e "$RESTORE_INTO/$tree" ] || [ -L "$RESTORE_INTO/$tree" ]; then
+      mv -- "$RESTORE_INTO/$tree" "$PREVIOUS/$tree" \
+        || die "could not move the existing $tree aside in $RESTORE_INTO"
+    fi
     mv -- "$STAGE/$tree" "$RESTORE_INTO/$tree" || die "could not place $tree into $RESTORE_INTO"
   done
 
@@ -566,6 +693,10 @@ if [ "$MODE" = restore ]; then
     have=$(stat -f '%Lp' "$RESTORE_INTO/$rel" 2> /dev/null || stat -c '%a' "$RESTORE_INTO/$rel" 2> /dev/null || printf '?')
     [ "$have" = "$mode" ] || die "restore finished but $RESTORE_INTO/$rel has mode $have, expected $mode"
   done < "$MANIFEST"
+
+  rm -rf -- "$RESTORE_SCRATCH" || die "restored $RESTORE_INTO but could not remove $RESTORE_SCRATCH"
+  RESTORE_SCRATCH=
+  RESTORE_SWAPPING=0
 
   printf 'restored %s files into %s (state/ and projects/ untouched)\n' "$files" "$RESTORE_INTO"
   exit 0
@@ -600,26 +731,33 @@ elif [ -f "$REGISTRY" ]; then
     [ "$id" != "$PRIMARY_ID" ] \
       || die "a secondmate is registered as '$PRIMARY_ID', which collides with the primary home's directory in the backup repo. Rename it in data/secondmates.md."
     if [ "$SECONDMATE_REGISTRY_REMOTE" -eq 1 ]; then
-      printf '%s\t%s\t%s\n' "$id" "$SECONDMATE_REGISTRY_HOST" "$SECONDMATE_REGISTRY_HOME" \
-        >> "$UNSUPPORTED"
+      printf 'unsupported-remote\t%s\t%s\t%s\n' \
+        "$id" "$SECONDMATE_REGISTRY_HOST" "$SECONDMATE_REGISTRY_HOME" >> "$UNSUPPORTED"
       continue
     fi
-    validate_secondmate_home "$id" "$SECONDMATE_REGISTRY_HOME" \
-      || die "secondmate $id has an unusable home '$SECONDMATE_REGISTRY_HOME': $VALIDATION_ERROR"
+    # A registered home that is not a usable secondmate home is recorded and
+    # skipped rather than fatal. Refusing the whole run here would mean one
+    # unmounted volume or one renamed directory silently stops the primary
+    # home's memory being backed up at all, which is the outcome this command
+    # exists to prevent; the skip is loud, in SNAPSHOT and on stderr, and the run
+    # still exits 3.
+    if ! validate_secondmate_home "$id" "$SECONDMATE_REGISTRY_HOME"; then
+      printf 'uncaptured-home\t%s\t%s\t%s\n' \
+        "$id" "$SECONDMATE_REGISTRY_HOME" "$VALIDATION_ERROR" >> "$UNSUPPORTED"
+      continue
+    fi
     printf '%s\t%s\n' "$id" "$VALIDATED_HOME" >> "$HOMES"
   done < "$TMP/records"
 fi
 
 # --- backup: capture --------------------------------------------------------
 
-CAPTURED_TREES='data config'
-
 # High-precision name shapes only. A broad "anything mentioning secret" rule
 # would refuse ordinary firstmate research notes, which trains an operator to
 # route around the guard - the failure mode this refusal exists to prevent.
 credential_shaped() {
   case ${1##*/} in
-    .env | .env.* | *.env) return 0 ;;
+    .env | .env.* | *.env | .envrc | .envrc.*) return 0 ;;
     .netrc | .npmrc | .pypirc | .git-credentials | .htpasswd) return 0 ;;
     *.pem | *.p8 | *.p12 | *.pfx | *.jks | *.keystore | *.key | *.asc | *.gpg) return 0 ;;
     id_rsa* | id_dsa* | id_ecdsa* | id_ed25519* | *_rsa | *_ed25519) return 0 ;;
@@ -728,9 +866,9 @@ done < "$HOMES"
     [ -n "$id" ] || continue
     printf 'home %s %s\n' "$id" "$home"
   done < "$HOMES"
-  while IFS=$'\t' read -r id host home || [ -n "$id" ]; do
-    [ -n "$id" ] || continue
-    printf 'unsupported-remote %s %s %s\n' "$id" "$host" "$home"
+  while IFS=$'\t' read -r kind id detail reason || [ -n "$kind" ]; do
+    [ -n "$kind" ] || continue
+    printf '%s %s %s %s\n' "$kind" "$id" "$detail" "$reason"
   done < "$UNSUPPORTED"
 } > "$REPO/SNAPSHOT"
 printf 'SNAPSHOT\n' >> "$STAGED_PATHS"
@@ -815,12 +953,19 @@ else
 fi
 
 if [ -s "$UNSUPPORTED" ]; then
-  while IFS=$'\t' read -r id host home || [ -n "$id" ]; do
-    [ -n "$id" ] || continue
-    printf 'fm-home-backup: NOT captured - secondmate %s is remote (%s:%s); this version has no remote reader\n' \
-      "$id" "$host" "$home" >&2
+  while IFS=$'\t' read -r kind id detail reason || [ -n "$kind" ]; do
+    [ -n "$kind" ] || continue
+    case $kind in
+      unsupported-remote)
+        printf 'fm-home-backup: NOT captured - secondmate %s is remote (%s:%s); this version has no remote reader. Back that home up from its own host, or extend fm-home-backup.sh with a remote reader.\n' \
+          "$id" "$detail" "$reason" >&2
+        ;;
+      uncaptured-home)
+        printf 'fm-home-backup: NOT captured - secondmate %s has an unusable home %s: %s. Every other home was captured and pushed. Fix that home, or unregister it in %s.\n' \
+          "$id" "$detail" "$reason" "$REGISTRY" >&2
+        ;;
+    esac
   done < "$UNSUPPORTED"
-  printf 'fm-home-backup: back that home up from its own host, or extend fm-home-backup.sh with a remote reader\n' >&2
   exit 3
 fi
 exit 0

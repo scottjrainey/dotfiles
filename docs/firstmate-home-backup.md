@@ -69,6 +69,10 @@ Print the plan first; it writes nothing without `--apply`.
 `--into` must already exist, and a populated `data/` or `config/` there is refused unless `--force` is also given.
 Restore never touches `state/` or `projects/` under the destination, so it is safe to run against a live home to recover a single lost tree.
 
+Restore refuses non-zero if the hourly backup happens to be running, naming the lock and the pid holding it; wait for that run to finish and re-run.
+It never reports success for a recovery that wrote nothing.
+If a restore is interrupted part way through, it leaves a `.fm-home-backup-restore` directory in the destination holding the trees it had already moved aside, and the next restore refuses until that directory has been inspected and removed.
+
 Rebuilding a whole fleet from nothing:
 
 1. Clone the firstmate repo and each secondmate home's checkout as usual.
@@ -80,7 +84,8 @@ Rebuilding a whole fleet from nothing:
 ## Known limitations
 
 - **Project clone URLs are not captured.** `data/projects.md` records each project's name and purpose but not its origin URL, and the only place those URLs exist is inside the clones under `projects/`, which this command is forbidden to read. Recovering them means `gh repo list <owner>` or the captain's own memory. Capturing a clone manifest would require allowing read-only git plumbing against `projects/`, which is a deliberate policy change rather than a code change.
-- **Remote secondmate homes are not captured.** A registry record carrying a `host:` field is named in `SNAPSHOT` and on stderr and the run exits non-zero, so a remote home is never silently missed - but it is also never backed up. Back such a home up from its own host until this command grows a remote reader.
+- **Remote secondmate homes are not captured.** A registry record carrying a `host:` field is recorded in `SNAPSHOT` as `unsupported-remote` and named on stderr, and the run exits 3, so a remote home is never silently missed - but it is also never backed up. Back such a home up from its own host until this command grows a remote reader.
+- **A registered local home that has become unusable is skipped, not captured.** If a registered secondmate home is missing, is not a directory, sits on an unmounted volume, or is no longer a seeded secondmate home, that one home is recorded in `SNAPSHOT` as `uncaptured-home` with the reason and named on stderr, every other home including the primary is still captured and pushed, and the run exits 3. This is deliberate: refusing the whole run would mean one renamed directory quietly stops the primary home's memory being backed up at all. An hourly job that keeps exiting 3 means a home needs fixing or unregistering in `data/secondmates.md` - check the log rather than assuming coverage.
 - **The backup repo's history is permanent.** A credential that reaches it cannot be removed by deleting the file later, which is why credential-shaped files are refused rather than skipped.
 
 ## Verifying a change to the command
