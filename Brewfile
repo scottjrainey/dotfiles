@@ -25,8 +25,9 @@ cask "nikitabobko/tap/aerospace"
 brew "asmvik/formulae/yabai"
 brew "asmvik/formulae/skhd"
 cask "whichspace"
-# sleepwatcher fires whichspace-wake-reset.sh on display wake to work around
-# a WhichSpace rendering bug across sleep/wake - see docs/whichspace-wake-reset.md.
+# sleepwatcher fires whichspace-wake-reset.sh on system wake (including
+# background DarkWake) to work around a WhichSpace rendering bug across
+# sleep/wake - see docs/whichspace-wake-reset.md.
 brew "sleepwatcher"
 cask "font-fira-code-nerd-font"
 cask "font-iosevka-term-nerd-font"

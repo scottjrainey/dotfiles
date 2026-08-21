@@ -176,7 +176,8 @@ fi
 
 echo "==> Step 11: load the sleepwatcher LaunchAgent (WhichSpace wake fix)"
 # See docs/whichspace-wake-reset.md. Fires home/.local/bin/whichspace-wake-reset.sh
-# on real display wake; harmless no-op if WhichSpace isn't running.
+# on system wake (including background DarkWake); harmless no-op if WhichSpace
+# isn't running.
 SLEEPWATCHER_PLIST="$HOME/Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist"
 if [ -f "$SLEEPWATCHER_PLIST" ]; then
   launchctl bootstrap "gui/$(id -u)" "$SLEEPWATCHER_PLIST" 2>/dev/null \
