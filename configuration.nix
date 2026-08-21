@@ -97,6 +97,7 @@
     brews = [
       "asmvik/formulae/yabai"
       "asmvik/formulae/skhd"
+      "sleepwatcher"
       "bat-extras"
       "mprocs"
       "tuicr"

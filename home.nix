@@ -151,6 +151,8 @@ in
   # script added under home/.local/bin needs its own line here.
   home.file.".local/bin/fm-home-backup.sh".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/fm-home-backup.sh";
+  home.file.".local/bin/whichspace-wake-reset.sh".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/whichspace-wake-reset.sh";
   home.file.".local/bin/yabai-stack-focus".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/yabai-stack-focus";
   home.file.".skhdrc".source =
@@ -168,6 +170,12 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/Library/LaunchAgents/com.scottjrainey.fm-home-backup.plist";
   home.file."Library/LaunchAgents/io.gechr.WhichSpace.plist".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/Library/LaunchAgents/io.gechr.WhichSpace.plist";
+
+  # sleepwatcher daemon that fires whichspace-wake-reset.sh on system wake
+  # (docs/whichspace-wake-reset.md). Like the two agents above, this only
+  # places the plist; loading it is bootstrap.sh's Step 11, or a logout/login.
+  home.file."Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist";
 
   # Aerospace was present but commented out in scripts/install.sh, so preserve
   # the file under home/ without managing the live config yet.

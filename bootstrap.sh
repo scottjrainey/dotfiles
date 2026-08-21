@@ -174,4 +174,17 @@ else
   echo "    plist not linked yet, skipping (re-run bootstrap.sh after a switch)"
 fi
 
+echo "==> Step 11: load the sleepwatcher LaunchAgent (WhichSpace wake fix)"
+# See docs/whichspace-wake-reset.md. Fires home/.local/bin/whichspace-wake-reset.sh
+# on system wake (including background DarkWake); harmless no-op if WhichSpace
+# isn't running.
+SLEEPWATCHER_PLIST="$HOME/Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist"
+if [ -f "$SLEEPWATCHER_PLIST" ]; then
+  launchctl bootstrap "gui/$(id -u)" "$SLEEPWATCHER_PLIST" 2>/dev/null \
+    || launchctl kickstart -k "gui/$(id -u)/com.scottjrainey.sleepwatcher" 2>/dev/null \
+    || echo "    WARNING: could not load the sleepwatcher LaunchAgent"
+else
+  echo "    plist not linked yet, skipping (re-run bootstrap.sh after a switch)"
+fi
+
 echo "==> Done. Use ./rebuild.sh for future changes."

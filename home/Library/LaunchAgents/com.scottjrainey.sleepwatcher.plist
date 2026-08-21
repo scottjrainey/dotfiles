@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.scottjrainey.sleepwatcher</string>
+  <!--
+    Runs Homebrew's sleepwatcher daemon (brew "sleepwatcher") to watch for
+    system wake and fire home/.local/bin/whichspace-wake-reset.sh (see that
+    script's header for the WhichSpace bug it exists to fix). -w is
+    sleepwatcher's wakeupcommand, backed by the public IORegisterForSystemPower
+    API - confirmed still current on Apple Silicon. Its display-only sibling,
+    -W (displaywakeupcommand), is NOT used here: `strings` on the installed
+    sleepwatcher binary shows -W is implemented against the legacy
+    IODisplayWrangler IOKit service, which `ioreg -c IODisplayWrangler`
+    confirms no longer exists on this Mac - -W silently never fires as a
+    result. -w does fire on macOS's frequent background DarkWake maintenance
+    cycles as well as a real interactive wake, not only the latter, but a
+    DarkWake by definition leaves the display off, so the WhichSpace restart
+    it triggers is never visible - see the script's header for why that
+    makes gating this on display state unnecessary.
+
+    Wrapped in a login zsh, matching com.scottjrainey.fm-home-backup.plist,
+    purely so $HOME expands at run time instead of a machine-specific
+    username being hardcoded into this public repo. sleepwatcher itself is
+    then exec'd so it - not an idle parent shell - is the process launchd
+    supervises and restarts.
+  -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-l</string>
+    <string>-c</string>
+    <string>exec /opt/homebrew/opt/sleepwatcher/sbin/sleepwatcher -V -w "$HOME/.local/bin/whichspace-wake-reset.sh"</string>
+  </array>
+  <!--
+    sleepwatcher is a watcher, not a one-shot job: it has to stay running to
+    catch the next wake, so unlike WhichSpace and fm-home-backup this one
+    wants RunAtLoad and KeepAlive both true.
+  -->
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ProcessType</key>
+  <string>Background</string>
+</dict>
+</plist>
