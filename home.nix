@@ -171,8 +171,8 @@ in
   home.file."Library/LaunchAgents/io.gechr.WhichSpace.plist".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/Library/LaunchAgents/io.gechr.WhichSpace.plist";
 
-  # sleepwatcher daemon that fires whichspace-wake-reset.sh on real display
-  # wake (docs/whichspace-wake-reset.md). Like the two agents above, this only
+  # sleepwatcher daemon that fires whichspace-wake-reset.sh on system wake
+  # (docs/whichspace-wake-reset.md). Like the two agents above, this only
   # places the plist; loading it is bootstrap.sh's Step 11, or a logout/login.
   home.file."Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist";

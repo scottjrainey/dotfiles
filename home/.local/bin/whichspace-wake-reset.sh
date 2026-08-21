@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # whichspace-wake-reset.sh - force WhichSpace to redraw correctly after the
-# display wakes.
+# system wakes.
 #
 # THE BUG: after the Mac wakes, WhichSpace's menu bar sometimes collapses
 # from the correct 6 lettered blocks (badges B/C/E/N/P/T, per
