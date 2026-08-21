@@ -43,6 +43,7 @@ cd dotfiles
 8. Trusts every tap and tap-qualified package named in `Brewfile`.
 9. Loads the WhichSpace LaunchAgent.
 10. Loads the firstmate home backup LaunchAgent (see [docs/firstmate-home-backup.md](docs/firstmate-home-backup.md)).
+11. Loads the sleepwatcher LaunchAgent that works around a WhichSpace wake bug (see [docs/whichspace-wake-reset.md](docs/whichspace-wake-reset.md)).
 
 oh-my-zsh, zsh-autosuggestions, Starship, and fzf are Nix packages pulled in by `home.nix`'s `programs.*` modules during that switch - no separate install step. mise is installed as a Homebrew formula in the same switch instead (see Notes).
 
@@ -84,6 +85,8 @@ It stays inert until a private backup repository is configured; see [docs/firstm
 
 The WhichSpace LaunchAgent is installed by symlinking `home/Library/LaunchAgents/io.gechr.WhichSpace.plist` into `~/Library/LaunchAgents`.
 The plist is present at login; if immediate loading is needed after a manual edit, use `launchctl` or log out and back in.
+
+WhichSpace's menu bar can render wrong after the Mac wakes from sleep; `com.scottjrainey.sleepwatcher` (`home/Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist`, installed the same way) works around it by restarting WhichSpace on every system wake. See [docs/whichspace-wake-reset.md](docs/whichspace-wake-reset.md) - including its Status note, since the wake trigger itself is still pending its first live confirmation. If the bug still shows up after a wake, toggle WhichSpace's own menu-bar Settings switch off and back on as a fallback.
 
 WhichSpace's own preferences (badges, per-space colors, toggles) are not managed by nix - the app stores per-space colors as binary-archived `NSColor` blobs that don't map cleanly to `system.defaults`. Instead they are captured in `whichspace/WhichSpaceSettings.json`, the app's native export. On a fresh machine, apply them once via the WhichSpace menu bar -> Import Settings -> `whichspace/WhichSpaceSettings.json`. To re-capture after changing settings, use the menu bar -> Export Settings and overwrite that file. (The Accessibility permission WhichSpace needs is a macOS TCC grant and must also be re-enabled by hand in System Settings.)
 
