@@ -1,7 +1,7 @@
 onboarding = false
 [keys]
-# Mirrors tmux's `set -g prefix C-a` (home/.config/tmux/tmux.conf)
-prefix = "ctrl+a"
+# Matches tmux's stock default prefix (home/.config/tmux/tmux.conf)
+prefix = "ctrl+b"
 
 [ui]
 agent_panel_sort = "spaces"
