@@ -144,6 +144,11 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/starship.toml";
   home.file.".config/tmux/tmux.conf".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/tmux/tmux.conf";
+  # Link the single file, not the ~/.gnupg directory: that directory is also
+  # where GPG keeps its private keyring, and this repo is public. Same hazard
+  # as ~/.local/bin below, different reason. See docs/pass-password-manager.md.
+  home.file.".gnupg/gpg-agent.conf".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.gnupg/gpg-agent.conf";
   # Link the individual script, not the directory. ~/.local/bin is a shared
   # drop zone that uv, the Claude Code installer, grok and no-mistakes also
   # write into, so a directory-level link would replace it with a symlink to

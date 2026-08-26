@@ -92,3 +92,17 @@ cask "zoom"
 
 # === Learning ===
 brew "codecrafters-io/tap/codecrafters"
+
+# === Password manager ===
+# pass is a shell wrapper around gpg, so homebrew-core's pass formula
+# hard-depends on gnupg - it is listed here anyway, not left implicit, because
+# gpg is the tool the operator actually drives (key generation, listing,
+# `pass init`), not incidental plumbing. gnupg itself only depends on the
+# tty/curses `pinentry`, which cannot prompt from a GUI or non-tty caller;
+# pinentry-mac is the separate formula that gives a native macOS passphrase
+# dialog, and home.nix wires gpg-agent to it via home/.gnupg/gpg-agent.conf.
+# All three are homebrew-core (not tap-qualified), so Step 8's trust parse
+# ignores them and no taps entry is needed. See docs/pass-password-manager.md.
+brew "pass"
+brew "gnupg"
+brew "pinentry-mac"
