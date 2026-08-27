@@ -14,7 +14,7 @@ Running the switch builds:
 - Homebrew casks for GUI apps, fonts, and macOS app bundles.
 - Homebrew formulae for tapped packages, macOS services, and formulae intentionally left in Homebrew.
 - Zsh, oh-my-zsh, autosuggestions, aliases, Starship, and fzf shell integration declared in `home.nix` via Home Manager's `programs.*` modules (no manual install scripts, no symlinked `.zshrc`). mise's binary comes from Homebrew instead, with its shell activation hand-wired into the same generated `.zshrc`.
-- Neovim, Ghostty, tmux, herdr, ripgrep, btop, yabai, skhd, Starship's `starship.toml`, gh-dash's `config.yml`, and ccstatusline configs as edit-in-place symlinks.
+- Neovim, Ghostty, tmux, herdr, ripgrep, btop, yabai, skhd, Starship's `starship.toml`, gh-dash's `config.yml`, ccstatusline, and gpg-agent configs as edit-in-place symlinks.
 - One shared `home/AGENTS.md` installed for Claude, Codex, and opencode.
 
 ## Prerequisites
@@ -70,7 +70,7 @@ This repo is tailored to Scott's machine, username, and package choices, so it i
 - `bootstrap.sh` handles first-machine setup.
 - `rebuild.sh` reapplies the flake after bootstrap.
 - `Brewfile` is not just a historical record: `bootstrap.sh` Step 8 parses it directly to `brew trust` every tap and every tap-qualified formula/cask, which `HOMEBREW_REQUIRE_TAP_TRUST=1` (set in `zprofile`) requires. `configuration.nix` is authoritative for what gets installed, but `Brewfile` must be kept in sync by hand - any tap or tap-qualified formula/cask added to `configuration.nix` needs the matching line added to `Brewfile`, or a fresh-machine bootstrap will fail to trust it.
-- `docs/` holds operator documentation for the scheduled jobs this repo installs.
+- `docs/` holds operator documentation for the scheduled jobs and the hand-configured tools this repo installs.
 - `tests/` holds behavior tests for the scripts under `home/.local/bin`; each is `<subject>.test.sh` and runs standalone.
 - `chrome/`, `scripts/*.mjs`, `whichspace/WhichSpaceSettings.json`, and `LICENSE` remain versioned assets outside the symlink tree.
 
@@ -92,6 +92,15 @@ WhichSpace's own preferences (badges, per-space colors, toggles) are not managed
 
 `home/.config/aerospace/aerospace.toml` is preserved but not linked.
 The old installer had the Aerospace symlink commented out, and `home.nix` keeps that behavior with a commented example line.
+
+## Password manager (`pass`)
+
+[`pass`](https://www.passwordstore.org/) is installed as a Homebrew formula, together with the `gnupg` it wraps and `pinentry-mac`, which gives GPG a native macOS passphrase dialog instead of the terminal-only prompt Homebrew's `gnupg` would otherwise use.
+`home.nix` links `home/.gnupg/gpg-agent.conf` into `~/.gnupg/` to select that pinentry, the same edit-in-place way as every other config here - only that single file, never the `~/.gnupg` directory, which is also where GPG keeps its private keyring.
+
+Installing the tooling is all a rebuild does. Creating a GPG key and running `pass init` are one-time manual steps, and until both are done `pass` will not work; see [docs/pass-password-manager.md](docs/pass-password-manager.md).
+
+**The password store (`~/.password-store`) must never be committed to this repo.** `dotfiles` is public, and encrypted-at-rest is not a reason to publish a password store: `pass` does not encrypt entry *filenames*, so the tree alone leaks every service and account stored, and git history makes any such commit permanent. Use `pass git` with a separate private repository if the store needs versioning.
 
 ## Private dotfiles
 

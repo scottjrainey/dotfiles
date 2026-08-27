@@ -1,2 +1,7 @@
 result
 result-*
+
+# home/.gnupg/ carries gpg-agent.conf and nothing else. This repo is public:
+# never let GPG's keyrings, trust database, or exported keys land here.
+home/.gnupg/*
+!home/.gnupg/gpg-agent.conf

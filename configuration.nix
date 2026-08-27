@@ -109,6 +109,15 @@
       "anomalyco/tap/opencode"
       "herdr"
       "codecrafters-io/tap/codecrafters"
+      # pass is a shell wrapper around gpg, so homebrew-core's pass formula
+      # hard-depends on gnupg; gnupg in turn only pulls the tty/curses
+      # pinentry. pinentry-mac is the separate formula that gives a native
+      # macOS passphrase dialog, and home.nix points gpg-agent at it. All
+      # three are homebrew-core, so none needs a taps entry or brew trust.
+      # See docs/pass-password-manager.md.
+      "pass"
+      "gnupg"
+      "pinentry-mac"
     ];
 
     casks = [

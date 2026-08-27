@@ -8,6 +8,7 @@ Project-scoped instructions for working in this dotfiles repo.
 - Prefer small, reviewable edits that match the surrounding style.
 - Do not drop configuration, package entries, or local scripts silently. Document intentional removals.
 - Read the relevant files before editing them.
+- This repo is PUBLIC. Nothing secret belongs in it: no keys, keyrings, tokens, or credential stores, and no file that lives inside a directory holding them. When a tool's config sits next to its secrets (GPG's `~/.gnupg`, for example), link the individual config file rather than the directory and add a `.gitignore` deny for the rest - see `docs/pass-password-manager.md` for the worked case.
 - Avoid destructive commands unless the task explicitly calls for them.
 
 ## Dotfiles
