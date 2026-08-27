@@ -102,4 +102,7 @@ After a rebuild, confirm the wiring end to end without touching a real store:
 
     which pass gpg pinentry-mac                 # all three resolve under /opt/homebrew/bin
     readlink ~/.gnupg/gpg-agent.conf            # points into ~/.dotfiles/home/.gnupg/
-    gpgconf --list-options gpg-agent | grep pinentry-program
+    grep pinentry-program "$(gpgconf --list-dirs homedir)/gpg-agent.conf"  # the agent's effective homedir declares it
+    gpg-connect-agent 'GET_PASSPHRASE --data cid errtext prompt desc' /bye  # and the agent really launches it
+
+The last one is the end-to-end proof: the native macOS `pinentry-mac` dialog appears. That it appears at all is the answer - press Escape to dismiss it and the command reports a cancel error, so nothing is cached and no key or store is involved.
