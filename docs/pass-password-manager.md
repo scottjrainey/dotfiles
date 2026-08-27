@@ -55,11 +55,12 @@ Edit the repo copy to tune it; the change is live immediately, with no rebuild, 
 
 Useful knobs for that file, both off by default: `default-cache-ttl <seconds>` (how long the agent remembers a passphrase after use, default 600) and `max-cache-ttl <seconds>` (hard ceiling regardless of use, default 7200).
 
-Two notes on the mechanism:
+Four notes on the mechanism:
 
 - There is no LaunchAgent for `gpg-agent`, unlike the other background jobs in `docs/`. `gpg` auto-spawns the agent on demand and it exits on its own; nothing needs to schedule it.
 - Home Manager's `services.gpg-agent` module was considered and rejected. It would express the same `pinentry-program` line through `pinentry.package`, but it hardwires the agent to `config.programs.gpg.package` - a *nixpkgs* GnuPG - and on Darwin relocates the agent socket to `/private/var/run/org.nix-community.home.gpg-agent/`, away from the stock `~/.gnupg`. Against a Homebrew `gpg` that is the two-GPG problem above plus a socket mismatch. The plain symlinked config file gets the same declarative result with none of that.
 - Home Manager refuses to link over an existing unmanaged file. If `~/.gnupg/gpg-agent.conf` already exists as a real file when the next `./rebuild.sh` runs, activation fails with a "would be clobbered" error; move it aside and re-run.
+- A rebuild also creates `~/.gnupg` itself, at mode 0700, ahead of that link - Home Manager's own link step would otherwise create it at 0755 and GnuPG would then warn about unsafe homedir permissions on every `gpg`/`pass` call. The mode is applied only when the directory is created, so an already-existing `~/.gnupg` is left exactly as it is; if it is already 0755, fix it once by hand with `chmod 700 ~/.gnupg`. The why is on `home.activation.gnupgHomedir` in `home.nix`.
 
 ## First-time setup
 
