@@ -149,6 +149,20 @@ in
   # as ~/.local/bin below, different reason. See docs/pass-password-manager.md.
   home.file.".gnupg/gpg-agent.conf".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.gnupg/gpg-agent.conf";
+
+  # Create ~/.gnupg ourselves, first, at the mode GPG expects. Home Manager's
+  # link script does `mkdir -p "$(dirname "$targetPath")"` with no mode, so
+  # under the activation umask of 022 linking the file above would otherwise
+  # create ~/.gnupg at 0755 before gpg ever gets to create it at 0700, and
+  # GnuPG then prints "WARNING: unsafe permissions on homedir" on every
+  # gpg/pass invocation. Hence entryBetween's before-list: this has to run
+  # ahead of linkGeneration to win that race. -m700 applies only on creation,
+  # so an existing ~/.gnupg - private keyring and all - is never touched.
+  home.activation.gnupgHomedir =
+    lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ] ''
+      run mkdir -m700 -p $VERBOSE_ARG "${config.home.homeDirectory}/.gnupg"
+    '';
+
   # Link the individual script, not the directory. ~/.local/bin is a shared
   # drop zone that uv, the Claude Code installer, grok and no-mistakes also
   # write into, so a directory-level link would replace it with a symlink to
