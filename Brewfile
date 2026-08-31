@@ -79,6 +79,9 @@ cask "codex"
 brew "anomalyco/tap/opencode"
 brew "herdr"
 
+# === Editors ===
+cask "zed"
+
 # === Browser ===
 cask "google-chrome"
 

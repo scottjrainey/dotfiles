@@ -135,6 +135,7 @@
       "cursor"
       "lm-studio"
       "codex"
+      "zed"
       "google-chrome"
       "obsidian"
       "discord"
