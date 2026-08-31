@@ -1,3 +1,7 @@
+# shellcheck shell=bash
+# Sourced by zsh as a login-shell dotfile, not executed directly, so it
+# intentionally carries no shebang. The directive above just tells shellcheck
+# which dialect to lint this POSIX-compatible file as.
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # brew shellenv's path_helper call rebuilds PATH from /etc/paths(.d), which
