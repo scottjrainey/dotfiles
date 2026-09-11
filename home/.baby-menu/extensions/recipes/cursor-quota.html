@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en" data-theme="wireframe">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cursor Quota Widget Recipe</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="bg-base-200 text-base-content">
+    <main class="mx-auto max-w-4xl space-y-5 p-6 text-base leading-7 sm:p-10 [&_code]:text-sm [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_h3]:font-semibold [&_li]:mb-1 [&_li]:leading-7 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-6 [&_p]:mb-2 [&_p]:leading-7 [&_pre]:my-3 [&_pre_code]:text-sm [&_section]:space-y-3 [&_table]:text-sm [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6">
+      <h1 class="text-3xl font-bold tracking-tight">Cursor Quota Widget Recipe</h1>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Capability</h2>
+        <p>Source Cursor quota windows from the local machine for a baby-menu widget, using only the access token Cursor already stores locally plus Cursor's own dashboard HTTP API.</p>
+        <p><strong>Do not depend on any separate quota CLI or npm package.</strong> The only external tool this recipe uses is <code>sqlite3</code>, a standard macOS system binary (not a per-product install), used strictly read-only to pull one existing token out of Cursor's own local database. When no usable local token exists, the token is rejected, or the API cannot be parsed, return an unavailable or sign-in-required result - do not fabricate or fall back to mock data.</p>
+        <p><strong>Scope:</strong> this recipe covers only how to obtain and normalize the data. How the widget presents it - layout, states, copy, refresh controls - is left to the implementer and is intentionally not specified here.</p>
+        <p>This recipe is self-contained. Do not require external source code, websites, or implementation guides to complete it.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Recommended Data Source Order</h2>
+        <table class="table table-zebra">
+          <thead>
+            <tr><th>Priority</th><th>Source</th><th>Use When</th><th>Expected Data</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Local Cursor state database + Dashboard API</td>
+              <td>Cursor has been signed in at least once on this Mac and the token it stored still works.</td>
+              <td>Plan name, included/auto/API usage percentages, billing cycle end.</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Cached last-good snapshot</td>
+              <td>The Dashboard API times out or is briefly unreachable, and a previous successful snapshot exists.</td>
+              <td>The same shape as source 1, marked <code>stale: true</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>There is no separate CLI fallback. A <code>quota-axi</code>-style tool installed only under a Node version manager is not on the menu-bar app's <code>PATH</code> and must not be depended on; read the local database and call the API directly instead.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Local Auth Details</h2>
+        <p>Read credentials only from <code>cursor-quota/server.ts</code>, never from the renderer.</p>
+        <p>Database path (macOS, verified present on this machine): <code>~/Library/Application Support/Cursor/User/globalStorage/state.vscdb</code>. This is a SQLite database Cursor itself writes to and may have open while the widget queries it, so always query it read-only.</p>
+        <p>Query it with the <code>sqlite3</code> CLI in read-only mode and set a short busy timeout so Cursor holding the database open is treated as a transient local read failure instead of a sign-in failure:</p>
+        <pre class="mockup-code p-4 overflow-auto"><code>sqlite3 -readonly -cmd ".timeout 1000" "&lt;path-to-state.vscdb&gt;" \
+  "SELECT key, value FROM ItemTable WHERE key IN ('cursorAuth/accessToken', 'cursorAuth/cachedEmail', 'cursorAuth/stripeMembershipType');"</code></pre>
+        <p>Verified live keys present in <code>ItemTable</code> on this machine include <code>cursorAuth/accessToken</code>, <code>cursorAuth/cachedEmail</code>, <code>cursorAuth/cachedSignUpType</code>, <code>cursorAuth/refreshToken</code>, and <code>cursorAuth/stripeMembershipType</code>. Query only <code>cursorAuth/accessToken</code>, <code>cursorAuth/cachedEmail</code>, and <code>cursorAuth/stripeMembershipType</code>; do not retrieve <code>cursorAuth/refreshToken</code> or any other unused secret. Each queried value is a plain string (the access token is a JWT), not JSON-wrapped. Read <code>cursorAuth/accessToken</code> for the bearer token, <code>cursorAuth/cachedEmail</code> for the account email, and <code>cursorAuth/stripeMembershipType</code> (e.g. <code>"free"</code>) as a plan fallback if the API call below does not return a plan name.</p>
+        <p><strong><code>sqlite3</code> discovery.</strong> Menu-bar apps can have a trimmed <code>PATH</code> that omits <code>sqlite3</code> even though it exists on the system. Try, in order: the bare <code>sqlite3</code> command; then <code>/usr/bin/sqlite3</code> (present on every macOS install); then <code>/opt/homebrew/bin/sqlite3</code> and <code>/usr/local/bin/sqlite3</code> (Homebrew installs). Use the first one that runs successfully. If none run, return an unavailable result - do not tell the user to install a quota tool, since <code>sqlite3</code> ships with macOS.</p>
+        <p><strong>Token expiry.</strong> The access token is usually a JWT (three base64url segments separated by <code>.</code>). You may decode the middle segment to read its <code>exp</code> claim (seconds since epoch) for diagnostics, but do not treat a past <code>exp</code> as final sign-in-required and do not skip the network because of it. Do not fail if the token cannot be decoded as a JWT at all - fall through and let the Dashboard API's own <code>401</code>/<code>403</code> response be the source of truth for rejection.</p>
+        <p>If the database file is missing or no <code>cursorAuth/accessToken</code> value is returned, return <code>Cursor sign-in required</code> without calling the network. If the query fails because the database is locked or busy after the busy timeout, return the cached snapshot marked stale when one exists, otherwise return an unavailable result. Other unreadable database or sqlite errors are unavailable local read failures, not evidence that the user is signed out. Never log, echo, or return the access token, refresh token, or raw database contents in errors, logs, or the response sent to the renderer.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Dashboard API Details</h2>
+        <p>Primary request (required):</p>
+        <pre class="mockup-code p-4 overflow-auto"><code>POST https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage
+Authorization: Bearer &lt;access_token&gt;
+content-type: application/json
+connect-protocol-version: 1
+
+{}</code></pre>
+        <p>Optional secondary request, for the plan name only (skip it entirely if the primary request already fails; do not let its failure affect the primary result):</p>
+        <pre class="mockup-code p-4 overflow-auto"><code>POST https://api2.cursor.sh/aiserver.v1.DashboardService/GetPlanInfo
+Authorization: Bearer &lt;access_token&gt;
+content-type: application/json
+connect-protocol-version: 1
+
+{}</code></pre>
+        <p>Use a hard timeout around 15 seconds per request. Treat <code>401</code> or <code>403</code> on the primary request as <code>Cursor sign-in required</code>. Any other non-<code>2xx</code> status, a timeout, or a network error on the primary request falls back to the cached snapshot when one exists, otherwise an unavailable result.</p>
+        <p><strong>Verified live response shape</strong> from <code>GetCurrentPeriodUsage</code> on this machine on 2026-07-09 (this account's real values at capture time):</p>
+        <pre class="mockup-code p-4 overflow-auto"><code>{
+  "billingCycleStart": "1781042356364",
+  "billingCycleEnd": "1783634356364",
+  "planUsage": {
+    "remainingBonus": false,
+    "bonusTooltip": "We work with model providers to give you free usage beyond what you've purchased. Amounts may vary.",
+    "autoPercentUsed": 0,
+    "apiPercentUsed": 0,
+    "totalPercentUsed": 0
+  },
+  "spendLimitUsage": {
+    "pooledLimit": 0,
+    "pooledRemaining": 0,
+    "individualLimit": 0,
+    "limitType": "user",
+    "overallLimit": 0,
+    "overallRemaining": 0
+  },
+  "displayThreshold": 200,
+  "displayMessage": "You've used 0% of your included usage"
+}</code></pre>
+        <p>And from <code>GetPlanInfo</code>:</p>
+        <pre class="mockup-code p-4 overflow-auto"><code>{
+  "planInfo": { "planName": "Free", "price": "Free", "billingCycleEnd": "1783634356364" },
+  "nextUpgrade": { "tier": "pro", "name": "Pro", "includedAmountCents": 2000, "price": "$20/mo", "description": "Upgrade to Cursor Pro" }
+}</code></pre>
+        <p><strong>Live output is authoritative.</strong> Parse defensively: tolerate added fields, missing optional fields, and non-numeric percentages. Do not default a missing percent-used field to 0 - if it is not a finite number, omit that window instead. <code>billingCycleStart</code>/<code>billingCycleEnd</code> are epoch-millisecond values encoded as decimal strings; parse them with <code>Number(...)</code> before constructing a <code>Date</code>.</p>
+        <p>Field mapping:</p>
+        <ul>
+          <li><code>planUsage.totalPercentUsed</code> -&gt; window <code>id: "included_usage"</code>, <code>label: "included usage"</code>, <code>kind: "monthly"</code>.</li>
+          <li><code>planUsage.autoPercentUsed</code> -&gt; window <code>id: "auto_usage"</code>, <code>label: "auto usage"</code>, <code>kind: "monthly"</code>.</li>
+          <li><code>planUsage.apiPercentUsed</code> -&gt; window <code>id: "api_usage"</code>, <code>label: "API usage"</code>, <code>kind: "monthly"</code>.</li>
+          <li><code>billingCycleEnd</code> -&gt; <code>resetAt</code> on every window (converted from the epoch-ms string to an ISO date), when it parses.</li>
+          <li><code>planInfo.planName</code> from the optional <code>GetPlanInfo</code> call, or else the sqlite <code>cursorAuth/stripeMembershipType</code> value capitalized, -&gt; <code>plan</code>.</li>
+        </ul>
+        <p><strong>One axis, consistently.</strong> Percentages here are percent <em>used</em> from 0 to 100. Remaining is <code>100 - percentUsed</code>. Whatever the widget chooses to show, the label, number, and any meter for a given window must all describe the same axis.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Normalized Snapshot Type</h2>
+        <pre class="mockup-code p-4 overflow-auto"><code>type CursorQuotaSnapshot = {
+  source: "api";
+  accountEmail?: string;
+  plan?: string;
+  windows: Array&lt;{
+    id: "included_usage" | "auto_usage" | "api_usage";
+    label: string;
+    kind?: "monthly";
+    percentUsed: number;          // canonical, percent USED (0-100)
+    percentRemaining?: number;    // optional, derive as 100 - percentUsed when absent
+    resetAt?: string;
+  }&gt;;
+  refreshedAt: string;
+  stale: boolean;
+  status?: string;
+};</code></pre>
+        <p>Clamp numeric percentages to the inclusive range <code>0..100</code>.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Implementation Contract</h2>
+        <p>All data acquisition lives in <code>cursor-quota/server.ts</code>: <code>sqlite3</code> discovery and invocation, the HTTP requests, timeouts, and parsing. Expose it as a <code>getQuota</code> server action invoked from the renderer with <code>window.babyMenu.capabilities.invoke("cursor-quota", "getQuota", input)</code>. Do not add preload methods, per-widget IPC channels, core renderer widgets, or <code>WidgetHost</code> registration; Baby Menu discovers extension widgets automatically.</p>
+        <p>The data is safe to refresh roughly every 5 minutes while the widget is visible. Use <code>viewRefreshIntervalMs</code> or <code>refreshView</code> for visible refresh. Do not add a background task unless the user explicitly asks for quota monitoring while the popover is closed.</p>
+        <p>Before writing the parser, inspect the real <code>state.vscdb</code> keys and the real Dashboard API responses on this machine to confirm the current shapes; do not guess or pattern-complete a field name. Before reporting the work done, invoke <code>getQuota</code> (or an equivalent one-off check) against the real source and confirm the exact windows and values you expect actually come back - reasoning through the shapes on paper is not enough.</p>
+        <p>Server action response shape:</p>
+        <pre class="mockup-code p-4 overflow-auto"><code>type QuotaResult&lt;T&gt; =
+  | { ok: true; data: T }
+  | { ok: false; error: string; sourceTried: string[] };</code></pre>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Error and Unavailable Handling</h2>
+        <p>These are data outcomes the server action returns, not UI copy.</p>
+        <ul>
+          <li>If <code>sqlite3</code> cannot be located under any of the fallback paths, return an unavailable error (<code>Cursor quota unavailable</code>) with <code>sourceTried: ["local-db"]</code>.</li>
+          <li>If the database is missing or has no <code>cursorAuth/accessToken</code> value, return <code>Cursor sign-in required</code> without calling the network.</li>
+          <li>If the database query fails because the database is locked or busy, return the previous successful snapshot marked <code>stale: true</code> when one exists; otherwise return an unavailable error. Treat other sqlite read failures as unavailable local read failures, not sign-in-required.</li>
+          <li>If the Dashboard API returns <code>401</code> or <code>403</code>, return <code>Cursor sign-in required</code>.</li>
+          <li>If the primary request times out or the network is briefly unreachable, return the previous successful snapshot marked <code>stale: true</code> when one exists; otherwise return an unavailable error.</li>
+          <li>If the optional <code>GetPlanInfo</code> call fails for any reason, omit <code>plan</code> (or use the sqlite fallback) rather than failing the whole result.</li>
+          <li>Ignore reset timestamps that fail to parse as dates. Keep the quota percentage and omit <code>resetAt</code> instead of showing a misleading date.</li>
+          <li>Never log, echo, or return the access token, refresh token, or database contents in errors or logs.</li>
+        </ul>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Security Constraints</h2>
+        <ul>
+          <li>Credential, filesystem, shell, and network access belongs only in extension-owned server actions behind <code>window.babyMenu.capabilities.invoke</code>.</li>
+          <li>Never commit secrets, token dumps, local database contents, or captured command output that might include credentials.</li>
+          <li>Do not send Cursor credentials to the renderer. The renderer receives only the normalized snapshot.</li>
+          <li>Keep <code>sqlite3</code> stderr out of user-visible errors unless it has been scrubbed for token-like values.</li>
+        </ul>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Interactive Demo</h2>
+        <div class="space-y-4">
+          <div class="stats stats-vertical w-full border border-base-300 bg-base-100 md:stats-horizontal">
+            <div class="stat">
+              <div class="stat-title">Included usage</div>
+              <div class="stat-value text-2xl">0% used</div>
+              <div class="stat-desc">100% remaining</div>
+            </div>
+            <div class="stat">
+              <div class="stat-title">Auto usage</div>
+              <div class="stat-value text-2xl">0% used</div>
+              <div class="stat-desc">100% remaining</div>
+            </div>
+            <div class="stat">
+              <div class="stat-title">API usage</div>
+              <div class="stat-value text-2xl">0% used</div>
+              <div class="stat-desc">100% remaining</div>
+            </div>
+          </div>
+          <progress class="progress w-full" value="0" max="100"></progress>
+          <p class="text-sm">Demo uses labeled sample values only. The shipped widget must read the token from Cursor's own local database and call the Dashboard API directly, and must show unavailable or sign-in-required states when live data is unavailable.</p>
+        </div>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Acceptance Criteria</h2>
+        <ul>
+          <li>The extension reads the access token from Cursor's own <code>state.vscdb</code> via read-only <code>sqlite3</code> and calls the Dashboard API directly from <code>cursor-quota/server.ts</code>. It never execs or requires <code>quota-axi</code> or any other separate quota CLI.</li>
+          <li><code>sqlite3</code> is located via a PATH lookup plus full-path fallbacks rather than assumed to be on <code>PATH</code>.</li>
+          <li>The snapshot includes Cursor plan (when discoverable), refreshed time, stale state, and all three usage windows from live output.</li>
+          <li><code>percentUsed</code> is treated as used, not remaining, and any label or meter uses one axis consistently.</li>
+          <li>Missing token, rejected token, invalid API responses, and timeouts produce explicit unavailable, sign-in-required, or stale results without mock data.</li>
+          <li>No token, cookie, local database, or credential value is logged, returned, committed, or exposed to the renderer.</li>
+          <li>The implementer verifies the finished server action against the real local database and the real Dashboard API on this machine before reporting done.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

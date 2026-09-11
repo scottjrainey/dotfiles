@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en" data-theme="wireframe">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GitHub Copilot Quota Widget Recipe</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="bg-base-200 text-base-content">
+    <main class="mx-auto max-w-4xl space-y-5 p-6 text-base leading-7 sm:p-10 [&_code]:text-sm [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_h3]:font-semibold [&_li]:mb-1 [&_li]:leading-7 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-6 [&_p]:mb-2 [&_p]:leading-7 [&_pre]:my-3 [&_pre_code]:text-sm [&_section]:space-y-3 [&_table]:text-sm [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6">
+      <h1 class="text-3xl font-bold tracking-tight">GitHub Copilot Quota Widget Recipe</h1>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Capability</h2>
+        <p>Source GitHub Copilot quota windows from the local machine for a baby-menu widget, using only a Copilot-issued OAuth token already stored locally by any Copilot-enabled editor/tool plus GitHub's own Copilot internal API.</p>
+        <p><strong>Do not depend on any separate quota CLI or npm package.</strong> When no usable local token exists, the token is rejected, or the API cannot be parsed, return an unavailable or sign-in-required result - do not fabricate or fall back to mock data.</p>
+        <p><strong>Scope:</strong> this recipe covers only how to obtain and normalize the data. How the widget presents it - layout, states, copy, refresh controls - is left to the implementer and is intentionally not specified here.</p>
+        <p>This recipe is self-contained. Do not require external source code, websites, or implementation guides to complete it.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Recommended Data Source Order</h2>
+        <table class="table table-zebra">
+          <thead>
+            <tr><th>Priority</th><th>Source</th><th>Use When</th><th>Expected Data</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Local Copilot apps.json + <code>copilot_internal/user</code> API</td>
+              <td>Any Copilot-enabled tool (editor extension, CLI, Neovim plugin, etc.) has signed in on this machine and its stored token still works.</td>
+              <td>Login, plan, per-window quota (chat, completions, premium interactions), quota reset date.</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Cached last-good snapshot</td>
+              <td>The API times out or is briefly unreachable, and a previous successful snapshot exists.</td>
+              <td>The same shape as source 1, marked <code>stale: true</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>There is no separate CLI fallback. A <code>quota-axi</code>-style tool installed only under a Node version manager is not on the menu-bar app's <code>PATH</code> and must not be depended on; read the local token and call the API directly instead.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Local Auth Details</h2>
+        <p>Read credentials only from <code>copilot-quota/server.ts</code>, never from the renderer.</p>
+        <p>Check both of these paths and read every file that exists and parses as JSON:</p>
+        <ol>
+          <li><code>~/.config/github-copilot/apps.json</code> - verified present on this machine.</li>
+          <li><code>~/Library/Application Support/github-copilot/apps.json</code> - some macOS-native Copilot clients use this path instead; not present on this machine, but check it before giving up.</li>
+        </ol>
+        <p>The file is a JSON object keyed by an opaque app-registration identifier (commonly of the form <code>&lt;host&gt;:&lt;github-app-id&gt;:&lt;client-name&gt;</code>, e.g. <code>github.com:Iv1.b507a08c87ecfe98:Neovim</code> as verified on this machine). Each value has this shape:</p>
+        <pre class="mockup-code p-4 overflow-auto"><code>{
+  "&lt;app-key&gt;": {
+    "user": "&lt;github-login&gt;",
+    "oauth_token": "ghu_...",
+    "githubAppId": "Iv1...."
+  }
+}</code></pre>
+        <p><strong>Candidate selection.</strong> Collect every entry from every readable apps.json file with a non-empty string <code>oauth_token</code>. Prefer entries whose key starts with <code>github.com</code> (tokens scoped to github.com, which is what the API below expects) over any other host. Within the same host preference, prefer candidates from the most recently modified file, then keep file order and object iteration order stable as tie-breakers. Try candidates in that order. If no token candidates can be built and any existing apps.json file was unreadable or malformed, follow the cached-stale-or-unavailable path instead of reporting sign-in required. Return <code>Copilot sign-in required</code> without calling the network only when at least one existing apps.json file parses successfully, no existing apps.json file failed read or parse, and no parsed entry has a usable <code>oauth_token</code>.</p>
+        <p>Note that the account identity comes back from the API response's own <code>login</code> field, not from the file's <code>user</code> field - the file may be labeled with an unrelated client name (e.g. a Neovim plugin's registration key) while still authenticating as the correct GitHub account. Do not assume the app-key's trailing segment names the product actually in use.</p>
+        <p>Never log, echo, or return the OAuth token or raw apps.json contents in errors, logs, or the response sent to the renderer.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Copilot Internal API Details</h2>
+        <p>Request:</p>
+        <pre class="mockup-code p-4 overflow-auto"><code>GET https://api.github.com/copilot_internal/user
+Authorization: Bearer &lt;oauth_token&gt;
+Accept: application/json
+User-Agent: GitHubCopilotChat/1.0</code></pre>
+        <p>The exact <code>User-Agent</code> string is not load-bearing for authorization, but GitHub's API rejects requests with no <code>User-Agent</code> at all; send a stable, descriptive value like the one above. Use a hard timeout around 15 seconds. For <code>403</code>, first check for rate limits or transient policy blocks. Do not classify every <code>403</code> as rejected auth: when the response has <code>x-ratelimit-remaining: 0</code>, a <code>retry-after</code> header, or a body message mentioning rate limits, secondary rate limits, abuse detection, or a transient GitHub policy block, return the cached snapshot when one exists, otherwise an unavailable result. Use <code>x-ratelimit-reset</code> only when <code>x-ratelimit-remaining</code> is <code>0</code> to decide when the current primary-limit window resets; do not let that header by itself classify a <code>403</code> as rate-limited. Treat <code>401</code>, or any remaining non-transient <code>403</code>, as that token candidate being rejected, then try the next token candidate before reporting sign-in required; only return <code>Copilot sign-in required</code> after every usable token candidate has been rejected. Any other non-<code>2xx</code> status, a timeout, or a network error follows the same cached-stale-or-unavailable path.</p>
+        <p><strong>Verified live response shape</strong> from this exact endpoint on this machine on 2026-07-09 (this account's real values at capture time, token redacted):</p>
+        <pre class="mockup-code p-4 overflow-auto"><code>{
+  "login": "kunchenguid",
+  "copilot_plan": "individual",
+  "quota_reset_date": "2026-08-01",
+  "quota_reset_date_utc": "2026-08-01T00:00:00.000Z",
+  "chat_enabled": true,
+  "quota_snapshots": {
+    "chat": {
+      "percent_remaining": 100.0,
+      "quota_remaining": 0.0,
+      "unlimited": true,
+      "quota_reset_at": 0,
+      "remaining": 0,
+      "entitlement": 0
+    },
+    "completions": {
+      "percent_remaining": 100.0,
+      "quota_remaining": 0.0,
+      "unlimited": true,
+      "quota_reset_at": 0,
+      "remaining": 0,
+      "entitlement": 0
+    },
+    "premium_interactions": {
+      "percent_remaining": 100.0,
+      "quota_remaining": 1500.0,
+      "unlimited": false,
+      "quota_reset_at": 0,
+      "remaining": 1500,
+      "entitlement": 1500
+    }
+  }
+}</code></pre>
+        <p><strong>Reset timestamp rule (important).</strong> Every <code>quota_snapshots.&lt;window&gt;.quota_reset_at</code> value observed on this machine was the literal number <code>0</code> - an epoch-zero placeholder, not a real reset time. Never render a Date built from <code>quota_reset_at</code> when it is <code>0</code> or otherwise resolves to the 1970 epoch. Use the top-level <code>quota_reset_date_utc</code> as the shared reset time for every window instead; it carries the real monthly reset date (e.g. the 1st of next month).</p>
+        <p><strong>Live output is authoritative.</strong> Parse defensively: tolerate added fields, missing optional fields, missing windows, and non-numeric percentages. Do not default a missing <code>percent_remaining</code> to 0 or 100 - if it is not a finite number, omit that window instead.</p>
+        <p>Field mapping:</p>
+        <ul>
+          <li><code>quota_snapshots.chat</code> -&gt; window <code>id: "chat"</code>, <code>label: "chat"</code>, <code>kind: "monthly"</code>.</li>
+          <li><code>quota_snapshots.completions</code> -&gt; window <code>id: "completions"</code>, <code>label: "completions"</code>, <code>kind: "monthly"</code>.</li>
+          <li><code>quota_snapshots.premium_interactions</code> -&gt; window <code>id: "premium_interactions"</code>, <code>label: "premium interactions"</code>, <code>kind: "monthly"</code>.</li>
+          <li>Any other <code>quota_snapshots.&lt;window&gt;</code> entry with a finite <code>percent_remaining</code> -&gt; window <code>id</code> equal to that snapshot key, <code>label</code> equal to the key with underscores replaced by spaces, <code>kind: "monthly"</code>.</li>
+          <li>Each window's <code>percentRemaining</code> comes directly from <code>percent_remaining</code>; derive <code>percentUsed = 100 - percentRemaining</code>. When <code>unlimited</code> is <code>true</code>, still report the API's own <code>percent_remaining</code> (typically <code>100</code>) rather than fabricating a different number.</li>
+          <li><code>resetAt</code> for every window -&gt; the top-level <code>quota_reset_date_utc</code> when it parses as a valid date; never the per-window <code>quota_reset_at</code>.</li>
+          <li><code>copilot_plan</code> -&gt; <code>plan</code>. <code>login</code> -&gt; <code>accountLogin</code>.</li>
+        </ul>
+        <p><strong>One axis, consistently.</strong> Percentages here can be sourced as percent remaining directly from the API; still ensure the label, number, and any meter for a given window all describe the same axis (used vs. remaining) once normalized into <code>percentUsed</code>.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Normalized Snapshot Type</h2>
+        <pre class="mockup-code p-4 overflow-auto"><code>type CopilotQuotaSnapshot = {
+  source: "api";
+  accountLogin?: string;
+  plan?: string;
+  windows: Array&lt;{
+    id: "chat" | "completions" | "premium_interactions" | (string & {});
+    label: string;
+    kind?: "monthly";
+    percentUsed: number;          // canonical, percent USED (0-100)
+    percentRemaining?: number;    // optional, derive as 100 - percentUsed when absent
+    resetAt?: string;             // from quota_reset_date_utc; never epoch-zero
+  }&gt;;
+  refreshedAt: string;
+  stale: boolean;
+  status?: string;
+};</code></pre>
+        <p>Clamp numeric percentages to the inclusive range <code>0..100</code>. Preserve unknown windows in <code>quota_snapshots</code> rather than dropping them, since GitHub may add new Copilot quota categories later.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Implementation Contract</h2>
+        <p>All data acquisition lives in <code>copilot-quota/server.ts</code>: apps.json discovery, the HTTP request, timeouts, and parsing. Expose it as a <code>getQuota</code> server action invoked from the renderer with <code>window.babyMenu.capabilities.invoke("copilot-quota", "getQuota", input)</code>. Do not add preload methods, per-widget IPC channels, core renderer widgets, or <code>WidgetHost</code> registration; Baby Menu discovers extension widgets automatically.</p>
+        <p>The data is safe to refresh roughly every 5 minutes while the widget is visible. Use <code>viewRefreshIntervalMs</code> or <code>refreshView</code> for visible refresh. Do not add a background task unless the user explicitly asks for quota monitoring while the popover is closed.</p>
+        <p>Before writing the parser, inspect the real apps.json file and the real API response on this machine to confirm the current shapes; do not guess or pattern-complete a field name. Before reporting the work done, invoke <code>getQuota</code> (or an equivalent one-off check) against the real source and confirm the exact windows and values you expect actually come back, including that epoch-zero reset dates are suppressed - reasoning through the shapes on paper is not enough.</p>
+        <p>Server action response shape:</p>
+        <pre class="mockup-code p-4 overflow-auto"><code>type QuotaResult&lt;T&gt; =
+  | { ok: true; data: T }
+  | { ok: false; error: string; sourceTried: string[] };</code></pre>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Error and Unavailable Handling</h2>
+        <p>These are data outcomes the server action returns, not UI copy.</p>
+        <ul>
+          <li>If neither apps.json path exists, every existing local auth file is unreadable or malformed, any existing local auth file is unreadable or malformed while no token candidates can be built from the remaining parsed files, or local auth parsing fails before a token candidate can be built, return the previous successful snapshot marked <code>stale: true</code> when one exists; otherwise return an unavailable error (<code>Copilot quota unavailable</code>) with <code>sourceTried: ["local-auth"]</code>.</li>
+          <li>If at least one existing apps.json file parses successfully, no existing apps.json file failed read or parse, and no parsed entry has a usable <code>oauth_token</code>, return <code>Copilot sign-in required</code> with <code>sourceTried: ["local-auth"]</code> without calling the network.</li>
+          <li>If the API returns <code>401</code>, or a non-transient <code>403</code> after the rate-limit and policy-block checks below, try the next usable token. Return <code>Copilot sign-in required</code> only after every usable token candidate is rejected.</li>
+          <li>If the API returns a rate-limited or transient-policy <code>403</code> (for example <code>x-ratelimit-remaining: 0</code>, <code>retry-after</code>, or a body mentioning rate limits, secondary rate limits, abuse detection, or a transient GitHub policy block), times out, or the network is briefly unreachable, return the previous successful snapshot marked <code>stale: true</code> when one exists; otherwise return an unavailable error (<code>Copilot quota unavailable</code>). Use <code>x-ratelimit-reset</code> as the retry time only with <code>x-ratelimit-remaining: 0</code>.</li>
+          <li>If <code>quota_snapshots</code> is missing or has no usable window, return an unavailable error rather than guessing.</li>
+          <li>Never render an epoch-zero or otherwise unparseable reset timestamp; omit <code>resetAt</code> instead of showing 1970.</li>
+          <li>Never log, echo, or return the OAuth token or apps.json contents in errors or logs.</li>
+        </ul>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Security Constraints</h2>
+        <ul>
+          <li>Credential, filesystem, and network access belongs only in extension-owned server actions behind <code>window.babyMenu.capabilities.invoke</code>.</li>
+          <li>Never commit secrets, token dumps, local apps.json contents, or captured command output that might include credentials.</li>
+          <li>Do not send the Copilot OAuth token to the renderer. The renderer receives only the normalized snapshot.</li>
+        </ul>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Interactive Demo</h2>
+        <div class="space-y-4">
+          <div class="stats stats-vertical w-full border border-base-300 bg-base-100 md:stats-horizontal">
+            <div class="stat">
+              <div class="stat-title">Chat</div>
+              <div class="stat-value text-2xl">0% used</div>
+              <div class="stat-desc">100% remaining</div>
+            </div>
+            <div class="stat">
+              <div class="stat-title">Completions</div>
+              <div class="stat-value text-2xl">0% used</div>
+              <div class="stat-desc">100% remaining</div>
+            </div>
+            <div class="stat">
+              <div class="stat-title">Premium interactions</div>
+              <div class="stat-value text-2xl">0% used</div>
+              <div class="stat-desc">100% remaining</div>
+            </div>
+          </div>
+          <progress class="progress w-full" value="0" max="100"></progress>
+          <p class="text-sm">Demo uses labeled sample values only. The shipped widget must read the token from a local apps.json and call the Copilot internal API directly, and must omit placeholder reset dates such as 1970 in favor of the top-level monthly reset date.</p>
+        </div>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 shadow-sm p-6">
+        <h2>Acceptance Criteria</h2>
+        <ul>
+          <li>The extension reads an <code>oauth_token</code> from a local apps.json file and calls <code>copilot_internal/user</code> directly from <code>copilot-quota/server.ts</code>. It never execs or requires <code>quota-axi</code> or any other separate quota CLI.</li>
+          <li>Both known apps.json paths are checked, token candidates are collected from every readable file, and github.com-scoped token entries are preferred.</li>
+          <li>The snapshot includes Copilot plan, account login, refreshed time, stale state, and all usable windows from <code>quota_snapshots</code>.</li>
+          <li><code>percentUsed</code> is treated as used, not remaining, and any label or meter uses one axis consistently.</li>
+          <li>Epoch-zero or otherwise non-useful per-window reset timestamps are never rendered; the top-level monthly reset date is used instead.</li>
+          <li>Malformed or unreadable apps.json files produce stale or unavailable results, not sign-in-required. Parsed auth files with no usable token, rejected token candidates, invalid API responses, and timeouts produce explicit unavailable, sign-in-required, or stale results without mock data.</li>
+          <li>No token, cookie, apps.json content, or credential value is logged, returned, committed, or exposed to the renderer.</li>
+          <li>The implementer verifies the finished server action against the real local apps.json and the real API on this machine before reporting done.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
