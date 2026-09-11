@@ -15,6 +15,7 @@
 tap "anomalyco/tap"
 tap "asmvik/formulae"
 tap "codecrafters-io/tap"
+tap "kunchenguid/tap"
 tap "nikitabobko/tap"
 tap "supabase/tap"
 tap "withgraphite/tap"
@@ -92,6 +93,12 @@ cask "obsidian"
 cask "discord"
 cask "slack"
 cask "zoom"
+
+# === Menu bar ===
+# baby-menu's popover runs an embedded coding agent (claude/codex CLI) to
+# write/hot-reload its own widgets - config and generated widgets live at
+# home/.baby-menu, symlinked to ~/.baby-menu in home.nix.
+cask "kunchenguid/tap/baby-menu"
 
 # === Learning ===
 brew "codecrafters-io/tap/codecrafters"

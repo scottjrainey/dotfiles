@@ -174,6 +174,8 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/whichspace-wake-reset.sh";
   home.file.".local/bin/yabai-stack-focus".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/yabai-stack-focus";
+  home.file.".baby-menu".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.baby-menu";
   home.file.".skhdrc".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.skhdrc";
   home.file.".yabairc".source =

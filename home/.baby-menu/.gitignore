@@ -1,0 +1,11 @@
+# Regenerated local state, not config. cache/ and .cache/ hold rendered
+# widget snapshots, server-action caches, and agent-turn/ACP session data
+# (actual coding-agent transcript content) that must never land in this
+# PUBLIC repo. baby-menu.db is app-local sqlite state, currently empty with
+# no schema. Mirrors home/.config/nvim/.gitignore's precedent for keeping
+# generated content out of an otherwise-tracked symlinked directory.
+cache/
+.cache/
+*.db
+*.db-shm
+*.db-wal

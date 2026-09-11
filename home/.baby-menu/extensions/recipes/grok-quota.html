@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en" data-theme="wireframe">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Grok Quota Widget Recipe</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="bg-base-200 text-base-content">
+    <main class="mx-auto max-w-4xl space-y-5 p-6 text-base leading-7 sm:p-10 [&_code]:text-sm [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_li]:mb-1 [&_li]:leading-7 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-6 [&_p]:mb-2 [&_p]:leading-7 [&_pre]:my-3 [&_pre_code]:text-sm [&_section]:space-y-3 [&_table]:text-sm [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6">
+      <h1 class="text-3xl font-bold tracking-tight">Grok Quota Widget Recipe</h1>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Capability</h2>
+        <p>Show the official consumer Grok usage pool, product breakdown, reset, and Extra Usage Credits through the exact consumer Usage-page operation.</p>
+        <p>The sole quota source is <code>grok_api_v2.GrokBuildBilling.GetGrokCreditsConfig</code> at <code>https://grok.com/grok_api_v2.GrokBuildBilling/GetGrokCreditsConfig</code>.</p>
+        <p>Use the provider-owned <code>~/.grok/auth.json</code> bearer and let only the official client refresh an expired or rejected session.</p>
+        <p>Do not run a healthy-session CLI preflight, import browser cookies, call the CLI billing proxy, call ACP billing, implement OAuth, or calculate quota from money.</p>
+        <p>This recipe is self-contained and requires no external implementation guide.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Recommended Data Source Order</h2>
+        <table class="table table-zebra">
+          <thead>
+            <tr><th>Priority</th><th>Source</th><th>Contract</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>Exact consumer gRPC-web operation</td><td>Fresh official percentages, period, reset, products, and prepaid balance.</td></tr>
+            <tr><td>2</td><td>Conditional official client refresh</td><td>Only after local expiry or one credential-classified consumer response, followed by auth reread and one retry.</td></tr>
+            <tr><td>3</td><td>Principal-bound schema version 2 cache</td><td>Same-account last-good data for eligible transient failures only.</td></tr>
+          </tbody>
+        </table>
+        <p>The CLI billing proxy and monetary fields are never parser fallbacks.</p>
+        <p><code>quota-axi</code> may be used as optional development evidence, but it is never a runtime dependency or oracle.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Read-only Auth Selection</h2>
+        <p>Credential access belongs only in <code>grok-quota/server.ts</code>.</p>
+        <p>Resolve auth in this order: <code>$GROK_AUTH_JSON</code>, <code>$GROK_AUTH_PATH</code>, <code>$GROK_HOME/auth.json</code>, then <code>~/.grok/auth.json</code>.</p>
+        <p>The auth file is an object keyed by provider scope, and a usable entry must contain a non-empty string <code>key</code>.</p>
+        <ol>
+          <li>Prefer a current entry whose scope begins with <code>https://auth.x.ai::</code>.</li>
+          <li>Use a current <code>https://accounts.x.ai/sign-in</code> or compatible sign-in entry only when no current OIDC entry exists.</li>
+          <li>Ignore unrelated and API-key-shaped scopes even when their expiry is later.</li>
+          <li>Select an expired OIDC or legacy entry only to drive one conditional official-client refresh when no current supported entry exists.</li>
+          <li>Return <code>auth_scope_ambiguous</code> before network access when current entries in the winning class bind to different or unknown principals.</li>
+        </ol>
+        <p>Build an internal SHA-256 account binding from non-secret principal type, user id, and team id fields.</p>
+        <p>Never return the account binding, raw ids, email, scope string, auth contents, or bearer to the renderer or diagnostics.</p>
+        <p>If no stable account binding can be formed, fresh data may render, but persistent last-good data must not be written or reused.</p>
+        <p>Classify auth sources exactly: a missing resolved file is <code>auth_source_missing</code>; a permission, I/O, or other read failure is <code>auth_source_unreadable</code>; invalid JSON is <code>auth_source_malformed</code>; and no usable credential is <code>auth_source_incompatible</code>.</p>
+        <p>Do not run a CLI capability probe for missing, unreadable, malformed, incompatible, ambiguous, or healthy auth.</p>
+        <p>Do not classify these local source outcomes as <code>parse_incompatible</code> or sign-in-required.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Conditional Official-client Refresh</h2>
+        <p>The installed official client documents <code>grok models</code> as "List available models and exit," so it is a bounded non-prompt capability that exercises the client's own auth manager.</p>
+        <p>Invoke it only when the deterministically selected bearer is locally expired or when one exact-source request returns HTTP 401, gRPC 16, or a narrowly recognized credential-like gRPC 7 message.</p>
+        <p>HTTP 403 remains a rejected credential or permission outcome but does not trigger refresh.</p>
+        <p>Never invoke it before every acquisition, after permission or team-scope failures, or after the one post-refresh retry.</p>
+        <p>Spawn the discovered executable with argument array <code>["models"]</code>, <code>shell: false</code>, ignored stdin, the complete inherited environment, a 20-second timeout, and 128 KiB bounded stdout and stderr held only in memory.</p>
+        <p>On timeout, terminate the detached non-Windows process group with <code>SIGTERM</code>, allow a one-second grace period, then issue at most one process-group <code>SIGKILL</code>. Suppress <code>ESRCH</code>; suppress <code>EPERM</code> only when a process-table check confirms that no live, same-uid, non-zombie member remains in the owned group. Otherwise propagate the signaling failure.</p>
+        <p>Discover <code>$GROK_CLI_PATH</code>, <code>$GROK_HOME/bin/grok</code>, current <code>PATH</code>, home-local Grok locations, then Homebrew locations without a shell.</p>
+        <p>After exit zero, reread the same resolved auth source, apply deterministic OIDC-over-legacy selection again, and require the new stable account binding to equal the pre-refresh binding.</p>
+        <p>Return <code>auth_principal_changed</code> without a gRPC retry when the principal changes, and return <code>auth_expired</code> when official refresh leaves the selected bearer expired.</p>
+        <p>A successful continuity check permits exactly one new <code>GetGrokCreditsConfig</code> request with the reread bearer.</p>
+        <p>Never read, post, or exchange a refresh token directly, and never infer success from CLI output.</p>
+        <p>An immutable <code>$GROK_AUTH_JSON</code> override cannot be refreshed by the client and must fail explicitly when expired.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Exact gRPC-web Request</h2>
+        <pre class="mockup-code overflow-auto p-4"><code>POST https://grok.com/grok_api_v2.GrokBuildBilling/GetGrokCreditsConfig
+Authorization: Bearer &lt;selected key&gt;
+Accept: */*
+Content-Type: application/grpc-web+proto
+Origin: https://grok.com
+Referer: https://grok.com/?_s=usage
+x-grpc-web: 1
+x-user-agent: connect-es/2.1.1
+
+00 00 00 00 00</code></pre>
+        <p>The five body bytes are one empty uncompressed gRPC-web data frame.</p>
+        <p>Do not send <code>x-grok-client-mode: billing</code>.</p>
+        <p>Do not call <code>GET https://cli-chat-proxy.grok.com/v1/billing?format=credits</code> or <code>_x.ai/billing</code>.</p>
+        <p>Apply one 15-second whole-request deadline and a 64 KiB streamed response cap.</p>
+        <p>Reject oversized, truncated, malformed, compressed, and multiple-data-frame responses before typed protobuf normalization.</p>
+        <p>Validate <code>grpc-status</code> from both HTTP headers and gRPC-web trailer frames.</p>
+        <p>Retry exactly once only for bounded transport failures, HTTP 408/502/503/504, gRPC deadline exceeded, or an explicit timeout or cancellation status.</p>
+        <p>Never retry authentication, permission, team scope, parser, schema, or response-size failures.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Typed Protobuf Decoder</h2>
+        <p>Accept one valid framed data payload or the provider's compatible raw protobuf payload.</p>
+        <p>Use a bounded typed decoder for these exact proto3 fields:</p>
+        <table class="table table-zebra">
+          <thead>
+            <tr><th>Message</th><th>Field</th><th>Wire type</th><th>Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Response</td><td>1</td><td>message</td><td><code>config</code></td></tr>
+            <tr><td>Config</td><td>1</td><td>fixed32</td><td><code>creditUsagePercent</code></td></tr>
+            <tr><td>Config</td><td>7</td><td>repeated message</td><td><code>productUsage</code></td></tr>
+            <tr><td>Config</td><td>8</td><td>message</td><td><code>currentPeriod</code></td></tr>
+            <tr><td>Config</td><td>12</td><td>message</td><td><code>prepaidBalance</code></td></tr>
+            <tr><td>Product usage</td><td>1 / 2</td><td>varint / fixed32</td><td>Product enum / used percentage</td></tr>
+            <tr><td>Usage period</td><td>1 / 2 / 3</td><td>varint / timestamp / timestamp</td><td>Type / start / end</td></tr>
+            <tr><td>Cent</td><td>1</td><td>varint</td><td>Balance value</td></tr>
+          </tbody>
+        </table>
+        <p>Map product enum 1 through 6 to API, Grok Build, Grok Plugins, Chat, Imagine, and Voice.</p>
+        <p>Preserve exact finite used percentages after clamping to <code>0..100</code>, and derive remaining as <code>100 - percentUsed</code>.</p>
+        <p>Use only <code>config.currentPeriod.end</code> as a quota reset.</p>
+        <p>A valid monthly or weekly current period plus an omitted global proto3 float is an official zero-percent success with <code>omittedProto3Default: true</code>.</p>
+        <p>A structurally valid product entry with an omitted product float is an official product zero with the same provenance marker.</p>
+        <p>Without an explicit official percentage or valid current-period evidence, return <code>quota_unreported</code> rather than inventing zero.</p>
+        <p>Never divide <code>config.used.val</code> by <code>config.monthlyLimit.val</code>, <code>onDemandUsed</code> by <code>onDemandCap</code>, or derive quota from history, prepaid balance, elapsed time, or billing dates.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Normalized Types</h2>
+        <pre class="mockup-code overflow-auto p-4"><code>type GrokQuotaSnapshot = {
+  schemaVersion: 2;
+  source: "grok-credits-grpc-web";
+  sourceVersion: 1;
+  operation: "grok_api_v2.GrokBuildBilling.GetGrokCreditsConfig";
+  accountBinding: string; // storage only, never renderer output
+  period: {
+    type: "weekly" | "monthly" | "unspecified";
+    startAt?: string;
+    endAt?: string;
+    provenance: "config.currentPeriod";
+  };
+  windows: Array&lt;{
+    id: "credits" | `product:${string}`;
+    label: string;
+    percentUsed: number;
+    percentRemaining: number;
+    resetAt?: string;
+    provenance: {
+      percentageField: "config.creditUsagePercent" | `config.productUsage[${number}].usagePercent`;
+      resetField?: "config.currentPeriod.end";
+      omittedProto3Default?: true;
+    };
+  }&gt;;
+  credits?: {
+    remaining: number;
+    unit: "credits";
+    sourceField: "config.prepaidBalance.val";
+  };
+  refreshedAt: string;
+  stale: boolean;
+};
+
+type QuotaFailure = {
+  kind:
+    | "auth_required"
+    | "auth_expired"
+    | "auth_scope_ambiguous"
+    | "auth_principal_changed"
+    | "auth_source_missing"
+    | "auth_source_unreadable"
+    | "auth_source_malformed"
+    | "auth_source_incompatible"
+    | "credential_rejected"
+    | "cli_not_found"
+    | "cli_launch_failed"
+    | "connectivity"
+    | "rate_limited"
+    | "quota_service"
+    | "official_quota_source_unavailable"
+    | "team_scope_unsupported"
+    | "response_too_large"
+    | "quota_unreported"
+    | "parse_incompatible";
+  message: string;
+  sourcesTried: Array&lt;"local-auth" | "consumer-quota-api" | "grok-cli-refresh" | "cache"&gt;;
+  httpStatus?: number;
+  grpcStatus?: number;
+  retryAt?: string;
+  diagnostic?: string;
+};
+
+type GrokQuotaResult =
+  | { ok: true; checkedAt: string; data: Omit&lt;GrokQuotaSnapshot, "accountBinding"&gt;; warning?: QuotaFailure }
+  | { ok: false; checkedAt: string; failure: QuotaFailure };</code></pre>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Implementation Contract</h2>
+        <p>All auth, network, protobuf, and cache work belongs in <code>grok-quota/server.ts</code> behind <code>window.babyMenu.capabilities.invoke</code>.</p>
+        <p>Use <code>context.db</code> for one internal last-good snapshot.</p>
+        <p><strong>Cache trust boundary:</strong> only schema version <code>2</code>, source <code>grok-credits-grpc-web</code>, source version <code>1</code>, the exact operation, complete field provenance, and an equal current account binding are trusted.</p>
+        <p>Unversioned, schema version <code>1</code>, future-version, malformed, wrong-source, wrong-operation, provenance-free, and wrong-principal rows are untrusted.</p>
+        <p>Delete the rejected row instead of rewriting, inferring, or promoting it.</p>
+        <p>Only a successful exact-source response may write schema version <code>2</code>.</p>
+        <p>On an eligible transport, service, or conditional refresh failure, return a same-principal trusted row as stale without changing the stored bytes.</p>
+        <p>Auth ambiguity, auth expiry, principal change, unsupported team scope, and an unbound identity must not render another principal's cache.</p>
+        <p>Single-flight the entire <code>getQuota</code> acquisition so startup, interval, and manual calls share one request and one cache write.</p>
+        <p>Server action response shape is the <code>GrokQuotaResult</code> union above.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Renderer and Refresh Contract</h2>
+        <p>Export a <code>RefreshableBabyMenuWidget</code> with a five-minute <code>viewRefreshIntervalMs</code> and one shared <code>refreshView</code> function.</p>
+        <p>The host-owned <code>refreshView</code> call is the startup refresh, so do not launch a mount-time request.</p>
+        <p>The visible manual refresh control must call the same function, disable itself while pending, and never create overlapping work.</p>
+        <p>While refresh is pending, keep the currently rendered successful windows and show an updating indicator.</p>
+        <p>Every completion must expose a fresh safe <code>checkedAt</code> and update the visible last checked state.</p>
+        <p>One rendered widget root must own the complete stable observability contract below in waiting, success, and failure states.</p>
+        <p>These attributes are a machine-readable mirror of the normalized renderer state, while the visible UI remains the user-facing truth.</p>
+        <table class="table table-zebra">
+          <thead>
+            <tr><th>Root attribute</th><th>Exact value semantics</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>data-grok-e2e</code></td><td>Latest completed-result state: <code>waiting</code> only before the first acquisition completes, then exactly <code>success</code> or <code>failure</code>. During a later refresh, preserve that terminal state and its parity values while the visible updating indicator reports pending work.</td></tr>
+            <tr><td><code>data-grok-checked-at</code></td><td>Empty while no acquisition has completed, otherwise the exact safe ISO 8601 <code>checkedAt</code> returned for the latest completion.</td></tr>
+            <tr><td><code>data-grok-stale</code></td><td>Exactly <code>true</code> only when rendering a trusted stale success, otherwise <code>false</code>.</td></tr>
+            <tr><td><code>data-grok-warning-kind</code></td><td>The normalized warning kind for a stale success, otherwise <code>none</code>.</td></tr>
+            <tr><td><code>data-grok-failure-kind</code></td><td>The normalized terminal failure kind for <code>failure</code>, otherwise <code>none</code>.</td></tr>
+            <tr><td><code>data-grok-cache-schema</code></td><td><code>2</code> for a success rendered from the exact-source schema, otherwise empty.</td></tr>
+            <tr><td><code>data-grok-source</code></td><td><code>grok-credits-grpc-web</code> for success, otherwise empty.</td></tr>
+            <tr><td><code>data-grok-source-version</code></td><td><code>1</code> for success, otherwise empty.</td></tr>
+            <tr><td><code>data-grok-operation</code></td><td><code>grok_api_v2.GrokBuildBilling.GetGrokCreditsConfig</code> for success, otherwise empty.</td></tr>
+            <tr><td><code>data-grok-period</code></td><td>The exact normalized <code>weekly</code>, <code>monthly</code>, or <code>unspecified</code> period for success, otherwise empty.</td></tr>
+            <tr><td><code>data-grok-percent-used</code></td><td>The unrounded finite decimal string from the primary credits window for success, otherwise empty.</td></tr>
+            <tr><td><code>data-grok-percent-remaining</code></td><td>The unrounded finite decimal string derived as <code>100 - percentUsed</code> for success, otherwise empty.</td></tr>
+            <tr><td><code>data-grok-percentage-field</code></td><td>The exact normalized primary percentage provenance, normally <code>config.creditUsagePercent</code>, for success, otherwise empty.</td></tr>
+            <tr><td><code>data-grok-reset-at</code></td><td>The exact safe ISO 8601 reset from <code>config.currentPeriod.end</code>, or empty when that official field is absent.</td></tr>
+            <tr><td><code>data-grok-reset-field</code></td><td><code>config.currentPeriod.end</code> when <code>data-grok-reset-at</code> is present, otherwise empty.</td></tr>
+            <tr><td><code>data-grok-products</code></td><td>A JSON array of only normalized <code>{ id, percentUsed }</code> product values from the same response, preserving exact unrounded finite percentages; use <code>[]</code> outside success.</td></tr>
+            <tr><td><code>data-grok-completed-acquisitions</code></td><td>A base-10 non-negative integer counting settled renderer acquisitions, exactly <code>0</code> for <code>waiting</code> and at least <code>1</code> for <code>success</code> or <code>failure</code>, incremented once for each startup, interval, or manual completion and unchanged while a shared request is pending.</td></tr>
+          </tbody>
+        </table>
+        <p>Every listed attribute must exist directly on the same <code>data-grok-e2e</code> root in every state; use the documented empty values rather than omitting attributes or nesting aliases under children.</p>
+        <p>A <code>waiting</code> root has no completed result, so it must use the documented empty parity values and <code>data-grok-completed-acquisitions="0"</code>. Never replace a completed success or failure root with <code>waiting</code> during interval or manual refresh.</p>
+        <p>The unattended harness validates this complete root contract for generated and future managed widgets.</p>
+        <p>A terminal partial root is an explicit observability failure, not an intermediate state to poll until timeout.</p>
+        <p>Hidden observability values are limited to the non-secret normalized values already allowed in renderer state.</p>
+        <p>Never place account binding, user or team ids, auth values, scopes, headers, raw protobuf, raw provider payload, or credential-refresh output in the DOM.</p>
+        <p>Label the shared window Weekly, Monthly, or Credits from the decoded current period.</p>
+        <p>Show both official used percentage and derived remaining percentage so parity is reviewable.</p>
+        <p>Round only rendered values, never stored values or provenance.</p>
+        <p>Render products only from product entries in the same response and reset only from <code>config.currentPeriod.end</code>.</p>
+        <p>Show sign-in guidance only for an actual authentication outcome.</p>
+        <p>Show distinct actionable copy for <code>auth_expired</code>, <code>auth_scope_ambiguous</code>, <code>team_scope_unsupported</code>, provider, parser, and response-size failures.</p>
+        <p>Never suggest browser sign-in for <code>official_quota_source_unavailable</code>.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Error Classification</h2>
+        <ul>
+          <li>HTTP 401/403, gRPC 16, and narrowly recognized credential-like gRPC 7 messages are <code>credential_rejected</code>.</li>
+          <li>Arbitrary gRPC 7 is not authentication.</li>
+          <li>gRPC 9 with the known no-personal-team condition is <code>team_scope_unsupported</code>.</li>
+          <li>HTTP 429 and gRPC resource exhaustion are <code>rate_limited</code>.</li>
+          <li>Network and deadline failures are <code>connectivity</code>.</li>
+          <li>Malformed compatible-status responses are <code>parse_incompatible</code>.</li>
+          <li>Responses over 64 KiB are <code>response_too_large</code>.</li>
+          <li>A response with neither an official percentage nor valid current-period proto3-default evidence is <code>quota_unreported</code>.</li>
+        </ul>
+        <p>Diagnostics are allowlisted status, timeout, and missing-field metadata only.</p>
+        <p>Raw response data and gRPC messages never leave the server action.</p>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Security Constraints</h2>
+        <ul>
+          <li>Use the exact bearer request and no browser cookies.</li>
+          <li>Launch only the documented conditional <code>grok models</code> capability and let that official client own credential mutation.</li>
+          <li>Never implement OAuth or pass a credential through process arguments or newly created environment variables.</li>
+          <li>Never log, return, cache separately, or commit tokens, refresh tokens, emails, ids, scopes, headers, raw protobuf, or provider bodies.</li>
+          <li>Never expose the internal account binding to the renderer.</li>
+          <li>Never use another local identity as a fallback after rejection.</li>
+        </ul>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Interactive Demo</h2>
+        <div class="space-y-4">
+          <div class="stats stats-vertical w-full border border-base-300 bg-base-100 md:stats-horizontal">
+            <div class="stat"><div class="stat-title">Weekly</div><div class="stat-value text-2xl">22% used</div><div class="stat-desc">78% remaining</div></div>
+            <div class="stat"><div class="stat-title">Grok Build</div><div class="stat-value text-2xl">14% used</div><div class="stat-desc">Exact product field</div></div>
+            <div class="stat"><div class="stat-title">Source</div><div class="stat-value text-2xl">live</div><div class="stat-desc">Consumer gRPC-web</div></div>
+          </div>
+          <progress class="progress w-full" value="22" max="100"></progress>
+          <div class="alert alert-warning" role="status"><span>Example stale state: showing same-account cached quota while the consumer service is temporarily unreachable.</span></div>
+          <p class="text-sm">These are labeled sample values only.</p>
+        </div>
+      </section>
+
+      <section class="card border border-base-300 bg-base-100 p-6 shadow-sm">
+        <h2>Acceptance Criteria</h2>
+        <ul>
+          <li>The server sends the exact gRPC-web POST, headers, and five-byte body with no client-mode header, cookie, proxy, or ACP path.</li>
+          <li>OIDC selection, legacy fallback, expiry, ambiguity, and unbound identity behavior are deterministic.</li>
+          <li>Local expiry and one credential-classified response run one bounded fake-CLI-tested official refresh, reread auth, verify principal continuity, and issue exactly one gRPC retry. Timeout coverage proves one owned-group hard kill, descendant cleanup, and narrow dead-group <code>EPERM</code> handling.</li>
+          <li>A healthy successful bearer never launches the CLI, and deterministic tests never execute a real Grok binary.</li>
+          <li>The bounded typed decoder covers framed and raw payloads, global and product percentages, current period, prepaid balance, proto3 zero, trailers, malformed data, and the response cap.</li>
+          <li>Exact used values remain unrounded in state and cache, remaining is derived, and rounding occurs only in visible copy.</li>
+          <li>Schema version <code>1</code> never renders, and schema version <code>2</code> cache reuse requires the same account binding.</li>
+          <li>Startup, interval, and manual refresh preserve renderer-causal single-flight, pending, settle, completion-count, checked-at, stale, and cleanup behavior.</li>
+          <li>Waiting, success, and failure render every stable <code>data-grok-*</code> observability attribute directly on one root with the exact documented values.</li>
+          <li>The generated fixture binds those attributes from renderer state and passes the complete-root observer contract for waiting, success, and failure.</li>
+          <li>The unattended E2E independently calls the same exact operation in the same time window and compares safe operation, account-binding equality, period, global, product, reset, provenance, and lifecycle fields.</li>
+          <li>No credential, cookie, raw principal, account-binding material, header, or raw provider payload appears in logs, renderer data, fixtures, screenshots, or evidence.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

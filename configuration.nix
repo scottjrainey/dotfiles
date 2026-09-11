@@ -89,6 +89,7 @@
       "anomalyco/tap"
       "asmvik/formulae"
       "codecrafters-io/tap"
+      "kunchenguid/tap"
       "nikitabobko/tap"
       "supabase/tap"
       "withgraphite/tap"
@@ -141,6 +142,7 @@
       "discord"
       "slack"
       "zoom"
+      "kunchenguid/tap/baby-menu"
     ];
   };
 
