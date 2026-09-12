@@ -20,8 +20,8 @@ Project-scoped instructions for working in this dotfiles repo.
 ## Package management
 
 - `configuration.nix` (`homebrew.taps`/`brews`/`casks`) is authoritative for what gets installed via nix-homebrew.
-- `Brewfile` is a second, load-bearing file, not just a historical record: `bootstrap.sh` Step 8 parses it directly to `brew trust` every tap and tap-qualified (`user/tap/name`) formula/cask, which `HOMEBREW_REQUIRE_TAP_TRUST=1` (set in `zprofile`) requires. `brew bundle` has no way to express trust, so this parse step is the only thing that grants it.
-- Any tap, or tap-qualified formula/cask, added to or removed from `configuration.nix` must get the matching change in `Brewfile` in the same commit. Skipping this silently breaks tap trust on the next fresh-machine bootstrap, with no error until `brew` refuses the untrusted tap.
+- `Brewfile` is a second, load-bearing file, not just a historical record: `scripts/trust-homebrew-taps.sh` parses it directly to `brew trust` every tap and tap-qualified (`user/tap/name`) formula/cask, which `HOMEBREW_REQUIRE_TAP_TRUST=1` (set in `zprofile`) requires. `brew bundle` has no way to express trust, so this script is the only thing that grants it. Both `bootstrap.sh` (Step 8) and `rebuild.sh` (before `darwin-rebuild switch`) call it, so a tap added since the last rebuild gets trusted without a manual `bootstrap.sh` re-run.
+- Any tap, or tap-qualified formula/cask, added to or removed from `configuration.nix` must get the matching change in `Brewfile` in the same commit. Skipping this silently breaks tap trust on the next rebuild, with no error until `brew` refuses the untrusted tap.
 - Plain (non-tap-qualified) formulae/casks that only live in Homebrew (e.g. `bat-extras`, `mprocs`, `jqp`, `beads`) should still be mirrored in `Brewfile` for consistency, even though they don't affect tap trust.
 
 ## Claude Code skills
