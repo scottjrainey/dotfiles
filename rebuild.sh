@@ -17,5 +17,10 @@ if [ -d "$PRIVATE_DIR" ]; then
   ln -sfn "$PRIVATE_DIR" "$HOME/.dotfiles-private"
 fi
 
+# Trust any newly-added taps/formulae/casks (e.g. from a Brewfile change
+# pulled in since the last rebuild) before activation needs them - see
+# scripts/trust-homebrew-taps.sh and AGENTS.md's "Package management" section.
+"$DIR/scripts/trust-homebrew-taps.sh"
+
 cd "$DIR"
 exec sudo darwin-rebuild switch --flake .#mac --impure

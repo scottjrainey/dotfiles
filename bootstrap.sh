@@ -126,27 +126,7 @@ else
 fi
 
 echo "==> Step 8: trust Homebrew taps"
-if [ -x /opt/homebrew/bin/brew ]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
-if command -v brew >/dev/null 2>&1; then
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^tap[[:space:]]+\"([^\"]+)\" ]]; then
-      brew trust "${BASH_REMATCH[1]}" >/dev/null 2>&1
-    fi
-  done < "$DIR/Brewfile"
-
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^(brew|cask)[[:space:]]+\"([^\"]+/[^\"]+/[^\"]+)\" ]]; then
-      case "${BASH_REMATCH[1]}" in
-        brew) brew trust --formula "${BASH_REMATCH[2]}" >/dev/null ;;
-        cask) brew trust --cask "${BASH_REMATCH[2]}" >/dev/null ;;
-      esac
-    fi
-  done < "$DIR/Brewfile"
-else
-  echo "    brew not found, skipping tap trust"
-fi
+"$DIR/scripts/trust-homebrew-taps.sh"
 
 echo "==> Step 9: load WhichSpace LaunchAgent"
 WHICHSPACE_PLIST="$HOME/Library/LaunchAgents/io.gechr.WhichSpace.plist"
