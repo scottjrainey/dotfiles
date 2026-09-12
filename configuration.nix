@@ -90,7 +90,6 @@
       "asmvik/formulae"
       "codecrafters-io/tap"
       "kunchenguid/tap"
-      "nikitabobko/tap"
       "supabase/tap"
       "withgraphite/tap"
     ];
@@ -123,7 +122,6 @@
 
     casks = [
       "ghostty"
-      "nikitabobko/tap/aerospace"
       "whichspace"
       "font-fira-code-nerd-font"
       "font-iosevka-term-nerd-font"

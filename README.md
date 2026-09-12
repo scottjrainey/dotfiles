@@ -90,8 +90,7 @@ WhichSpace's menu bar can render wrong after the Mac wakes from sleep; `com.scot
 
 WhichSpace's own preferences (badges, per-space colors, toggles) are not managed by nix - the app stores per-space colors as binary-archived `NSColor` blobs that don't map cleanly to `system.defaults`. Instead they are captured in `whichspace/WhichSpaceSettings.json`, the app's native export. On a fresh machine, apply them once via the WhichSpace menu bar -> Import Settings -> `whichspace/WhichSpaceSettings.json`. To re-capture after changing settings, use the menu bar -> Export Settings and overwrite that file. (The Accessibility permission WhichSpace needs is a macOS TCC grant and must also be re-enabled by hand in System Settings.)
 
-`home/.config/aerospace/aerospace.toml` is preserved but not linked.
-The old installer had the Aerospace symlink commented out, and `home.nix` keeps that behavior with a commented example line.
+AeroSpace (a tiling window manager) was used on this machine previously. `home/.yabairc` and `home/.skhdrc` are yabai/skhd translations of its keybindings and retain comments crediting the original AeroSpace bindings they came from. AeroSpace itself - including its Homebrew cask, `nikitabobko/tap/aerospace` - was removed from this repo because an upstream cask-definition break started failing `brew bundle` on every rebuild.
 
 ## Password manager (`pass`)
 

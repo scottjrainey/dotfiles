@@ -198,11 +198,6 @@ in
   home.file."Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist";
 
-  # Aerospace was present but commented out in scripts/install.sh, so preserve
-  # the file under home/ without managing the live config yet.
-  # home.file.".config/aerospace/aerospace.toml".source =
-  #   config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/aerospace/aerospace.toml";
-
   home.file.".claude/CLAUDE.md".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
   home.file.".codex/AGENTS.md".source =

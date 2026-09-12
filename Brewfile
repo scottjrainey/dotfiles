@@ -16,13 +16,11 @@ tap "anomalyco/tap"
 tap "asmvik/formulae"
 tap "codecrafters-io/tap"
 tap "kunchenguid/tap"
-tap "nikitabobko/tap"
 tap "supabase/tap"
 tap "withgraphite/tap"
 
 # === Terminal, window manager, fonts ===
 cask "ghostty"
-cask "nikitabobko/tap/aerospace"
 brew "asmvik/formulae/yabai"
 brew "asmvik/formulae/skhd"
 cask "whichspace"
