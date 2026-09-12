@@ -26,7 +26,7 @@ Three homebrew-core formulae, declared in `configuration.nix` and mirrored in `B
 - `gnupg` - provides `gpg` and `gpg-agent`. This is a hard dependency of the `pass` formula, so Homebrew installs it either way; it is declared anyway, because `gpg` is a tool the operator drives directly (key generation, key listing) rather than invisible plumbing.
 - `pinentry-mac` - the native macOS passphrase dialog. **Not** a dependency of anything above; it is an explicit choice, for the reason in the next section.
 
-All three are plain (non-tap-qualified) homebrew-core formulae, so none of them needs a `homebrew.taps` entry and none is touched by `bootstrap.sh` Step 8's `brew trust` parse.
+All three are plain (non-tap-qualified) homebrew-core formulae, so none of them needs a `homebrew.taps` entry and none is touched by `scripts/trust-homebrew-taps.sh`'s `brew trust` parse.
 
 Homebrew, not Nix, on purpose. `pass` was requested as a Homebrew formula, and its formula hard-depends on Homebrew's `gnupg` - so a `pkgs.gnupg` from `home.nix` would be a *second*, differently-configured GPG installation racing the first for `~/.gnupg` and for `gpg` on `PATH`, not a replacement for it. One GPG is the whole point.
 
