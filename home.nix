@@ -126,6 +126,10 @@ in
   # Edit-in-place: the real files stay in this repo, and $HOME points at them.
   home.file.".config/btop/btop.conf".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/btop/btop.conf";
+  # Vendored theme(s) so color_theme in btop.conf can reference a theme by
+  # bare name instead of an absolute, version-pinned package install path.
+  home.file.".config/btop/themes".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/btop/themes";
   home.file.".config/ccstatusline".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/ccstatusline";
   home.file.".config/gh-dash/config.yml".source =
