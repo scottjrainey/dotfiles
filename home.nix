@@ -63,6 +63,10 @@ in
     XDG_CACHE_HOME = "${config.home.homeDirectory}/.cache";
     XDG_DATA_HOME = "${config.home.homeDirectory}/.local/share";
     RIPGREP_CONFIG_PATH = "${config.home.homeDirectory}/.config/ripgrep/config";
+    CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING = "1";
+    CLAUDE_CODE_DISABLE_AUTO_MEMORY = "1";
+    CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY = "1";
+    CLAUDE_CODE_AUTO_COMPACT_WINDOW = "500000";
   };
 
   home.sessionPath = [
