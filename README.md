@@ -42,8 +42,7 @@ cd dotfiles
 7. Installs the gh-dash `gh` CLI extension.
 8. Trusts every tap and tap-qualified package named in `Brewfile`.
 9. Loads the WhichSpace LaunchAgent.
-10. Loads the firstmate home backup LaunchAgent (see [docs/firstmate-home-backup.md](docs/firstmate-home-backup.md)).
-11. Loads the sleepwatcher LaunchAgent that works around a WhichSpace wake bug (see [docs/whichspace-wake-reset.md](docs/whichspace-wake-reset.md)).
+10. Loads the sleepwatcher LaunchAgent that works around a WhichSpace wake bug (see [docs/whichspace-wake-reset.md](docs/whichspace-wake-reset.md)).
 
 oh-my-zsh, zsh-autosuggestions, Starship, and fzf are Nix packages pulled in by `home.nix`'s `programs.*` modules during that switch - no separate install step. mise is installed as a Homebrew formula in the same switch instead (see Notes).
 

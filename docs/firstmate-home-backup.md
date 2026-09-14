@@ -26,7 +26,7 @@ The backup target must therefore be a **private** repository, and `fm-home-backu
     printf '%s\n' "$HOME/repos/firstmate" > ~/.config/fm-home-backup/home
 
 The `home` file names the primary firstmate home.
-It is only consulted when `FM_HOME` is not already set in the environment, which is the case for the scheduled job.
+It is only consulted when `FM_HOME` is not already set in the environment, which is the case for the watcher check.
 Nothing else is configured, and no path or repository name is hardcoded anywhere in this repository.
 
 Confirm the setup without publishing anything:
@@ -66,7 +66,7 @@ Print the plan first; it writes nothing without `--apply`.
 `--into` must already exist, and a populated `data/` or `config/` there is refused unless `--force` is also given.
 Restore never touches `state/` or `projects/` under the destination, so it is safe to run against a live home to recover a single lost tree.
 
-Restore refuses non-zero if the hourly backup happens to be running, naming the lock and the pid holding it; wait for that run to finish and re-run.
+Restore refuses non-zero if a backup happens to be running, naming the lock and the pid holding it; wait for that run to finish and re-run.
 It never reports success for a recovery that wrote nothing.
 If a restore is interrupted part way through, it leaves a `.fm-home-backup-restore` directory in the destination holding the trees it had already moved aside, and the next restore refuses until that directory has been inspected and removed.
 
@@ -87,7 +87,7 @@ Rebuilding a whole fleet from nothing:
 
 - **Project clone URLs are not captured.** `data/projects.md` records each project's name and purpose but not its origin URL, and the only place those URLs exist is inside the clones under `projects/`, which this command is forbidden to read. Recovering them means `gh repo list <owner>` or the captain's own memory. Capturing a clone manifest would require allowing read-only git plumbing against `projects/`, which is a deliberate policy change rather than a code change.
 - **Remote secondmate homes are not captured.** A registry record carrying a `host:` field is recorded in `SNAPSHOT` as `unsupported-remote` and named on stderr, and the run exits 3, so a remote home is never silently missed - but it is also never backed up. Back such a home up from its own host until this command grows a remote reader.
-- **A registered local home whose own directory is gone is skipped, not captured.** If a registered secondmate home is missing, is not a directory, or is no longer a seeded secondmate home, and its **parent path still resolves**, that one home is recorded in `SNAPSHOT` as `uncaptured-home` with the reason and named on stderr, every other home including the primary is still captured and pushed, and the run exits 3. This is deliberate: refusing the whole run would mean one renamed directory quietly stops the primary home's memory being backed up at all. An hourly job that keeps exiting 3 means a home needs fixing or unregistering in `data/secondmates.md` - check the log rather than assuming coverage.
+- **A registered local home whose own directory is gone is skipped, not captured.** If a registered secondmate home is missing, is not a directory, or is no longer a seeded secondmate home, and its **parent path still resolves**, that one home is recorded in `SNAPSHOT` as `uncaptured-home` with the reason and named on stderr, every other home including the primary is still captured and pushed, and the run exits 3. This is deliberate: refusing the whole run would mean one renamed directory quietly stops the primary home's memory being backed up at all. A watcher check that keeps waking firstmate over this means a home needs fixing or unregistering in `data/secondmates.md` - do not assume coverage just because the watcher stayed quiet once.
 - **An unmounted volume is the exception: it aborts the whole run.** If a registered home's **parent path** cannot be resolved either - the canonical case being `home: /Volumes/<name>/...` when that volume is not mounted, because macOS removes the whole `/Volumes/<name>` tree - the run refuses with exit 1 and pushes nothing, so no home is backed up that hour. The skip above cannot apply, because firstmate's shared registry binding validator (`secondmate_registry_validate_bindings`, sourced from the firstmate repo) rejects the registry as unusable before this command's per-home loop is ever reached, with `secondmate registry is unusable: unresolvable secondmate home for <id>: <path>`. Remedy for now: mount the volume, or unregister that home in `data/secondmates.md`. Widening this to a per-home skip means changing the shared validator in the firstmate repo, which is deliberately out of scope for this command.
 - **The backup repo's history is permanent.** A credential that reaches it cannot be removed by deleting the file later, which is why credential-shaped files are refused rather than skipped.
 
