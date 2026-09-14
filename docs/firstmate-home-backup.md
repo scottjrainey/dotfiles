@@ -39,21 +39,18 @@ Then take the first real snapshot:
 
 ## Schedule
 
-The hourly job is `home/Library/LaunchAgents/com.scottjrainey.fm-home-backup.plist`, linked into `~/Library/LaunchAgents` by `home.nix` and loaded by `bootstrap.sh` Step 10.
-Like every other file under `home/`, it needs its own explicit `home.file` entry in `home.nix`; there is no auto-discovery.
-A `darwin-rebuild switch` places the plist but does not load it, so a newly added or edited agent needs one of:
+The supported trigger is a watcher check, not a scheduled job: `state/fm-home-backup.check.sh` in the main firstmate home runs `fm-home-backup.sh backup` on roughly every firstmate watcher sweep (about every 5 minutes), so the backup rides firstmate's own poll cycle instead of a separate OS-level schedule.
 
-    launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.scottjrainey.fm-home-backup.plist
-    launchctl kickstart -k "gui/$(id -u)/com.scottjrainey.fm-home-backup"
+That check file must be registered one time before it runs:
 
-Each run appends one timestamped block to `~/Library/Logs/fm-home-backup.log`.
-An unchanged fleet logs a single `no changes` line, so the log grows by a few kilobytes a year and needs no rotation.
-Check the last few runs with:
+    bin/fm-check-register.sh fm-home-backup
 
-    tail -20 ~/Library/Logs/fm-home-backup.log
+See that command's own `--help` for the exact mechanics and what registration binds; this doc does not restate it. Re-register after any edit to `state/fm-home-backup.check.sh` itself, since the watcher refuses to run a custom check whose bytes no longer match what was registered.
+
+A successful run is silent by design: the watcher check contract is to print nothing on a routine pass and speak up only when firstmate should wake. A failing backup does not surface immediately either - the check lets `FAIL_THRESHOLD` (3) consecutive failures accumulate, roughly 15 minutes at the default sweep, before it wakes firstmate with the last failure's tail output. That threshold exists because this runs on a laptop that sleeps constantly, and a single failed push during a sleep/wake boundary is not worth an interruption. In other words: no news from the watcher is the expected good outcome, and firstmate's own wake-up is how a persistent failure is observed - there is no separate log file to tail.
 
 The job clones and pushes over HTTPS using `gh` as git's credential helper, which is the same authentication `gh repo view` already needs for the privacy check.
-If a scheduled run logs an authentication failure while the same command works in a terminal, confirm that helper is registered:
+If the watcher check reports an authentication failure, confirm that helper is registered:
 
     gh auth status
     gh auth setup-git
@@ -106,5 +103,5 @@ The suite looks in `~/repos/firstmate` by default; point it elsewhere with `FM_H
 ## If this moves into the firstmate repo
 
 The command is written to firstmate's `bin/` conventions and resolves `FM_ROOT` from its own location first, so dropping it into `bin/fm-home-backup.sh` needs no edit to the command itself.
-What is dotfiles-specific is exactly the "Schedule" section above and the `home.nix` and `bootstrap.sh` wiring it describes; everything else in this document travels with the command.
+The trigger described in "Schedule" above already lives in the firstmate repo (`state/fm-home-backup.check.sh`, registered via `bin/fm-check-register.sh`), not in dotfiles, so nothing in that section is dotfiles-specific anymore; everything in this document travels with the command.
 `tests/fm-home-backup.test.sh` moves as-is, because the one path that differs between the two repos - `bin/` versus `home/.local/bin/` - is resolved by `tests/lib.sh` as `FM_BIN_DIR` rather than by the test file.

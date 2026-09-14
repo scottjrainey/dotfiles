@@ -138,23 +138,7 @@ else
   echo "    WhichSpace.app not found in /Applications, skipping LaunchAgent load"
 fi
 
-echo "==> Step 10: load the firstmate home backup LaunchAgent"
-# The agent is inert until ~/.config/fm-home-backup/target names a PRIVATE repo;
-# until then every run refuses and logs the setup steps rather than doing
-# anything. See docs/firstmate-home-backup.md.
-FM_BACKUP_PLIST="$HOME/Library/LaunchAgents/com.scottjrainey.fm-home-backup.plist"
-if [ -f "$FM_BACKUP_PLIST" ]; then
-  launchctl bootstrap "gui/$(id -u)" "$FM_BACKUP_PLIST" 2>/dev/null \
-    || launchctl kickstart -k "gui/$(id -u)/com.scottjrainey.fm-home-backup" 2>/dev/null \
-    || echo "    WARNING: could not load the fm-home-backup LaunchAgent"
-  if [ ! -f "$HOME/.config/fm-home-backup/target" ]; then
-    echo "    Not configured yet - see docs/firstmate-home-backup.md for the one-time setup"
-  fi
-else
-  echo "    plist not linked yet, skipping (re-run bootstrap.sh after a switch)"
-fi
-
-echo "==> Step 11: load the sleepwatcher LaunchAgent (WhichSpace wake fix)"
+echo "==> Step 10: load the sleepwatcher LaunchAgent (WhichSpace wake fix)"
 # See docs/whichspace-wake-reset.md. Fires home/.local/bin/whichspace-wake-reset.sh
 # on system wake (including background DarkWake); harmless no-op if WhichSpace
 # isn't running.

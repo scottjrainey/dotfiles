@@ -80,9 +80,6 @@ This repo is tailored to Scott's machine, username, and package choices, so it i
 `home.nix` then uses `mkOutOfStoreSymlink` so targets such as `~/.config/nvim` point at files under `~/.dotfiles/home/.config/nvim`.
 This keeps the repo as the source of truth while allowing normal edit-in-place workflows.
 
-The firstmate home backup LaunchAgent (`com.scottjrainey.fm-home-backup`) is installed the same way and runs `home/.local/bin/fm-home-backup.sh` hourly.
-It stays inert until a private backup repository is configured; see [docs/firstmate-home-backup.md](docs/firstmate-home-backup.md) for the one-time setup and for how to restore a home.
-
 The WhichSpace LaunchAgent is installed by symlinking `home/Library/LaunchAgents/io.gechr.WhichSpace.plist` into `~/Library/LaunchAgents`.
 The plist is present at login; if immediate loading is needed after a manual edit, use `launchctl` or log out and back in.
 
