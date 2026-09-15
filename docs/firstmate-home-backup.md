@@ -26,7 +26,7 @@ The backup target must therefore be a **private** repository, and `fm-home-backu
     printf '%s\n' "$HOME/repos/firstmate" > ~/.config/fm-home-backup/home
 
 The `home` file names the primary firstmate home.
-It is only consulted when `FM_HOME` is not already set in the environment, which is the case for the scheduled job.
+It is only consulted when `FM_HOME` is not already set in the environment, which is the case for the watcher check.
 Nothing else is configured, and no path or repository name is hardcoded anywhere in this repository.
 
 Confirm the setup without publishing anything:
@@ -39,21 +39,18 @@ Then take the first real snapshot:
 
 ## Schedule
 
-The hourly job is `home/Library/LaunchAgents/com.scottjrainey.fm-home-backup.plist`, linked into `~/Library/LaunchAgents` by `home.nix` and loaded by `bootstrap.sh` Step 10.
-Like every other file under `home/`, it needs its own explicit `home.file` entry in `home.nix`; there is no auto-discovery.
-A `darwin-rebuild switch` places the plist but does not load it, so a newly added or edited agent needs one of:
+The supported trigger is a watcher check, not a scheduled job: `state/fm-home-backup.check.sh` in the main firstmate home runs `fm-home-backup.sh backup` on roughly every firstmate watcher sweep (about every 5 minutes), so the backup rides firstmate's own poll cycle instead of a separate OS-level schedule.
 
-    launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.scottjrainey.fm-home-backup.plist
-    launchctl kickstart -k "gui/$(id -u)/com.scottjrainey.fm-home-backup"
+That check file must be registered one time before it runs:
 
-Each run appends one timestamped block to `~/Library/Logs/fm-home-backup.log`.
-An unchanged fleet logs a single `no changes` line, so the log grows by a few kilobytes a year and needs no rotation.
-Check the last few runs with:
+    bin/fm-check-register.sh fm-home-backup
 
-    tail -20 ~/Library/Logs/fm-home-backup.log
+See that command's own `--help` for the exact mechanics and what registration binds; this doc does not restate it. Re-register after any edit to `state/fm-home-backup.check.sh` itself, since the watcher refuses to run a custom check whose bytes no longer match what was registered.
+
+A successful run is silent by design: the watcher check contract is to print nothing on a routine pass and speak up only when firstmate should wake. A failing backup does not surface immediately either - the check lets `FAIL_THRESHOLD` (3) consecutive failures accumulate, roughly 15 minutes at the default sweep, before it wakes firstmate with the last failure's tail output. That threshold exists because this runs on a laptop that sleeps constantly, and a single failed push during a sleep/wake boundary is not worth an interruption. In other words: no news from the watcher is the expected good outcome, and firstmate's own wake-up is how a persistent failure is observed - there is no separate log file to tail.
 
 The job clones and pushes over HTTPS using `gh` as git's credential helper, which is the same authentication `gh repo view` already needs for the privacy check.
-If a scheduled run logs an authentication failure while the same command works in a terminal, confirm that helper is registered:
+If the watcher check reports an authentication failure, confirm that helper is registered:
 
     gh auth status
     gh auth setup-git
@@ -69,7 +66,7 @@ Print the plan first; it writes nothing without `--apply`.
 `--into` must already exist, and a populated `data/` or `config/` there is refused unless `--force` is also given.
 Restore never touches `state/` or `projects/` under the destination, so it is safe to run against a live home to recover a single lost tree.
 
-Restore refuses non-zero if the hourly backup happens to be running, naming the lock and the pid holding it; wait for that run to finish and re-run.
+Restore refuses non-zero if a backup happens to be running, naming the lock and the pid holding it; wait for that run to finish and re-run.
 It never reports success for a recovery that wrote nothing.
 If a restore is interrupted part way through, it leaves a `.fm-home-backup-restore` directory in the destination holding the trees it had already moved aside, and the next restore refuses until that directory has been inspected and removed.
 
@@ -90,7 +87,7 @@ Rebuilding a whole fleet from nothing:
 
 - **Project clone URLs are not captured.** `data/projects.md` records each project's name and purpose but not its origin URL, and the only place those URLs exist is inside the clones under `projects/`, which this command is forbidden to read. Recovering them means `gh repo list <owner>` or the captain's own memory. Capturing a clone manifest would require allowing read-only git plumbing against `projects/`, which is a deliberate policy change rather than a code change.
 - **Remote secondmate homes are not captured.** A registry record carrying a `host:` field is recorded in `SNAPSHOT` as `unsupported-remote` and named on stderr, and the run exits 3, so a remote home is never silently missed - but it is also never backed up. Back such a home up from its own host until this command grows a remote reader.
-- **A registered local home whose own directory is gone is skipped, not captured.** If a registered secondmate home is missing, is not a directory, or is no longer a seeded secondmate home, and its **parent path still resolves**, that one home is recorded in `SNAPSHOT` as `uncaptured-home` with the reason and named on stderr, every other home including the primary is still captured and pushed, and the run exits 3. This is deliberate: refusing the whole run would mean one renamed directory quietly stops the primary home's memory being backed up at all. An hourly job that keeps exiting 3 means a home needs fixing or unregistering in `data/secondmates.md` - check the log rather than assuming coverage.
+- **A registered local home whose own directory is gone is skipped, not captured.** If a registered secondmate home is missing, is not a directory, or is no longer a seeded secondmate home, and its **parent path still resolves**, that one home is recorded in `SNAPSHOT` as `uncaptured-home` with the reason and named on stderr, every other home including the primary is still captured and pushed, and the run exits 3. This is deliberate: refusing the whole run would mean one renamed directory quietly stops the primary home's memory being backed up at all. A watcher check that keeps waking firstmate over this means a home needs fixing or unregistering in `data/secondmates.md` - do not assume coverage just because the watcher stayed quiet once.
 - **An unmounted volume is the exception: it aborts the whole run.** If a registered home's **parent path** cannot be resolved either - the canonical case being `home: /Volumes/<name>/...` when that volume is not mounted, because macOS removes the whole `/Volumes/<name>` tree - the run refuses with exit 1 and pushes nothing, so no home is backed up that hour. The skip above cannot apply, because firstmate's shared registry binding validator (`secondmate_registry_validate_bindings`, sourced from the firstmate repo) rejects the registry as unusable before this command's per-home loop is ever reached, with `secondmate registry is unusable: unresolvable secondmate home for <id>: <path>`. Remedy for now: mount the volume, or unregister that home in `data/secondmates.md`. Widening this to a per-home skip means changing the shared validator in the firstmate repo, which is deliberately out of scope for this command.
 - **The backup repo's history is permanent.** A credential that reaches it cannot be removed by deleting the file later, which is why credential-shaped files are refused rather than skipped.
 
@@ -106,5 +103,5 @@ The suite looks in `~/repos/firstmate` by default; point it elsewhere with `FM_H
 ## If this moves into the firstmate repo
 
 The command is written to firstmate's `bin/` conventions and resolves `FM_ROOT` from its own location first, so dropping it into `bin/fm-home-backup.sh` needs no edit to the command itself.
-What is dotfiles-specific is exactly the "Schedule" section above and the `home.nix` and `bootstrap.sh` wiring it describes; everything else in this document travels with the command.
+The trigger described in "Schedule" above already lives in the firstmate repo (`state/fm-home-backup.check.sh`, registered via `bin/fm-check-register.sh`), not in dotfiles, so nothing in that section is dotfiles-specific anymore; everything in this document travels with the command.
 `tests/fm-home-backup.test.sh` moves as-is, because the one path that differs between the two repos - `bin/` versus `home/.local/bin/` - is resolved by `tests/lib.sh` as `FM_BIN_DIR` rather than by the test file.

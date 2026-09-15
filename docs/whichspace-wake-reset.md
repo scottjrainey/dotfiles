@@ -41,7 +41,7 @@ The tradeoff is that `-w` also fires on background DarkWake, not only a real int
     launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist
     launchctl kickstart -k "gui/$(id -u)/com.scottjrainey.sleepwatcher"
 
-or a logout/login, or re-running `bootstrap.sh` (Step 11).
+or a logout/login, or re-running `bootstrap.sh` (Step 10).
 A `darwin-rebuild switch` alone (via `./rebuild.sh`) places the plist but does not load it - same as every other LaunchAgent in this repo.
 
 Confirm it's running:

@@ -42,8 +42,7 @@ cd dotfiles
 7. Installs the gh-dash `gh` CLI extension.
 8. Trusts every tap and tap-qualified package named in `Brewfile`.
 9. Loads the WhichSpace LaunchAgent.
-10. Loads the firstmate home backup LaunchAgent (see [docs/firstmate-home-backup.md](docs/firstmate-home-backup.md)).
-11. Loads the sleepwatcher LaunchAgent that works around a WhichSpace wake bug (see [docs/whichspace-wake-reset.md](docs/whichspace-wake-reset.md)).
+10. Loads the sleepwatcher LaunchAgent that works around a WhichSpace wake bug (see [docs/whichspace-wake-reset.md](docs/whichspace-wake-reset.md)).
 
 oh-my-zsh, zsh-autosuggestions, Starship, and fzf are Nix packages pulled in by `home.nix`'s `programs.*` modules during that switch - no separate install step. mise is installed as a Homebrew formula in the same switch instead (see Notes).
 
@@ -79,9 +78,6 @@ This repo is tailored to Scott's machine, username, and package choices, so it i
 `bootstrap.sh` and `rebuild.sh` link this repo to `~/.dotfiles`.
 `home.nix` then uses `mkOutOfStoreSymlink` so targets such as `~/.config/nvim` point at files under `~/.dotfiles/home/.config/nvim`.
 This keeps the repo as the source of truth while allowing normal edit-in-place workflows.
-
-The firstmate home backup LaunchAgent (`com.scottjrainey.fm-home-backup`) is installed the same way and runs `home/.local/bin/fm-home-backup.sh` hourly.
-It stays inert until a private backup repository is configured; see [docs/firstmate-home-backup.md](docs/firstmate-home-backup.md) for the one-time setup and for how to restore a home.
 
 The WhichSpace LaunchAgent is installed by symlinking `home/Library/LaunchAgents/io.gechr.WhichSpace.plist` into `~/Library/LaunchAgents`.
 The plist is present at login; if immediate loading is needed after a manual edit, use `launchctl` or log out and back in.

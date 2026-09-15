@@ -20,11 +20,10 @@
     it triggers is never visible - see the script's header for why that
     makes gating this on display state unnecessary.
 
-    Wrapped in a login zsh, matching com.scottjrainey.fm-home-backup.plist,
-    purely so $HOME expands at run time instead of a machine-specific
-    username being hardcoded into this public repo. sleepwatcher itself is
-    then exec'd so it - not an idle parent shell - is the process launchd
-    supervises and restarts.
+    Wrapped in a login zsh purely so $HOME expands at run time instead of a
+    machine-specific username being hardcoded into this public repo.
+    sleepwatcher itself is then exec'd so it - not an idle parent shell - is
+    the process launchd supervises and restarts.
   -->
   <key>ProgramArguments</key>
   <array>
