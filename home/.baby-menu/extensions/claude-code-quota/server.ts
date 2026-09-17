@@ -12,6 +12,22 @@ let lastGood: Snapshot | undefined;
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
 const windowLabels: Record<string, string> = { five_hour: "five hour", seven_day: "weekly", seven_day_sonnet: "sonnet weekly", seven_day_opus: "opus weekly" };
 
+const KEYCHAIN_SERVICE_PREFIX = "Claude Code-credentials";
+
+async function keychainServiceNames(): Promise<string[]> {
+  try {
+    const { stdout } = await execFileAsync("security", ["dump-keychain"], { timeout: 5_000, maxBuffer: 64 * 1024 * 1024 });
+    const names = new Set<string>();
+    const pattern = /"svce"<blob>="([^"]*)"/g;
+    for (const match of stdout.matchAll(pattern)) {
+      if (match[1].startsWith(KEYCHAIN_SERVICE_PREFIX)) names.add(match[1]);
+    }
+    return [...names];
+  } catch {
+    return [];
+  }
+}
+
 async function candidates() {
   const values: Array<{ token: string; plan?: string; expiresAt?: number; keychain: boolean }> = [];
   const parse = (raw: string, keychain: boolean) => {
@@ -21,7 +37,13 @@ async function candidates() {
       if (typeof token === "string" && (!auth.expiresAt || Number(auth.expiresAt) > Date.now())) values.push({ token, plan: auth.subscriptionType, expiresAt: Number(auth.expiresAt), keychain });
     } catch { /* unusable credential */ }
   };
-  await Promise.all([readFile(join(homedir(), ".claude", ".credentials.json"), "utf8").then((raw) => parse(raw, false)).catch(() => undefined), execFileAsync("security", ["find-generic-password", "-s", "Claude Code-credentials", "-w"], { timeout: 5_000 }).then(({ stdout }) => parse(stdout, true)).catch(() => undefined)]);
+  const serviceNames = await keychainServiceNames();
+  await Promise.all([
+    readFile(join(homedir(), ".claude", ".credentials.json"), "utf8").then((raw) => parse(raw, false)).catch(() => undefined),
+    ...serviceNames.map((service) =>
+      execFileAsync("security", ["find-generic-password", "-s", service, "-w"], { timeout: 5_000 }).then(({ stdout }) => parse(stdout, true)).catch(() => undefined)
+    ),
+  ]);
   return values.sort((a, b) => Number(b.keychain) - Number(a.keychain) || (b.expiresAt ?? 0) - (a.expiresAt ?? 0));
 }
 
