@@ -67,6 +67,9 @@ in
     CLAUDE_CODE_DISABLE_AUTO_MEMORY = "1";
     CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY = "1";
     CLAUDE_AUTOCOMPACT_PCT_OVERRIDE = "50";
+    # Claude Code skips transcript saving when it inherits a stale
+    # CLAUDE_CODE_CHILD_SESSION marker (e.g. leftover in a reused shell); force it on.
+    CLAUDE_CODE_FORCE_SESSION_PERSISTENCE = "1";
   };
 
   home.sessionPath = [
