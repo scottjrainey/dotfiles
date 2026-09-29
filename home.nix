@@ -154,6 +154,9 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/ghostty/config";
   home.file.".config/herdr/config.toml".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/herdr/config.toml";
+  # Only config.toml is linked; hotkeys.toml and theme/ stay superfile-generated.
+  home.file.".config/superfile/config.toml".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/superfile/config.toml";
   home.file.".config/nvim".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/nvim";
   # Legacy source name: ripgreprc.
