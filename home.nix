@@ -127,6 +127,14 @@ in
         # time .zshrc runs.
         eval "$(mise activate zsh)"
       ''
+      ''
+        # atuin is Homebrew-managed (not programs.atuin), so its shell hook
+        # is wired here by hand. It runs after fzf's integration so atuin
+        # owns ctrl-r. See docs/atuin.md.
+        if command -v atuin >/dev/null 2>&1; then
+          eval "$(atuin init zsh)"
+        fi
+      ''
     ];
   };
 

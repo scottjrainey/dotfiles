@@ -34,14 +34,21 @@ cask "font-symbols-only-nerd-font"
 
 # === Pretty viewers & process utilities ===
 # bat-extras extends bat (nix-managed); mprocs is a process-manager TUI;
-# tuicr is a code-review TUI, driven from gh-dash (see home/.config/gh-dash).
+# tuicr is a code-review TUI, driven from gh-dash (see home/.config/gh-dash);
+# superfile is a TUI file manager (the binary is `spf`).
 brew "bat-extras"
 brew "mprocs"
 brew "tuicr"
+brew "superfile"
 
 # === Structured data ===
 # jqp is a jq TUI companion; jq itself is nix-managed.
 brew "jqp"
+
+# === Shell history ===
+# atuin replaces ctrl-r history search; its zsh hook is hand-wired in home.nix
+# and setup notes live in docs/atuin.md.
+brew "atuin"
 
 # === Toolchain version manager ===
 # mise stays on Homebrew's rolling core index instead of nixpkgs so it
