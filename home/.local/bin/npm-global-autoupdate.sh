@@ -138,7 +138,7 @@ rm -f "$DEFER_FILE"
 
 snapshot() { # <outfile>: sorted name@version per installed global package
   local listing
-  listing=$(npm ls -g --depth=0 --parseable --long 2> /dev/null) || return 1
+  listing=$(npm ls -g --depth=0 --parseable --long 2> /dev/null) || true
   printf '%s\n' "$listing" | awk -F: 'NR > 1 && $2 != "" { print $2 }' | sort > "$1"
   [ -s "$1" ]
 }

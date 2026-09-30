@@ -57,6 +57,7 @@ case "\$1" in
     echo "$prefix/lib/node_modules/unpublished:unpublished@0.1.0:"
     if [ -e "$dir/updated" ]; then echo "$prefix/lib/node_modules/gh-axi:gh-axi@2.0.0:"
     else echo "$prefix/lib/node_modules/gh-axi:gh-axi@1.0.0:"; fi
+    [ -e "$dir/lsproblem" ] && exit 1
     ;;
 esac
 EOF
@@ -165,6 +166,13 @@ assert_contains "$(cat "$dir/state/status")" "could not list installed packages"
 assert_absent "$dir/updated" "a broken npm ls must not fall through to an update"
 assert_absent "$dir/state/last-ok" "npm ls failure clears last-ok"
 pass "a broken npm ls fails the run"
+
+dir=$(new_case 1 0 0)
+touch "$dir/lsproblem"
+run "$dir"
+expect_code 0 "$?" "npm ls tree problem with usable listing"
+assert_present "$dir/updated" "a nonzero npm ls with a usable listing must still update"
+pass "a nonzero npm ls exit with a non-empty listing is tolerated"
 
 dir=$(new_case 1 0 0)
 run "$dir"
