@@ -151,4 +151,16 @@ else
   echo "    plist not linked yet, skipping (re-run bootstrap.sh after a switch)"
 fi
 
+echo "==> Step 11: load the npm-global-autoupdate LaunchAgent"
+# See docs/npm-global-autoupdate.md. Daily update of the global npm tools. Not
+# kickstarted when already loaded: that would run an update right now.
+NPM_AUTOUPDATE_PLIST="$HOME/Library/LaunchAgents/com.scottjrainey.npm-global-autoupdate.plist"
+if [ -f "$NPM_AUTOUPDATE_PLIST" ]; then
+  launchctl bootstrap "gui/$(id -u)" "$NPM_AUTOUPDATE_PLIST" 2>/dev/null \
+    || launchctl print "gui/$(id -u)/com.scottjrainey.npm-global-autoupdate" >/dev/null 2>&1 \
+    || echo "    WARNING: could not load the npm-global-autoupdate LaunchAgent"
+else
+  echo "    plist not linked yet, skipping (re-run bootstrap.sh after a switch)"
+fi
+
 echo "==> Done. Use ./rebuild.sh for future changes."

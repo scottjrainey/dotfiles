@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.scottjrainey.npm-global-autoupdate</string>
+  <!--
+    Updates the global npm tools in ~/.npm-global and re-runs their setup hooks
+    (home/.local/bin/npm-global-autoupdate.sh, docs/npm-global-autoupdate.md).
+
+    Run through a login zsh rather than calling the script directly. launchd
+    hands a user agent almost no PATH and does not expand variables inside
+    plist values, so a direct invocation would have to hardcode this machine's
+    username and the node/npm directories into a public repo. A login shell
+    resolves $HOME and the full PATH (npm) at run time instead.
+    Output is appended to a log under ~/Library/Logs; the script itself writes
+    the pass/fail status file and raises the failure notification.
+  -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-l</string>
+    <string>-c</string>
+    <string>LOG="$HOME/Library/Logs/npm-global-autoupdate.log"; mkdir -p "$HOME/Library/Logs"; { printf -- '--- %s\n' "$(date +%Y-%m-%dT%H:%M:%S%z)"; "$HOME/.local/bin/npm-global-autoupdate.sh"; } &gt;&gt; "$LOG" 2&gt;&amp;1</string>
+  </array>
+  <!--
+    Daily at 04:30, an idle window: the script also defers on its own while any
+    tool in the prefix is running, so this is belt and braces. A run missed
+    because the Mac was asleep fires shortly after wake. RunAtLoad is false so a
+    rebuild or login never starts an update into a session that is starting up.
+  -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>4</integer>
+    <key>Minute</key>
+    <integer>30</integer>
+  </dict>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LowPriorityIO</key>
+  <true/>
+</dict>
+</plist>
