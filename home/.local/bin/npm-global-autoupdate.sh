@@ -15,7 +15,11 @@
 #   1. Defers (exit 0, state "deferred") while any process is running out of
 #      the prefix. npm replaces package directories in place, which can pull
 #      files out from under a live agent session; waiting for the next
-#      scheduled run is cheaper than breaking one.
+#      scheduled run is cheaper than breaking one. Deferrals are counted: the
+#      DEFER_LIMIT-th consecutive one (about three days of daily runs) is a
+#      failure, so a tool that is never idle cannot silently stop updating. A
+#      lock dir older than LOCK_STALE_MINUTES (a run killed before its EXIT
+#      trap) is stale and is taken over.
 #   2. Snapshots installed name@version, runs `npm update -g` on every package
 #      the registry knows (one that returns E404, like prime-agent today, is
 #      set aside and named in the log and status rather than failing the lot),
@@ -23,16 +27,17 @@
 #   3. Verifies with `npm outdated -g`: anything still outdated after the
 #      update is a failure, not a shrug.
 #   4. If any package changed (or no run has ever succeeded), re-runs
-#      `setup hooks` for every installed tool that offers it. Tools are found by
-#      probing `<tool> setup --help` for a "setup hooks" subcommand instead of a
-#      hardcoded list, so a newly installed tool with the same contract is
-#      covered without an edit here. The hooks only touch agent settings and
-#      plugin files; nothing under ~/.claude/skills or ~/.agents/skills.
+#      `setup hooks` for every tool in KNOWN_TOOLS that is installed and offers
+#      it. Each candidate is probed with `<tool> setup --help` (bounded by
+#      SETUP_PROBE_TIMEOUT seconds) for a "setup hooks" subcommand; nothing
+#      outside KNOWN_TOOLS is ever executed. The hooks only touch agent settings
+#      and plugin files; nothing under ~/.claude/skills or ~/.agents/skills.
 #
 # FAILING VISIBLY
 # Every run ends by writing one line to $STATE_DIR/status:
 #   <ok|deferred|failed> <epoch> <iso-time> <message>
-# A failure also exits nonzero, fires a macOS notification, and leaves npm's own
+# A failure clears $STATE_DIR/last-ok so the next run re-runs setup hooks. A
+# failure also exits nonzero, fires a macOS notification, and leaves npm's own
 # output in the log the LaunchAgent redirects into (~/Library/Logs). A run never
 # reports ok when the update, the outdated check, or a setup step failed.
 #
@@ -40,6 +45,9 @@
 #   NPM_GLOBAL_PREFIX                prefix to manage (default $HOME/.npm-global)
 #   NPM_GLOBAL_AUTOUPDATE_STATE_DIR  status and lock dir
 #                                    (default ~/.local/state/npm-global-autoupdate)
+#   NPM_GLOBAL_SETUP_PROBE_TIMEOUT   seconds allowed per `setup --help` probe (default 5)
+#   NPM_GLOBAL_LOCK_STALE_MINUTES    age after which a lock dir is stale (default 180)
+#   NPM_GLOBAL_DEFER_LIMIT           consecutive deferrals that become a failure (default 3)
 
 set -eu
 
@@ -65,6 +73,11 @@ PREFIX=${NPM_GLOBAL_PREFIX:-$HOME/.npm-global}
 STATE_DIR=${NPM_GLOBAL_AUTOUPDATE_STATE_DIR:-$HOME/.local/state/npm-global-autoupdate}
 STATUS_FILE="$STATE_DIR/status"
 LOCK_DIR="$STATE_DIR/lock"
+DEFER_FILE="$STATE_DIR/deferrals"
+KNOWN_TOOLS="gh-axi lavish-axi tasks-axi chrome-devtools-axi quota-axi pi prime-agent"
+SETUP_PROBE_TIMEOUT=${NPM_GLOBAL_SETUP_PROBE_TIMEOUT:-5}
+LOCK_STALE_MINUTES=${NPM_GLOBAL_LOCK_STALE_MINUTES:-180}
+DEFER_LIMIT=${NPM_GLOBAL_DEFER_LIMIT:-3}
 
 log() { printf '%s %s\n' "$(date +%Y-%m-%dT%H:%M:%S%z)" "$*"; }
 
@@ -76,6 +89,7 @@ write_status() { # <state> <message>
 
 fail() { # <message>
   log "FAILED: $1" >&2
+  rm -f "$STATE_DIR/last-ok"
   write_status failed "$1"
   if command -v osascript > /dev/null 2>&1; then
     osascript -e "display notification \"$1\" with title \"npm-global-autoupdate failed\"" > /dev/null 2>&1 || true
@@ -83,14 +97,29 @@ fail() { # <message>
   exit 1
 }
 
+defer() { # <message>: quiet until DEFER_LIMIT consecutive deferrals, then a failure
+  local n
+  n=$(cat "$DEFER_FILE" 2> /dev/null || echo 0)
+  n=$((n + 1))
+  printf '%s\n' "$n" > "$DEFER_FILE"
+  if [ "$n" -ge "$DEFER_LIMIT" ]; then
+    fail "deferred $n runs in a row: $1"
+  fi
+  log "$1; deferring to the next scheduled run ($n of $DEFER_LIMIT)"
+  write_status deferred "$1"
+  exit 0
+}
+
 [ -d "$PREFIX" ] || { mkdir -p "$STATE_DIR"; fail "npm prefix $PREFIX does not exist"; }
 mkdir -p "$STATE_DIR"
 
 # Single-flight: a still-running earlier update must not be raced.
+if [ -d "$LOCK_DIR" ] && [ -n "$(find "$LOCK_DIR" -maxdepth 0 -mmin "+$LOCK_STALE_MINUTES" 2> /dev/null)" ]; then
+  log "removing stale lock $LOCK_DIR (older than $LOCK_STALE_MINUTES minutes)"
+  rmdir "$LOCK_DIR" 2> /dev/null || true
+fi
 if ! mkdir "$LOCK_DIR" 2> /dev/null; then
-  log "another run holds $LOCK_DIR; deferring"
-  write_status deferred "another run holds the lock"
-  exit 0
+  defer "another run holds the lock"
 fi
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/npm-global-autoupdate.XXXXXX")
 cleanup() { rm -rf "$WORK"; rmdir "$LOCK_DIR" 2> /dev/null || true; }
@@ -103,13 +132,28 @@ command -v npm > /dev/null 2>&1 || fail "npm not found on PATH"
 # Never update underneath a live session. The pattern is the prefix path with a
 # trailing slash, which matches both the bin/ symlinks and lib/node_modules/.
 if pgrep -f "$PREFIX/" > /dev/null 2>&1; then
-  log "processes are running out of $PREFIX; deferring to the next scheduled run"
-  write_status deferred "tools in $PREFIX are running"
-  exit 0
+  defer "tools in $PREFIX are running"
 fi
+rm -f "$DEFER_FILE"
 
 snapshot() { # <outfile>: sorted name@version per installed global package
-  npm ls -g --depth=0 --parseable --long 2> /dev/null | awk -F: 'NR > 1 && $2 != "" { print $2 }' | sort > "$1"
+  local listing
+  listing=$(npm ls -g --depth=0 --parseable --long 2> /dev/null) || return 1
+  printf '%s\n' "$listing" | awk -F: 'NR > 1 && $2 != "" { print $2 }' | sort > "$1"
+  [ -s "$1" ]
+}
+
+run_bounded() { # <seconds> <outfile> <cmd...>: stdin closed, killed after <seconds>
+  local secs=$1 out=$2 pid watcher rc=0
+  shift 2
+  "$@" < /dev/null > "$out" 2>&1 &
+  pid=$!
+  (sleep "$secs"; kill "$pid" 2> /dev/null) > /dev/null 2>&1 &
+  watcher=$!
+  wait "$pid" || rc=$?
+  kill "$watcher" 2> /dev/null || true
+  wait "$watcher" 2> /dev/null || true
+  return "$rc"
 }
 
 log "snapshotting installed packages"
@@ -155,17 +199,18 @@ if ! cmp -s "$WORK/before" "$WORK/after"; then
   diff "$WORK/before" "$WORK/after" | grep '^[<>]' || true
 fi
 
-# last-ok is touched only by a fully successful run, so a first run, or one
-# after failures, still re-runs setup even when no package version moved.
+# last-ok is touched only by a fully successful run and removed by fail(), so a
+# first run, or one after a failure, still re-runs setup when no version moved.
 prior_ok=0
 [ -f "$STATE_DIR/last-ok" ] && prior_ok=1
 
 setup_failed=''
 if [ "$changed" = 1 ] || [ "$prior_ok" = 0 ]; then
-  for bin in "$PREFIX"/bin/*; do
+  for name in $KNOWN_TOOLS; do
+    bin="$PREFIX/bin/$name"
     [ -x "$bin" ] || continue
-    name=$(basename "$bin")
-    "$bin" setup --help < /dev/null 2>&1 | grep -q 'setup hooks' || continue
+    run_bounded "$SETUP_PROBE_TIMEOUT" "$WORK/probe" "$bin" setup --help || true
+    grep -q 'setup hooks' "$WORK/probe" || continue
     log "$name setup hooks"
     "$bin" setup hooks < /dev/null || setup_failed="$setup_failed $name"
   done
