@@ -42,7 +42,7 @@ The tradeoff is that `-w` also fires on background DarkWake, not only a real int
     launchctl kickstart -k "gui/$(id -u)/com.scottjrainey.sleepwatcher"
 
 or a logout/login, or re-running `bootstrap.sh` (Step 10).
-A `darwin-rebuild switch` alone (via `./rebuild.sh`) places the plist but does not load it - same as every other LaunchAgent in this repo.
+A `darwin-rebuild switch` alone (via `./rebuild.sh`) places the plist but does not load it - same as every LaunchAgent in this repo except npm-global-autoupdate, which `rebuild.sh` also loads.
 
 Confirm it's running:
 
