@@ -67,7 +67,7 @@ This repo is tailored to Scott's machine, username, and package choices, so it i
 - `home.nix` holds Nix CLI packages, environment variables, shell config (`programs.zsh`, oh-my-zsh, Starship, fzf, and mise's and atuin's hand-wired shell activation), and all Home Manager symlinks.
 - `home/` mirrors the target home-directory tree.
 - `bootstrap.sh` handles first-machine setup.
-- `rebuild.sh` reapplies the flake after bootstrap, trusting any newly-added Homebrew taps first.
+- `rebuild.sh` reapplies the flake after bootstrap, trusting any newly-added Homebrew taps first, then loading the npm-global-autoupdate LaunchAgent after a successful switch (see [docs/npm-global-autoupdate.md](docs/npm-global-autoupdate.md)).
 - `Brewfile` must be kept in sync by hand with `configuration.nix`'s Homebrew taps, formulae, and casks - see `scripts/trust-homebrew-taps.sh` and AGENTS.md's "Package management" section for why.
 - `docs/` holds operator documentation for the scheduled jobs and the hand-configured tools this repo installs.
 - `tests/` holds behavior tests for the scripts under `home/.local/bin`; each is `<subject>.test.sh` and runs standalone.
