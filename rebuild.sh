@@ -23,4 +23,11 @@ fi
 "$DIR/scripts/trust-homebrew-taps.sh"
 
 cd "$DIR"
-exec sudo darwin-rebuild switch --flake .#mac --impure
+# No exec: a switch only places LaunchAgent plists, so load the ones that need
+# arming after it, then exit with the switch's own status.
+status=0
+sudo darwin-rebuild switch --flake .#mac --impure || status=$?
+if [ "$status" -eq 0 ]; then
+  "$DIR/scripts/load-npm-autoupdate-agent.sh"
+fi
+exit "$status"

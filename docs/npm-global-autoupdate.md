@@ -13,7 +13,7 @@ They were installed by hand and nothing updated them, while firstmate keeps rais
 | --- | --- |
 | Script | `home/.local/bin/npm-global-autoupdate.sh` (linked to `~/.local/bin/` in `home.nix`) |
 | Schedule | `home/Library/LaunchAgents/com.scottjrainey.npm-global-autoupdate.plist`, daily 04:30, no `RunAtLoad` |
-| Loaded by | `bootstrap.sh` Step 11 (a `darwin-rebuild switch` only places the plist), or logout/login |
+| Loaded by | `scripts/load-npm-autoupdate-agent.sh`, called by `rebuild.sh` after a successful switch and by `bootstrap.sh` Step 11 (a `darwin-rebuild switch` alone only places the plist), or logout/login. Idempotent, and never kickstarts, so loading does not run an update |
 | Log | `~/Library/Logs/npm-global-autoupdate.log` (appended, one `---` header per run) |
 | Status | `~/.local/state/npm-global-autoupdate/status` |
 | Tests | `tests/npm-global-autoupdate.test.sh` |
