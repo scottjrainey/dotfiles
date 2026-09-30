@@ -189,6 +189,8 @@ in
   # script added under home/.local/bin needs its own line here.
   home.file.".local/bin/fm-home-backup.sh".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/fm-home-backup.sh";
+  home.file.".local/bin/npm-global-autoupdate.sh".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/npm-global-autoupdate.sh";
   home.file.".local/bin/whichspace-wake-reset.sh".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/whichspace-wake-reset.sh";
   home.file.".local/bin/yabai-stack-focus".source =
@@ -211,6 +213,11 @@ in
   # places the plist; loading it is bootstrap.sh's Step 10, or a logout/login.
   home.file."Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist";
+
+  # Daily global npm tool updater (docs/npm-global-autoupdate.md). Places the
+  # plist only; loading it is bootstrap.sh's Step 11, or a logout/login.
+  home.file."Library/LaunchAgents/com.scottjrainey.npm-global-autoupdate.plist".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/Library/LaunchAgents/com.scottjrainey.npm-global-autoupdate.plist";
 
   home.file.".claude/CLAUDE.md".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
