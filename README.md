@@ -117,6 +117,8 @@ The three Nerd Font casks stay as Homebrew casks to match the current setup.
 
 `atuin` and `superfile` are Homebrew formulae for the same reason as mise: fast-moving CLI tools that homebrew-core tracks within days. Both live in homebrew-core, so neither needs a tap or `brew trust`. `programs.atuin` is intentionally not enabled; the `atuin init zsh` hook is hand-written into `programs.zsh.initContent` (guarded by `command -v atuin`, so a shell opened before the first switch installs it doesn't error). Superfile needs no shell wiring - run it as `spf`; only its `config.toml` is tracked (`home/.config/superfile/`, transparent background to match ghostty/herdr/btop), while `hotkeys.toml` and `theme/` stay superfile-generated. Both upgrade with `brew update && brew upgrade atuin superfile`. See `docs/atuin.md` for atuin's one-time setup.
 
+`python313` in `home.packages` is the global, no-project `python3` (Python 3.13); mise has no global config and only selects a Python inside projects that pin one. `.zprofile` prepends the per-user and system Nix profiles after `brew shellenv`, so login shells resolve Nix tools ahead of Homebrew and Apple's `/usr/bin`, matching the order nix-darwin's `/etc/zshenv` sets for a scrubbed zsh. It ships without pip and lives in the read-only Nix store, so there is no global `pip install`; use `python3 -m venv`, `uv`, or a mise-pinned project instead.
+
 `nodejs_22` provides Node 22 and the Corepack command; there is no separate npm-managed `corepack` install in the Nix setup.
 
 Homebrew cleanup warning: `configuration.nix` sets `homebrew.onActivation.cleanup = "zap"`.

@@ -42,6 +42,7 @@ in
     xh
     nmap
     uv
+    python313 # Global no-project python3; mise still owns per-project pins.
     nodejs_22 # Includes corepack.
     shellcheck
     just
