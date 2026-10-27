@@ -14,7 +14,7 @@ Running the switch builds:
 - Homebrew casks for GUI apps, fonts, and macOS app bundles.
 - Homebrew formulae for tapped packages, macOS services, and formulae intentionally left in Homebrew.
 - Zsh, oh-my-zsh, autosuggestions, aliases, Starship, and fzf shell integration declared in `home.nix` via Home Manager's `programs.*` modules (no manual install scripts, no symlinked `.zshrc`). mise's binary comes from Homebrew instead, with its shell activation hand-wired into the same generated `.zshrc`. Atuin (shell history search, see `docs/atuin.md`) and superfile (`spf`, a TUI file manager) are Homebrew formulae too; atuin's hook is hand-wired the same way.
-- Neovim, Ghostty, tmux, herdr, ripgrep, btop, yabai, skhd, Starship's `starship.toml`, gh-dash's `config.yml`, ccstatusline, gpg-agent, and baby-menu configs as edit-in-place symlinks.
+- Neovim, Ghostty, tmux, herdr, ripgrep, btop, yabai, skhd, AeroSpace (on trial, see [docs/aerospace-trial.md](docs/aerospace-trial.md)), Starship's `starship.toml`, gh-dash's `config.yml`, ccstatusline, gpg-agent, and baby-menu configs as edit-in-place symlinks.
 - One shared `home/AGENTS.md` installed for Claude, Codex, and opencode.
 
 ## Prerequisites
@@ -86,7 +86,7 @@ WhichSpace's menu bar can render wrong after the Mac wakes from sleep; `com.scot
 
 WhichSpace's own preferences (badges, per-space colors, toggles) are not managed by nix - the app stores per-space colors as binary-archived `NSColor` blobs that don't map cleanly to `system.defaults`. Instead they are captured in `whichspace/WhichSpaceSettings.json`, the app's native export. On a fresh machine, apply them once via the WhichSpace menu bar -> Import Settings -> `whichspace/WhichSpaceSettings.json`. To re-capture after changing settings, use the menu bar -> Export Settings and overwrite that file. (The Accessibility permission WhichSpace needs is a macOS TCC grant and must also be re-enabled by hand in System Settings.)
 
-AeroSpace (a tiling window manager) was used on this machine previously. `home/.yabairc` and `home/.skhdrc` are yabai/skhd translations of its keybindings and retain comments crediting the original AeroSpace bindings they came from. AeroSpace itself - including its Homebrew cask, `nikitabobko/tap/aerospace` - was removed from this repo because an upstream cask-definition break started failing `brew bundle` on every rebuild.
+AeroSpace (a tiling window manager) was used on this machine previously. `home/.yabairc` and `home/.skhdrc` are yabai/skhd translations of its keybindings and retain comments crediting the original AeroSpace bindings they came from. Its cask, `nikitabobko/tap/aerospace`, was removed in September 2026 after `brew bundle` started failing on it. That was not a broken cask upstream: the cask had moved to Homebrew's `postflight_steps` DSL, which needs Homebrew 6.0.16 or newer, and the nix-homebrew lock held Homebrew at 6.0.12. With nix-homebrew now pinned to Homebrew 6.0.22 (`flake.nix`), AeroSpace is back on trial alongside yabai/skhd as the macOS 27 replacement candidate, with `home/.config/aerospace/aerospace.toml` mirroring the `.skhdrc` keybindings and yabai/skhd untouched as the rollback. See [docs/aerospace-trial.md](docs/aerospace-trial.md) for how to try it, how to roll back, and every binding that differs.
 
 ## Password manager (`pass`)
 

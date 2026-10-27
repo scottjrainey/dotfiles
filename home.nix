@@ -145,6 +145,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/btop/themes";
   home.file.".config/ccstatusline".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/ccstatusline";
+  # AeroSpace trial (docs/aerospace-trial.md). The single file, not the
+  # directory, matching how the other ~/.config entries here are linked.
+  home.file.".config/aerospace/aerospace.toml".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/aerospace/aerospace.toml";
   home.file.".config/gh-dash/config.yml".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/gh-dash/config.yml";
   # Legacy source name: ghostty.config.
@@ -188,6 +192,15 @@ in
   # write into, so a directory-level link would replace it with a symlink to
   # this repo and drop every one of those binaries out of PATH. Any future
   # script added under home/.local/bin needs its own line here.
+  # AeroSpace trial helpers, called from home/.config/aerospace/aerospace.toml.
+  home.file.".local/bin/aerospace-chrome-detach-tab".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/aerospace-chrome-detach-tab";
+  home.file.".local/bin/aerospace-chrome-window-detected".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/aerospace-chrome-window-detected";
+  home.file.".local/bin/aerospace-stack-focus".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/aerospace-stack-focus";
+  home.file.".local/bin/aerospace-workspace-float-toggle".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/aerospace-workspace-float-toggle";
   home.file.".local/bin/fm-home-backup.sh".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.local/bin/fm-home-backup.sh";
   home.file.".local/bin/npm-global-autoupdate.sh".source =

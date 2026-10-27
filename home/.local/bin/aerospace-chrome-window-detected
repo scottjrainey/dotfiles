@@ -1,0 +1,114 @@
+#!/usr/bin/env sh
+# aerospace-chrome-window-detected - Chrome special cases for AeroSpace's
+# on-window-detected callbacks.
+#
+# The AeroSpace port of the two Google Chrome signals in .yabairc. Both run
+# from [[on-window-detected]] rules in home/.config/aerospace/aerospace.toml
+# via exec-and-forget, which hands the new window's id over in
+# AEROSPACE_WINDOW_ID.
+#
+# Usage:
+#   aerospace-chrome-window-detected float-if-small
+#       Floats the window if it is narrower than CHROME_POPUP_MAX_WIDTH points
+#       (OAuth popups, account choosers). AeroSpace's rule conditions can't
+#       see window size, so the width comes from CoreGraphics; AeroSpace window
+#       ids are CGWindowIDs.
+#   aerospace-chrome-window-detected route-cold-launch
+#       Moves the window to the `browser` workspace only when it is Chrome's
+#       one and only window and its title is "New Tab", i.e. Chrome was
+#       launched cold with no URL. `open https://...` from another app, Cmd+N
+#       and popups stay where they opened. Titles can arrive after the window
+#       does, so an empty title is re-read for up to TITLE_TRIES x 0.1s. The
+#       rule that calls this skips windows found during AeroSpace's startup
+#       scan, which stands in for .yabairc's startup grace.
+#   aerospace-chrome-window-detected --help
+#
+# A missing or non-numeric AEROSPACE_WINDOW_ID is a usage error (exit 2); a
+# window that has already gone away is a silent no-op.
+#
+# Environment:
+#   AEROSPACE_WINDOW_ID      window to act on (set by AeroSpace)
+#   AEROSPACE                aerospace CLI to call (default: aerospace on PATH)
+#   CHROME_POPUP_MAX_WIDTH   float threshold in points (default 1000, as .yabairc)
+#   TITLE_TRIES              title re-reads for route-cold-launch (default 10)
+
+set -eu
+
+AEROSPACE="${AEROSPACE:-aerospace}"
+CHROME_POPUP_MAX_WIDTH="${CHROME_POPUP_MAX_WIDTH:-1000}"
+TITLE_TRIES="${TITLE_TRIES:-10}"
+CHROME_BUNDLE_ID=com.google.Chrome
+
+usage() {
+  printf 'Usage: aerospace-chrome-window-detected float-if-small|route-cold-launch\n'
+  printf 'Chrome rules for AeroSpace on-window-detected; reads AEROSPACE_WINDOW_ID.\n'
+}
+
+if [ $# -ne 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+case "$1" in
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  float-if-small | route-cold-launch) cmd=$1 ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
+
+id="${AEROSPACE_WINDOW_ID:-}"
+case "$id" in
+  "" | *[!0-9]*)
+    printf 'aerospace-chrome-window-detected: AEROSPACE_WINDOW_ID is not a window id: %s\n' "'$id'" >&2
+    exit 2
+    ;;
+esac
+
+# Prints the window's width in points, or nothing if CoreGraphics doesn't
+# know the window.
+window_width() {
+  osascript -l JavaScript -e '
+    ObjC.import("CoreGraphics");
+    function run(argv) {
+      const info = ObjC.deepUnwrap(ObjC.castRefToObject(
+        $.CGWindowListCopyWindowInfo($.kCGWindowListOptionIncludingWindow, Number(argv[0]))));
+      if (!info || info.length === 0) return "";
+      return String(Math.round(info[0].kCGWindowBounds.Width));
+    }' "$1" 2>/dev/null || true
+}
+
+is_small() {
+  width="$(window_width "$1")"
+  [ -n "$width" ] && [ "$width" -lt "$CHROME_POPUP_MAX_WIDTH" ]
+}
+
+if [ "$cmd" = float-if-small ]; then
+  if is_small "$id"; then
+    "$AEROSPACE" layout --window-id "$id" floating
+  fi
+  exit 0
+fi
+
+tries=0
+while [ "$tries" -lt "$TITLE_TRIES" ]; do
+  # "<id><TAB><title>" for every Chrome window on every monitor.
+  windows="$("$AEROSPACE" list-windows --monitor all --app-bundle-id "$CHROME_BUNDLE_ID" \
+    --format '%{window-id}%{tab}%{window-title}' 2>/dev/null)" || exit 0
+  [ "$(printf '%s\n' "$windows" | grep -c .)" -eq 1 ] || exit 0
+  case "$windows" in
+    "$id	"*) title="${windows#"$id	"}" ;;
+    *) exit 0 ;;
+  esac
+  if [ -n "$title" ]; then
+    [ "$title" = "New Tab" ] || exit 0
+    is_small "$id" && exit 0
+    exec "$AEROSPACE" move-node-to-workspace --window-id "$id" browser
+  fi
+  tries=$((tries + 1))
+  sleep 0.1
+done

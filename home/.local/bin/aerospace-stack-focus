@@ -1,0 +1,68 @@
+#!/usr/bin/env sh
+# aerospace-stack-focus - wrapped stack navigation for AeroSpace.
+#
+# The AeroSpace counterpart of yabai-stack-focus, bound to the same alt+ctrl+j
+# / alt+ctrl+k chords in home/.config/aerospace/aerospace.toml. A "stack" there
+# is an accordion container (alt+ctrl+shift+hjkl joins the focused window and
+# a neighbour into one). The accordion's own axis picks the direction: a
+# v_accordion cycles with down/up, an h_accordion with right/left, and
+# `focus --wrap-around` steps from the last member back to the first.
+#
+# Usage:
+#   aerospace-stack-focus next     focus the next window in the stack, wrapping
+#   aerospace-stack-focus prev     focus the previous window in the stack, wrapping
+#   aerospace-stack-focus --help
+#
+# A focused window that isn't in an accordion (tiles or floating), or no
+# focused window at all, is a silent no-op, same as yabai-stack-focus on an
+# unstacked window.
+#
+# Differences from yabai-stack-focus:
+#   - No "N of M" notification and no `status` verb. AeroSpace has no query for
+#     a window's position inside its container; the accordion padding edges of
+#     the other members are the visual cue instead.
+#   - --wrap-around wraps at the workspace boundary, not the stack's. That
+#     lands on the stack's first member when the stack spans the workspace
+#     along its axis, which is the shape join-with produces from a single row
+#     or column of tiles.
+#
+# Environment:
+#   AEROSPACE   aerospace CLI to call (default: aerospace on PATH)
+
+set -eu
+
+AEROSPACE="${AEROSPACE:-aerospace}"
+
+usage() {
+  printf 'Usage: aerospace-stack-focus next|prev\n'
+  printf 'Cycles focus inside the focused AeroSpace accordion (stack), wrapping.\n'
+}
+
+if [ $# -ne 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+case "$1" in
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  next | prev) cmd=$1 ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
+
+layout="$("$AEROSPACE" list-windows --focused --format '%{window-layout}' 2>/dev/null)" || exit 0
+
+case "$layout:$cmd" in
+  v_accordion:next) dir=down ;;
+  v_accordion:prev) dir=up ;;
+  h_accordion:next) dir=right ;;
+  h_accordion:prev) dir=left ;;
+  *) exit 0 ;;
+esac
+
+exec "$AEROSPACE" focus --wrap-around "$dir"

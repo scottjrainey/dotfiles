@@ -16,6 +16,7 @@ tap "anomalyco/tap"
 tap "asmvik/formulae"
 tap "codecrafters-io/tap"
 tap "kunchenguid/tap"
+tap "nikitabobko/tap"
 tap "supabase/tap"
 tap "withgraphite/tap"
 
@@ -23,6 +24,9 @@ tap "withgraphite/tap"
 cask "ghostty"
 brew "asmvik/formulae/yabai"
 brew "asmvik/formulae/skhd"
+# AeroSpace is on trial alongside yabai/skhd, which stay the rollback path -
+# see docs/aerospace-trial.md.
+cask "nikitabobko/tap/aerospace"
 cask "whichspace"
 # sleepwatcher fires whichspace-wake-reset.sh on system wake (including
 # background DarkWake) to work around a WhichSpace rendering bug across
