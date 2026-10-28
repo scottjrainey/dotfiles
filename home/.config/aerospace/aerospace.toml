@@ -16,9 +16,10 @@
 
 config-version = 2
 
-# Nothing starts AeroSpace at login yet; it is launched with `open -a
-# AeroSpace`. Turning this on is a separate step (docs/aerospace.md).
-start-at-login = false
+# AeroSpace registers itself as a macOS login item, so it comes back after a
+# reboot or login. It applies this when it starts or reloads this file
+# (docs/aerospace.md).
+start-at-login = true
 
 after-startup-command = []
 
