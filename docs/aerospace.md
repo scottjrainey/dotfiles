@@ -19,7 +19,7 @@ AeroSpace needs no scripting addition, no SIP change, no sudoers entry and no Do
   - `aerospace-chrome-window-detected`: Chrome popup floating and cold-launch routing.
   - `aerospace-chrome-detach-tab`: alt+shift+o.
 
-`start-at-login = false`, so a rebuild installs AeroSpace but nothing starts it at login.
+`start-at-login = true`, so once AeroSpace has run it registers itself as a macOS login item and starts again after every reboot or login. A rebuild alone does not start it: the first start is step 3 below.
 
 ## Starting it
 
@@ -37,6 +37,8 @@ AeroSpace needs no scripting addition, no SIP change, no sudoers entry and no Do
    ```sh
    open -a AeroSpace
    ```
+
+   That first start also registers the login item, so this is a one-time step. An AeroSpace that was already running when `start-at-login` was turned on picks it up on its next start or on service-mode `esc` (`reload-config`).
 
    Windows that are already open when AeroSpace starts get their float/tile rule but are not routed (that is the startup grace below), so spread them once with `alt+shift+<key>`.
 
