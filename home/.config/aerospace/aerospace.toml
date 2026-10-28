@@ -1,11 +1,11 @@
-# AeroSpace config - trial alongside yabai/skhd on macOS 26.
-# Companion files: ../../.yabairc and ../../.skhdrc stay the rollback path
-# (docs/aerospace-trial.md). This file is linked to ~/.config/aerospace/
-# aerospace.toml by home.nix.
+# AeroSpace config - the window manager on this machine (docs/aerospace.md).
+# This file is linked to ~/.config/aerospace/aerospace.toml by home.nix.
 #
-# Every binding below mirrors the same chord in .skhdrc wherever AeroSpace can
-# express it. Where the action can't map 1:1 the key is kept and the comment
-# says what differs; docs/aerospace-trial.md has the full deviation list.
+# Every binding below keeps the chord the retired yabai/skhd setup (.yabairc,
+# .skhdrc) used, wherever AeroSpace can express it. Where the action can't map
+# 1:1 the key is kept and the comment says what differs; "yabai:" and "skhd:"
+# comments name the behaviour a setting replaced. docs/aerospace.md has the
+# full deviation list and where the retired files live in git history.
 #
 # .skhdrc and .yabairc were themselves translated from an earlier AeroSpace
 # config (removed in 9f7eecc), and their "Aerospace:" comments are what this
@@ -16,9 +16,8 @@
 
 config-version = 2
 
-# Nothing starts AeroSpace during the trial except `open -a AeroSpace`, so a
-# rebuild can't race the still-running skhd for the same alt chords. Flip to
-# true only when adopting it (docs/aerospace-trial.md, "Adopting").
+# Nothing starts AeroSpace at login yet; it is launched with `open -a
+# AeroSpace`. Turning this on is a separate step (docs/aerospace.md).
 start-at-login = false
 
 after-startup-command = []
@@ -29,7 +28,8 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 
 # Accordion padding doubles as the stack indicator: the 30px edges of the
 # other stack members stay visible behind the focused one. It replaces the
-# "N of M" notification yabai-stack-focus fires (no index query exists here).
+# "N of M" notification the retired yabai-stack-focus fired (no index query
+# exists here).
 accordion-padding = 30
 
 # yabai: layout bsp. AeroSpace has no auto-splitting bsp; a new window joins
@@ -45,16 +45,16 @@ focus-follows-mouse.enabled = false
 automatically-unhide-macos-hidden-apps = false
 
 # Replaces the six labelled macOS Spaces (.yabairc "Space labels"). The names
-# live here, so they can't drift the way Space labels can, and the skhd
-# service-mode `s` label-repair binding has nothing left to repair. AeroSpace's
+# live here, so they can't drift the way Space labels could, and the skhd
+# service-mode `s` label-repair binding had nothing left to repair. AeroSpace's
 # menu-bar icon shows the focused workspace's name; that is the workspace
-# indicator for the trial (WhichSpace only understands native Spaces).
+# indicator, replacing WhichSpace (which only understands native Spaces).
 persistent-workspaces = ['browser', 'comms', 'editor', 'notes', 'planning', 'terminal']
 
 key-mapping.preset = 'qwerty'
 
 # yabai: top/bottom/left/right_padding 24/40/30/30 and window_gap 3. The
-# reasoning for the asymmetric values is in .yabairc's padding comment.
+# reasoning for the asymmetric values was in .yabairc's padding comment.
 [gaps]
 inner.horizontal = 3
 inner.vertical = 3
@@ -73,12 +73,12 @@ outer.right = 30
 # skhd: alt+/ rotates the whole bsp tree 90 degrees.
 alt-slash = 'layout tiles horizontal vertical'
 # skhd: alt+, sets the whole space to yabai's stack layout. Here it is
-# per-container, which is the gap the .skhdrc comment points at.
+# per-container, which is the gap the .skhdrc comment pointed at.
 alt-comma = 'layout accordion horizontal vertical'
 
 # ── Window focus ─────────────────────────────────────────────────────────────
-# Unbound in .skhdrc on purpose (the alt+h/j/k/l focus lines are commented
-# out there too); directional focus lives in service mode.
+# Unbound on purpose (the alt+h/j/k/l focus lines were commented out in
+# .skhdrc too); directional focus lives in service mode.
 # alt-h = 'focus left'
 # alt-j = 'focus down'
 # alt-k = 'focus up'
@@ -129,7 +129,7 @@ alt-t = 'workspace terminal'
 
 # ── Move window to workspace, and follow it ──────────────────────────────────
 # move-node-to-workspace does not follow by default; --focus-follows-window
-# gives the same move-then-focus the skhd chain does.
+# gives the same move-then-focus the skhd chain did.
 alt-shift-1 = 'move-node-to-workspace --focus-follows-window browser'
 alt-shift-2 = 'move-node-to-workspace --focus-follows-window comms'
 alt-shift-3 = 'move-node-to-workspace --focus-follows-window editor'
@@ -219,7 +219,7 @@ run = 'layout floating'
 #    when AeroSpace starts. Terminal is deliberately absent: its native tabs
 #    are separate windows to AeroSpace, and there is no equivalent of the
 #    .yabairc bsp-rebuild workaround, so Terminal.app stays floating. Ghostty
-#    is unaffected (its tabs are off; see .yabairc's native-tab comment).
+#    is unaffected (its tabs are off; see ghostty/config).
 [[on-window-detected]]
 if.app-name-regex-substring = '^(Cursor|Claude|ChatGPT|Ghostty|Obsidian|Calendar|Messages|Slack|Discord|Google Chrome)$'
 check-further-callbacks = true

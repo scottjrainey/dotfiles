@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # aerospace-chrome-detach-tab - pop the active Chrome tab into its own tiled window.
 #
-# The AeroSpace port of .skhdrc's alt+shift+o binding (same chord in
+# The AeroSpace port of the retired .skhdrc's alt+shift+o binding (same chord in
 # home/.config/aerospace/aerospace.toml). Moves the front Chrome window's
 # active tab into a new window on the current workspace, then makes that
 # window the focused tile. Pair it with alt+shift+{1..6,b,c,e,n,p,t} to send

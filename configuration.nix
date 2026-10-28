@@ -87,7 +87,6 @@
 
     taps = [
       "anomalyco/tap"
-      "asmvik/formulae"
       "codecrafters-io/tap"
       "kunchenguid/tap"
       "nikitabobko/tap"
@@ -96,9 +95,6 @@
     ];
 
     brews = [
-      "asmvik/formulae/yabai"
-      "asmvik/formulae/skhd"
-      "sleepwatcher"
       "bat-extras"
       "mprocs"
       "tuicr"
@@ -125,11 +121,10 @@
 
     casks = [
       "ghostty"
-      # AeroSpace trial alongside yabai/skhd (docs/aerospace-trial.md). Needs
+      # AeroSpace, the window manager (docs/aerospace.md). Needs
       # Homebrew 6.0.16+ for its postflight_steps cask DSL - see the
       # nix-homebrew pin in flake.nix.
       "nikitabobko/tap/aerospace"
-      "whichspace"
       "font-fira-code-nerd-font"
       "font-iosevka-term-nerd-font"
       "font-symbols-only-nerd-font"

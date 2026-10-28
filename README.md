@@ -14,7 +14,7 @@ Running the switch builds:
 - Homebrew casks for GUI apps, fonts, and macOS app bundles.
 - Homebrew formulae for tapped packages, macOS services, and formulae intentionally left in Homebrew.
 - Zsh, oh-my-zsh, autosuggestions, aliases, Starship, and fzf shell integration declared in `home.nix` via Home Manager's `programs.*` modules (no manual install scripts, no symlinked `.zshrc`). mise's binary comes from Homebrew instead, with its shell activation hand-wired into the same generated `.zshrc`. Atuin (shell history search, see `docs/atuin.md`) and superfile (`spf`, a TUI file manager) are Homebrew formulae too; atuin's hook is hand-wired the same way.
-- Neovim, Ghostty, tmux, herdr, ripgrep, btop, yabai, skhd, AeroSpace (on trial, see [docs/aerospace-trial.md](docs/aerospace-trial.md)), Starship's `starship.toml`, gh-dash's `config.yml`, ccstatusline, gpg-agent, and baby-menu configs as edit-in-place symlinks.
+- Neovim, Ghostty, tmux, herdr, ripgrep, btop, AeroSpace (see [docs/aerospace.md](docs/aerospace.md)), Starship's `starship.toml`, gh-dash's `config.yml`, ccstatusline, gpg-agent, and baby-menu configs as edit-in-place symlinks.
 - One shared `home/AGENTS.md` installed for Claude, Codex, and opencode.
 
 ## Prerequisites
@@ -41,8 +41,7 @@ cd dotfiles
 6. Runs the first `darwin-rebuild switch --flake .#mac --impure`.
 7. Installs the gh-dash `gh` CLI extension.
 8. Trusts every tap and tap-qualified package named in `Brewfile`.
-9. Loads the WhichSpace LaunchAgent.
-10. Loads the sleepwatcher LaunchAgent that works around a WhichSpace wake bug (see [docs/whichspace-wake-reset.md](docs/whichspace-wake-reset.md)).
+9. Loads the npm-global-autoupdate LaunchAgent (see [docs/npm-global-autoupdate.md](docs/npm-global-autoupdate.md)).
 
 oh-my-zsh, zsh-autosuggestions, Starship, and fzf are Nix packages pulled in by `home.nix`'s `programs.*` modules during that switch - no separate install step. mise is installed as a Homebrew formula in the same switch instead (see Notes).
 
@@ -71,7 +70,7 @@ This repo is tailored to Scott's machine, username, and package choices, so it i
 - `Brewfile` must be kept in sync by hand with `configuration.nix`'s Homebrew taps, formulae, and casks - see `scripts/trust-homebrew-taps.sh` and AGENTS.md's "Package management" section for why.
 - `docs/` holds operator documentation for the scheduled jobs and the hand-configured tools this repo installs.
 - `tests/` holds behavior tests for the scripts under `home/.local/bin`; each is `<subject>.test.sh` and runs standalone.
-- `chrome/`, `scripts/*.mjs`, `whichspace/WhichSpaceSettings.json`, and `LICENSE` remain versioned assets outside the symlink tree.
+- `chrome/`, `scripts/*.mjs`, and `LICENSE` remain versioned assets outside the symlink tree.
 
 ## How the symlinks work
 
@@ -79,14 +78,7 @@ This repo is tailored to Scott's machine, username, and package choices, so it i
 `home.nix` then uses `mkOutOfStoreSymlink` so targets such as `~/.config/nvim` point at files under `~/.dotfiles/home/.config/nvim`.
 This keeps the repo as the source of truth while allowing normal edit-in-place workflows.
 
-The WhichSpace LaunchAgent is installed by symlinking `home/Library/LaunchAgents/io.gechr.WhichSpace.plist` into `~/Library/LaunchAgents`.
-The plist is present at login; if immediate loading is needed after a manual edit, use `launchctl` or log out and back in.
-
-WhichSpace's menu bar can render wrong after the Mac wakes from sleep; `com.scottjrainey.sleepwatcher` (`home/Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist`, installed the same way) works around it by restarting WhichSpace on every system wake. See [docs/whichspace-wake-reset.md](docs/whichspace-wake-reset.md) - including its Status note, since the wake trigger itself is still pending its first live confirmation. If the bug still shows up after a wake, toggle WhichSpace's own menu-bar Settings switch off and back on as a fallback.
-
-WhichSpace's own preferences (badges, per-space colors, toggles) are not managed by nix - the app stores per-space colors as binary-archived `NSColor` blobs that don't map cleanly to `system.defaults`. Instead they are captured in `whichspace/WhichSpaceSettings.json`, the app's native export. On a fresh machine, apply them once via the WhichSpace menu bar -> Import Settings -> `whichspace/WhichSpaceSettings.json`. To re-capture after changing settings, use the menu bar -> Export Settings and overwrite that file. (The Accessibility permission WhichSpace needs is a macOS TCC grant and must also be re-enabled by hand in System Settings.)
-
-AeroSpace (a tiling window manager) was used on this machine previously. `home/.yabairc` and `home/.skhdrc` are yabai/skhd translations of its keybindings and retain comments crediting the original AeroSpace bindings they came from. Its cask, `nikitabobko/tap/aerospace`, was removed in September 2026 after `brew bundle` started failing on it. That was not a broken cask upstream: the cask had moved to Homebrew's `postflight_steps` DSL, which needs Homebrew 6.0.16 or newer, and the nix-homebrew lock held Homebrew at 6.0.12. With nix-homebrew now pinned to Homebrew 6.0.22 (`flake.nix`), AeroSpace is back on trial alongside yabai/skhd as the macOS 27 replacement candidate, with `home/.config/aerospace/aerospace.toml` mirroring the `.skhdrc` keybindings and yabai/skhd untouched as the rollback. See [docs/aerospace-trial.md](docs/aerospace-trial.md) for how to try it, how to roll back, and every binding that differs.
+AeroSpace (a tiling window manager) is the window manager, configured by `home/.config/aerospace/aerospace.toml`. It also ran on this machine before yabai/skhd, whose `.yabairc` and `.skhdrc` were translations of its keybindings. Its cask, `nikitabobko/tap/aerospace`, was removed in September 2026 after `brew bundle` started failing on it. That was not a broken cask upstream: the cask had moved to Homebrew's `postflight_steps` DSL, which needs Homebrew 6.0.16 or newer, and the nix-homebrew lock held Homebrew at 6.0.12. With nix-homebrew pinned to Homebrew 6.0.22 (`flake.nix`), AeroSpace came back on trial as the macOS 27 replacement for yabai/skhd, whose scripting addition doesn't load there, and then replaced them. yabai, skhd, WhichSpace and the sleepwatcher agent that worked around a WhichSpace wake bug are retired. See [docs/aerospace.md](docs/aerospace.md) for setup, every binding that differs from the yabai/skhd days, what was removed and why, and the one-time live cleanup steps.
 
 ## Password manager (`pass`)
 
