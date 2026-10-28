@@ -1,0 +1,64 @@
+#!/usr/bin/env sh
+# aerospace-chrome-detach-tab - pop the active Chrome tab into its own tiled window.
+#
+# The AeroSpace port of .skhdrc's alt+shift+o binding (same chord in
+# home/.config/aerospace/aerospace.toml). Moves the front Chrome window's
+# active tab into a new window on the current workspace, then makes that
+# window the focused tile. Pair it with alt+shift+{1..6,b,c,e,n,p,t} to send
+# the tab on to another workspace.
+#
+# Usage:
+#   aerospace-chrome-detach-tab
+#   aerospace-chrome-detach-tab --help
+#
+# Two failsafes after the AppleScript, as in the skhd version:
+#   1. The float-if-small rule (aerospace-chrome-window-detected) may float the
+#      new window if it is born narrow, so it is tiled again here. `layout
+#      tiling` on an already tiled window is a no-op.
+#   2. macOS doesn't always hand focus to an AppleScript-created window, so it
+#      is focused explicitly.
+# The newest Chrome window is the one with the highest id: AeroSpace window
+# ids are CGWindowIDs, which macOS allocates monotonically.
+#
+# Environment:
+#   AEROSPACE          aerospace CLI to call (default: aerospace on PATH)
+#   DETACH_SETTLE_SECS wait after the AppleScript before looking for the new
+#                      window (default 0.3)
+
+set -eu
+
+AEROSPACE="${AEROSPACE:-aerospace}"
+DETACH_SETTLE_SECS="${DETACH_SETTLE_SECS:-0.3}"
+
+usage() {
+  printf 'Usage: aerospace-chrome-detach-tab\n'
+  printf "Moves Chrome's active tab into its own window, tiled and focused.\n"
+}
+
+case "${1:-}" in
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  "") ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
+
+osascript -e 'tell application "Google Chrome"' \
+  -e 'set u to URL of active tab of front window' \
+  -e 'close active tab of front window' \
+  -e 'set newWin to make new window' \
+  -e 'set URL of active tab of newWin to u' \
+  -e 'end tell'
+
+sleep "$DETACH_SETTLE_SECS"
+
+w="$("$AEROSPACE" list-windows --monitor all --app-bundle-id com.google.Chrome --format '%{window-id}' \
+  | sort -n | tail -n 1)"
+[ -n "$w" ] || exit 0
+
+"$AEROSPACE" layout --window-id "$w" tiling
+"$AEROSPACE" focus --window-id "$w"

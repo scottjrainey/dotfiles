@@ -1,0 +1,85 @@
+#!/usr/bin/env sh
+# aerospace-workspace-float-toggle - float, or re-tile, a whole AeroSpace workspace.
+#
+# The AeroSpace port of .skhdrc's service-mode `f`, which flips the focused
+# yabai space between the bsp and float layouts. AeroSpace has no
+# workspace-wide float layout (`layout floating tiling` acts on one window),
+# so this does it window by window. Bound to service-mode `f` in
+# home/.config/aerospace/aerospace.toml.
+#
+# Usage:
+#   aerospace-workspace-float-toggle
+#   aerospace-workspace-float-toggle --help
+#
+# First press: every tiled window on the focused workspace floats, and their
+# ids are recorded in a per-workspace state file. Next press on that
+# workspace: exactly those windows are tiled again, if they are still on it
+# and still floating, and the state file is removed. Windows that were
+# floating before the first press stay floating, which is what yabai's
+# bsp -> float -> bsp round trip does for unmanaged windows too. A workspace
+# with no tiled windows and no state file is a no-op.
+#
+# Environment:
+#   AEROSPACE                         aerospace CLI to call (default: aerospace on PATH)
+#   AEROSPACE_FLOAT_TOGGLE_STATE_DIR  state directory
+#                                     (default: ${XDG_CACHE_HOME:-~/.cache}/aerospace-float-toggle)
+
+set -eu
+
+AEROSPACE="${AEROSPACE:-aerospace}"
+STATE_DIR="${AEROSPACE_FLOAT_TOGGLE_STATE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/aerospace-float-toggle}"
+
+usage() {
+  printf 'Usage: aerospace-workspace-float-toggle\n'
+  printf 'Floats every tiled window on the focused workspace, or re-tiles the ones it floated.\n'
+}
+
+case "${1:-}" in
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  "") ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
+
+workspace="$("$AEROSPACE" list-workspaces --focused)"
+case "$workspace" in
+  "" | */* | .*)
+    printf 'aerospace-workspace-float-toggle: unusable workspace name %s\n' "'$workspace'" >&2
+    exit 1
+    ;;
+esac
+state="$STATE_DIR/$workspace"
+
+# "<id><TAB><layout>" per window on the focused workspace.
+windows="$("$AEROSPACE" list-windows --workspace focused --format '%{window-id}%{tab}%{window-layout}')"
+
+if [ -s "$state" ]; then
+  floating="$(printf '%s\n' "$windows" | awk -F '\t' '$2 == "floating" { print $1 }')"
+  while IFS= read -r id; do
+    case "
+$floating
+" in
+      *"
+$id
+"*) "$AEROSPACE" layout --window-id "$id" tiling ;;
+    esac
+  done < "$state"
+  rm -f "$state"
+  exit 0
+fi
+
+tiled="$(printf '%s\n' "$windows" | awk -F '\t' '$1 != "" && $2 != "floating" { print $1 }')"
+[ -n "$tiled" ] || exit 0
+
+mkdir -p "$STATE_DIR"
+printf '%s\n' "$tiled" > "$state.tmp.$$"
+mv "$state.tmp.$$" "$state"
+
+printf '%s\n' "$tiled" | while IFS= read -r id; do
+  "$AEROSPACE" layout --window-id "$id" floating
+done

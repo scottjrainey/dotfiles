@@ -1,0 +1,270 @@
+# AeroSpace config - trial alongside yabai/skhd on macOS 26.
+# Companion files: ../../.yabairc and ../../.skhdrc stay the rollback path
+# (docs/aerospace-trial.md). This file is linked to ~/.config/aerospace/
+# aerospace.toml by home.nix.
+#
+# Every binding below mirrors the same chord in .skhdrc wherever AeroSpace can
+# express it. Where the action can't map 1:1 the key is kept and the comment
+# says what differs; docs/aerospace-trial.md has the full deviation list.
+#
+# .skhdrc and .yabairc were themselves translated from an earlier AeroSpace
+# config (removed in 9f7eecc), and their "Aerospace:" comments are what this
+# file was rebuilt from - those originals are native here again (accordion,
+# join-with, resize smart, flatten-workspace-tree, focus-following moves).
+#
+# Target: AeroSpace 0.21.3-Beta (cask nikitabobko/tap/aerospace).
+
+config-version = 2
+
+# Nothing starts AeroSpace during the trial except `open -a AeroSpace`, so a
+# rebuild can't race the still-running skhd for the same alt chords. Flip to
+# true only when adopting it (docs/aerospace-trial.md, "Adopting").
+start-at-login = false
+
+after-startup-command = []
+
+# Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+# Accordion padding doubles as the stack indicator: the 30px edges of the
+# other stack members stay visible behind the focused one. It replaces the
+# "N of M" notification yabai-stack-focus fires (no index query exists here).
+accordion-padding = 30
+
+# yabai: layout bsp. AeroSpace has no auto-splitting bsp; a new window joins
+# the focused window's container and splits are made by hand (join-with).
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+# yabai: mouse_follows_focus on, focus_follows_mouse off.
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+on-focus-changed = ['move-mouse window-lazy-center']
+focus-follows-mouse.enabled = false
+
+automatically-unhide-macos-hidden-apps = false
+
+# Replaces the six labelled macOS Spaces (.yabairc "Space labels"). The names
+# live here, so they can't drift the way Space labels can, and the skhd
+# service-mode `s` label-repair binding has nothing left to repair. AeroSpace's
+# menu-bar icon shows the focused workspace's name; that is the workspace
+# indicator for the trial (WhichSpace only understands native Spaces).
+persistent-workspaces = ['browser', 'comms', 'editor', 'notes', 'planning', 'terminal']
+
+key-mapping.preset = 'qwerty'
+
+# yabai: top/bottom/left/right_padding 24/40/30/30 and window_gap 3. The
+# reasoning for the asymmetric values is in .yabairc's padding comment.
+[gaps]
+inner.horizontal = 3
+inner.vertical = 3
+outer.top = 24
+outer.bottom = 40
+outer.left = 30
+outer.right = 30
+
+# exec-and-forget scripts below call `aerospace` and `osascript`. The default
+# exec PATH (/opt/homebrew/bin prepended) already covers both, so [exec] is not
+# overridden.
+
+[mode.main.binding]
+
+# ── Layout toggles ───────────────────────────────────────────────────────────
+# skhd: alt+/ rotates the whole bsp tree 90 degrees.
+alt-slash = 'layout tiles horizontal vertical'
+# skhd: alt+, sets the whole space to yabai's stack layout. Here it is
+# per-container, which is the gap the .skhdrc comment points at.
+alt-comma = 'layout accordion horizontal vertical'
+
+# ── Window focus ─────────────────────────────────────────────────────────────
+# Unbound in .skhdrc on purpose (the alt+h/j/k/l focus lines are commented
+# out there too); directional focus lives in service mode.
+# alt-h = 'focus left'
+# alt-j = 'focus down'
+# alt-k = 'focus up'
+# alt-l = 'focus right'
+
+# ── Window move ──────────────────────────────────────────────────────────────
+# skhd: yabai --swap. AeroSpace's `move` swaps with the neighbour inside one
+# container and moves into/out of a neighbouring container at its edge, which
+# is also how a window joins an existing stack.
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
+
+# ── Window stacking (alt+ctrl lane, same chords as .skhdrc) ──────────────────
+# A stack is an accordion container. Cycling wraps via aerospace-stack-focus,
+# which picks the stack's own axis.
+alt-ctrl-j = 'exec-and-forget $HOME/.local/bin/aerospace-stack-focus next'
+alt-ctrl-k = 'exec-and-forget $HOME/.local/bin/aerospace-stack-focus prev'
+
+# skhd: yabai --stack <dir>. join-with puts the focused window and its
+# neighbour in a new container, then that container becomes an accordion.
+alt-ctrl-shift-h = ['join-with left', 'layout accordion']
+alt-ctrl-shift-j = ['join-with down', 'layout accordion']
+alt-ctrl-shift-k = ['join-with up', 'layout accordion']
+alt-ctrl-shift-l = ['join-with right', 'layout accordion']
+
+# ── Window resize ────────────────────────────────────────────────────────────
+# skhd approximated this with right/left edge resizes; smart resizes along
+# the parent container's axis.
+alt-minus = 'resize smart -50'
+alt-equal = 'resize smart +50'
+
+# ── Workspaces (letters and numbers point at the same 6) ─────────────────────
+alt-1 = 'workspace browser'
+alt-2 = 'workspace comms'
+alt-3 = 'workspace editor'
+alt-4 = 'workspace notes'
+alt-5 = 'workspace planning'
+alt-6 = 'workspace terminal'
+
+alt-b = 'workspace browser'
+alt-c = 'workspace comms'
+alt-e = 'workspace editor'
+alt-n = 'workspace notes'
+alt-p = 'workspace planning'
+alt-t = 'workspace terminal'
+
+# ── Move window to workspace, and follow it ──────────────────────────────────
+# move-node-to-workspace does not follow by default; --focus-follows-window
+# gives the same move-then-focus the skhd chain does.
+alt-shift-1 = 'move-node-to-workspace --focus-follows-window browser'
+alt-shift-2 = 'move-node-to-workspace --focus-follows-window comms'
+alt-shift-3 = 'move-node-to-workspace --focus-follows-window editor'
+alt-shift-4 = 'move-node-to-workspace --focus-follows-window notes'
+alt-shift-5 = 'move-node-to-workspace --focus-follows-window planning'
+alt-shift-6 = 'move-node-to-workspace --focus-follows-window terminal'
+
+alt-shift-b = 'move-node-to-workspace --focus-follows-window browser'
+alt-shift-c = 'move-node-to-workspace --focus-follows-window comms'
+alt-shift-e = 'move-node-to-workspace --focus-follows-window editor'
+alt-shift-n = 'move-node-to-workspace --focus-follows-window notes'
+alt-shift-p = 'move-node-to-workspace --focus-follows-window planning'
+alt-shift-t = 'move-node-to-workspace --focus-follows-window terminal'
+
+# ── Chrome: detach active tab to new window ──────────────────────────────────
+alt-shift-o = 'exec-and-forget $HOME/.local/bin/aerospace-chrome-detach-tab'
+
+# ── Fullscreen ───────────────────────────────────────────────────────────────
+# Same idea as yabai zoom-fullscreen: fills the workspace, no native Space.
+alt-shift-f = 'fullscreen'
+
+# ── Float / tile toggle ──────────────────────────────────────────────────────
+alt-shift-space = 'layout floating tiling'
+
+# ── Workspace navigation ─────────────────────────────────────────────────────
+alt-tab = 'workspace-back-and-forth'
+# Disabled in .skhdrc for the labelled-space setup; kept disabled here.
+# alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+# ── Mode entry ───────────────────────────────────────────────────────────────
+alt-shift-semicolon = 'mode service'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Service mode - one-shot leader. Every binding ends with 'mode main', which
+# replaces skhd's `skhd -k "escape"` re-intercept trick. Unlike skhd's `@`
+# capture-all, an unbound key here is not swallowed: it reaches the focused
+# app and the mode stays on until a bound key (esc) is pressed.
+# ─────────────────────────────────────────────────────────────────────────────
+[mode.service.binding]
+# skhd: escape just leaves the mode. Reloading too costs nothing and saves a
+# step while this file is being tuned.
+esc = ['reload-config', 'mode main']
+
+# skhd: yabai --balance. balance-sizes is the same "even out sizes" and keeps
+# stacks intact, where flatten-workspace-tree would dissolve them.
+r = ['balance-sizes', 'mode main']
+
+# skhd: toggle the whole space between bsp and float.
+f = ['exec-and-forget $HOME/.local/bin/aerospace-workspace-float-toggle', 'mode main']
+
+# skhd `s` (relabel Spaces) is not bound: workspace names can't drift here.
+
+backspace = ['close-all-windows-but-current', 'mode main']
+
+h = ['focus left', 'mode main']
+j = ['focus down', 'mode main']
+k = ['focus up', 'mode main']
+l = ['focus right', 'mode main']
+
+# skhd: yabai --warp, which also pops a window out of a stack. join-with is
+# the container join yabai lacked; from inside a stack it pulls the window
+# out to join its neighbour instead.
+alt-shift-h = ['join-with left', 'mode main']
+alt-shift-j = ['join-with down', 'mode main']
+alt-shift-k = ['join-with up', 'mode main']
+alt-shift-l = ['join-with right', 'mode main']
+
+# skhd used osascript +/-10 points; AeroSpace's volume command steps by 1/16,
+# the same step as the keyboard volume keys.
+down = ['volume down', 'mode main']
+up = ['volume up', 'mode main']
+shift-down = ['volume mute-on', 'mode main']
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Window rules - float by default, opt-in tiling, per-app workspace routing.
+# Order matters: AeroSpace stops at the first matching callback unless it
+# sets check-further-callbacks.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 1. Float everything (yabai: rule app=".*" manage=off).
+[[on-window-detected]]
+if = 'true'
+check-further-callbacks = true
+run = 'layout floating'
+
+# 2. Opt-in tiling (yabai: manage=on), applied even to windows already open
+#    when AeroSpace starts. Terminal is deliberately absent: its native tabs
+#    are separate windows to AeroSpace, and there is no equivalent of the
+#    .yabairc bsp-rebuild workaround, so Terminal.app stays floating. Ghostty
+#    is unaffected (its tabs are off; see .yabairc's native-tab comment).
+[[on-window-detected]]
+if.app-name-regex-substring = '^(Cursor|Claude|ChatGPT|Ghostty|Obsidian|Calendar|Messages|Slack|Discord|Google Chrome)$'
+check-further-callbacks = true
+run = 'layout tiling'
+
+# 3. Chrome popups: float windows born narrower than 1000px (OAuth, account
+#    chooser), on every Chrome window including those found at startup.
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+check-further-callbacks = true
+run = 'exec-and-forget $HOME/.local/bin/aerospace-chrome-window-detected float-if-small'
+
+# Routing below skips windows AeroSpace finds during its own startup scan, so
+# a launch or restart doesn't yank every open window to its workspace (the
+# .yabairc STARTUP_GRACE_SECONDS behaviour). Windows macOS session restore
+# opens after that scan are still routed.
+
+# 4. Chrome goes to browser only on a cold launch (one window, "New Tab"),
+#    never for `open https://...` from another app or a Cmd+N window.
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+if.during-aerospace-startup = false
+run = 'exec-and-forget $HOME/.local/bin/aerospace-chrome-window-detected route-cold-launch'
+
+[[on-window-detected]]
+if.app-name-regex-substring = '^(Cursor|Claude|ChatGPT)$'
+if.during-aerospace-startup = false
+run = 'move-node-to-workspace editor'
+
+[[on-window-detected]]
+if.app-name-regex-substring = '^(Ghostty|Terminal)$'
+if.during-aerospace-startup = false
+run = 'move-node-to-workspace terminal'
+
+[[on-window-detected]]
+if.app-name-regex-substring = '^Obsidian$'
+if.during-aerospace-startup = false
+run = 'move-node-to-workspace notes'
+
+[[on-window-detected]]
+if.app-name-regex-substring = '^Calendar$'
+if.during-aerospace-startup = false
+run = 'move-node-to-workspace planning'
+
+[[on-window-detected]]
+if.app-name-regex-substring = '^(Messages|Slack|Discord)$'
+if.during-aerospace-startup = false
+run = 'move-node-to-workspace comms'

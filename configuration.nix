@@ -90,6 +90,7 @@
       "asmvik/formulae"
       "codecrafters-io/tap"
       "kunchenguid/tap"
+      "nikitabobko/tap"
       "supabase/tap"
       "withgraphite/tap"
     ];
@@ -124,6 +125,10 @@
 
     casks = [
       "ghostty"
+      # AeroSpace trial alongside yabai/skhd (docs/aerospace-trial.md). Needs
+      # Homebrew 6.0.16+ for its postflight_steps cask DSL - see the
+      # nix-homebrew pin in flake.nix.
+      "nikitabobko/tap/aerospace"
       "whichspace"
       "font-fira-code-nerd-font"
       "font-iosevka-term-nerd-font"

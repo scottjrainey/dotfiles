@@ -8,7 +8,27 @@
 # Shared by bootstrap.sh (Step 8) and rebuild.sh, so a newly-added tap gets
 # trusted on an ordinary rebuild too, not only on a fresh-machine bootstrap.
 # Safe to re-run: already-trusted taps/formulae/casks are a no-op.
+#
+# Takes no arguments. Anything else, --help included, prints usage and changes
+# nothing: this writes the live trust store, so it must not run on a guess.
 set -euo pipefail
+
+usage() {
+  printf 'Usage: trust-homebrew-taps.sh\n'
+  printf "Runs brew trust on every tap and tap-qualified formula/cask in this repo's Brewfile.\n"
+}
+
+case "$#:${1:-}" in
+  0:) ;;
+  1:-h | 1:--help)
+    usage
+    exit 0
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
