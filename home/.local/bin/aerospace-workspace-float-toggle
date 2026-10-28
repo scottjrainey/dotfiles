@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 # aerospace-workspace-float-toggle - float, or re-tile, a whole AeroSpace workspace.
 #
-# The AeroSpace port of .skhdrc's service-mode `f`, which flips the focused
-# yabai space between the bsp and float layouts. AeroSpace has no
+# The AeroSpace port of the retired .skhdrc's service-mode `f`, which flipped
+# the focused yabai space between the bsp and float layouts. AeroSpace has no
 # workspace-wide float layout (`layout floating tiling` acts on one window),
 # so this does it window by window. Bound to service-mode `f` in
 # home/.config/aerospace/aerospace.toml.

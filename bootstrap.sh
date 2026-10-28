@@ -128,30 +128,7 @@ fi
 echo "==> Step 8: trust Homebrew taps"
 "$DIR/scripts/trust-homebrew-taps.sh"
 
-echo "==> Step 9: load WhichSpace LaunchAgent"
-WHICHSPACE_PLIST="$HOME/Library/LaunchAgents/io.gechr.WhichSpace.plist"
-if [ -d /Applications/WhichSpace.app ]; then
-  launchctl bootstrap "gui/$(id -u)" "$WHICHSPACE_PLIST" 2>/dev/null \
-    || launchctl kickstart -k "gui/$(id -u)/io.gechr.WhichSpace" 2>/dev/null \
-    || echo "    WARNING: could not load WhichSpace LaunchAgent"
-else
-  echo "    WhichSpace.app not found in /Applications, skipping LaunchAgent load"
-fi
-
-echo "==> Step 10: load the sleepwatcher LaunchAgent (WhichSpace wake fix)"
-# See docs/whichspace-wake-reset.md. Fires home/.local/bin/whichspace-wake-reset.sh
-# on system wake (including background DarkWake); harmless no-op if WhichSpace
-# isn't running.
-SLEEPWATCHER_PLIST="$HOME/Library/LaunchAgents/com.scottjrainey.sleepwatcher.plist"
-if [ -f "$SLEEPWATCHER_PLIST" ]; then
-  launchctl bootstrap "gui/$(id -u)" "$SLEEPWATCHER_PLIST" 2>/dev/null \
-    || launchctl kickstart -k "gui/$(id -u)/com.scottjrainey.sleepwatcher" 2>/dev/null \
-    || echo "    WARNING: could not load the sleepwatcher LaunchAgent"
-else
-  echo "    plist not linked yet, skipping (re-run bootstrap.sh after a switch)"
-fi
-
-echo "==> Step 11: load the npm-global-autoupdate LaunchAgent"
+echo "==> Step 9: load the npm-global-autoupdate LaunchAgent"
 # See docs/npm-global-autoupdate.md. Daily update of the global npm tools. Shared
 # with rebuild.sh; never kickstarts, since that would run an update right now.
 "$DIR/scripts/load-npm-autoupdate-agent.sh"

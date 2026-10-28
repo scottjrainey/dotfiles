@@ -27,7 +27,6 @@ jobs:
           # fm-home-backup.test.sh does not run here: it requires
           # a real ~/repos/firstmate checkout (FIRSTMATE_SRC=${FM_HOME_BACKUP_TEST_FM_ROOT:-$HOME/repos/firstmate})
           # that CI does not provision, so it cannot pass here as-is.
-          ./tests/whichspace-wake-reset.test.sh
           ./tests/aerospace-chrome-detach-tab.test.sh
           ./tests/aerospace-chrome-window-detected.test.sh
           ./tests/aerospace-stack-focus.test.sh

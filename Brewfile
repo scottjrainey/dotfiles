@@ -13,7 +13,6 @@
 # below.
 
 tap "anomalyco/tap"
-tap "asmvik/formulae"
 tap "codecrafters-io/tap"
 tap "kunchenguid/tap"
 tap "nikitabobko/tap"
@@ -22,16 +21,8 @@ tap "withgraphite/tap"
 
 # === Terminal, window manager, fonts ===
 cask "ghostty"
-brew "asmvik/formulae/yabai"
-brew "asmvik/formulae/skhd"
-# AeroSpace is on trial alongside yabai/skhd, which stay the rollback path -
-# see docs/aerospace-trial.md.
+# AeroSpace is the window manager - see docs/aerospace.md.
 cask "nikitabobko/tap/aerospace"
-cask "whichspace"
-# sleepwatcher fires whichspace-wake-reset.sh on system wake (including
-# background DarkWake) to work around a WhichSpace rendering bug across
-# sleep/wake - see docs/whichspace-wake-reset.md.
-brew "sleepwatcher"
 cask "font-fira-code-nerd-font"
 cask "font-iosevka-term-nerd-font"
 cask "font-symbols-only-nerd-font"

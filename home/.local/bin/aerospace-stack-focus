@@ -1,12 +1,13 @@
 #!/usr/bin/env sh
 # aerospace-stack-focus - wrapped stack navigation for AeroSpace.
 #
-# The AeroSpace counterpart of yabai-stack-focus, bound to the same alt+ctrl+j
-# / alt+ctrl+k chords in home/.config/aerospace/aerospace.toml. A "stack" there
-# is an accordion container (alt+ctrl+shift+hjkl joins the focused window and
-# a neighbour into one). The accordion's own axis picks the direction: a
-# v_accordion cycles with down/up, an h_accordion with right/left, and
-# `focus --wrap-around` steps from the last member back to the first.
+# The AeroSpace counterpart of the retired yabai-stack-focus, bound to the same
+# alt+ctrl+j / alt+ctrl+k chords in home/.config/aerospace/aerospace.toml. A
+# "stack" there is an accordion container (alt+ctrl+shift+hjkl joins the
+# focused window and a neighbour into one). The accordion's own axis picks the
+# direction: a v_accordion cycles with down/up, an h_accordion with
+# right/left, and `focus --wrap-around` steps from the last member back to the
+# first.
 #
 # Usage:
 #   aerospace-stack-focus next     focus the next window in the stack, wrapping

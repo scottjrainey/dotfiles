@@ -2,10 +2,10 @@
 # aerospace-chrome-window-detected - Chrome special cases for AeroSpace's
 # on-window-detected callbacks.
 #
-# The AeroSpace port of the two Google Chrome signals in .yabairc. Both run
-# from [[on-window-detected]] rules in home/.config/aerospace/aerospace.toml
-# via exec-and-forget, which hands the new window's id over in
-# AEROSPACE_WINDOW_ID.
+# The AeroSpace port of the two Google Chrome signals in the retired .yabairc.
+# Both run from [[on-window-detected]] rules in
+# home/.config/aerospace/aerospace.toml via exec-and-forget, which hands the
+# new window's id over in AEROSPACE_WINDOW_ID.
 #
 # Usage:
 #   aerospace-chrome-window-detected float-if-small

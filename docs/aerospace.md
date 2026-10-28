@@ -1,13 +1,12 @@
-# AeroSpace trial
+# AeroSpace
 
-Operator notes for running [AeroSpace](https://github.com/nikitabobko/AeroSpace) alongside yabai/skhd on macOS 26, with yabai/skhd kept intact as the one-step rollback.
+Operator notes for [AeroSpace](https://github.com/nikitabobko/AeroSpace), the tiling window manager on this machine.
+It replaced yabai and skhd after a trial alongside them on macOS 26; see "Retired: yabai, skhd and WhichSpace" below.
 
 ## Why
 
 yabai's scripting addition does not load on macOS 27, so the six labelled Spaces and every `space --focus` / `window --space` binding break there.
-AeroSpace needs no scripting addition, no SIP change, no sudoers entry and no Dock injection, so it is the candidate replacement.
-This trial runs it on macOS 26 first, where switching back to yabai is still cheap.
-The macOS 27 upgrade itself stays on hold.
+AeroSpace needs no scripting addition, no SIP change, no sudoers entry and no Dock injection.
 
 ## What this repo sets up
 
@@ -20,10 +19,9 @@ The macOS 27 upgrade itself stays on hold.
   - `aerospace-chrome-window-detected`: Chrome popup floating and cold-launch routing.
   - `aerospace-chrome-detach-tab`: alt+shift+o.
 
-`start-at-login = false`, so a rebuild installs AeroSpace but nothing starts it.
-yabai, skhd, `.yabairc`, `.skhdrc`, WhichSpace and the sleepwatcher agent are untouched and keep running as before.
+`start-at-login = false`, so a rebuild installs AeroSpace but nothing starts it at login.
 
-## Try it
+## Starting it
 
 1. Rebuild (`./rebuild.sh`), then check that Homebrew is new enough and AeroSpace is installed:
 
@@ -32,28 +30,9 @@ yabai, skhd, `.yabairc`, `.skhdrc`, WhichSpace and the sleepwatcher agent are un
    ls -d /Applications/AeroSpace.app
    ```
 
-2. Optional snapshot of the yabai state, for comparison later:
+2. AeroSpace is meant to run on a single native Space. Remove any extra Desktops in Mission Control.
 
-   ```sh
-   mkdir -p ~/aerospace-trial
-   yabai -m query --spaces  > ~/aerospace-trial/spaces.json
-   yabai -m query --windows > ~/aerospace-trial/windows.json
-   ```
-
-3. Gather every window onto Desktop 1 while yabai still runs. AeroSpace is meant to run on a single native Space. Don't delete the other five Spaces; yabai needs them for a rollback.
-
-   ```sh
-   for id in $(yabai -m query --windows | jq '.[] | select(.space != 1) | .id'); do yabai -m window "$id" --space 1; done
-   yabai -m space --focus 1
-   ```
-
-4. Stop skhd and yabai. Both grab the same alt chords as AeroSpace, so they must not run at the same time.
-
-   ```sh
-   skhd --stop-service; yabai --stop-service
-   ```
-
-5. Start AeroSpace and grant Accessibility when asked (System Settings > Privacy & Security > Accessibility):
+3. Start AeroSpace and grant Accessibility when asked (System Settings > Privacy & Security > Accessibility):
 
    ```sh
    open -a AeroSpace
@@ -61,41 +40,18 @@ yabai, skhd, `.yabairc`, `.skhdrc`, WhichSpace and the sleepwatcher agent are un
 
    Windows that are already open when AeroSpace starts get their float/tile rule but are not routed (that is the startup grace below), so spread them once with `alt+shift+<key>`.
 
-6. Optional, AeroSpace-recommended tweaks, each undone with `defaults delete` plus the same `killall`:
+4. Optional, AeroSpace-recommended tweaks, each undone with `defaults delete` plus the same `killall`:
 
    ```sh
    defaults write com.apple.dock expose-group-apps -bool true && killall Dock   # readable Mission Control
    defaults write -g NSWindowShouldDragOnGesture -bool true                     # ctrl+cmd+drag moves any window
    ```
 
-Things worth checking during the trial:
-
-- alt+1..6 and alt+letter, many times at normal speed: does the switch ever flash through another workspace?
-- `alt+shift+<key>` moves the window and follows it.
-- Routing for each tiled app; Chrome cold launch vs `open https://...` from Ghostty vs a Google sign-in popup vs Cmd+N; alt+shift+o.
-- Stacks: `alt+ctrl+shift+<dir>` to make one, alt+ctrl+j/k to cycle (does it wrap inside the stack?), service-mode `alt+shift+<dir>` to pull a window out.
-- Service mode: each binding drops back out on its own.
-- Lid-close sleep and wake: do windows stay on their workspaces?
-- Login with session restore, and battery / WindowServer CPU against a typical yabai day.
-
 While tuning `aerospace.toml`, service-mode `esc` reloads it.
-
-## Roll back
-
-Any time, about a minute:
-
-```sh
-osascript -e 'quit app "AeroSpace"'           # puts every window back on screen
-yabai --start-service; skhd --start-service   # labels are still on the six Spaces
-```
-
-Windows stay wherever they are; re-file them with `alt+shift+<key>`.
-Reverting the commit that added the trial removes the config and links, and the next rebuild uninstalls the cask (`onActivation.cleanup = "zap"`).
-The nix-homebrew pin can stay either way: it is harmless without AeroSpace, and any other tap that adopts `postflight_steps` would break on Homebrew 6.0.12 the same way.
 
 ## Keybindings
 
-Every chord in `.skhdrc` keeps the same key in `aerospace.toml`, except service-mode `s` (below).
+Every chord in the retired `.skhdrc` kept the same key in `aerospace.toml`, except service-mode `s` (below). The yabai/skhd column is what the chord did before.
 
 | Chord | yabai/skhd | AeroSpace |
 |---|---|---|
@@ -156,11 +112,24 @@ Same key, different behaviour:
 - **bsp auto-split.** New windows join the focused window's container (i3-style); split by hand with join-with.
 - **fn+drag move and fn+right-drag resize.** AeroSpace has no modifier-drag. Dragging a tiled window's title bar re-inserts it at the drop point, dragging its edges resizes it, and the optional `NSWindowShouldDragOnGesture` default above gives ctrl+cmd+drag-anywhere.
 - **"N of M" stack notification** (see deviation 4).
-- **WhichSpace's lettered, coloured strip.** WhichSpace only understands native Spaces, so with one Space it shows a single badge. AeroSpace's menu-bar workspace name is the indicator for the trial. WhichSpace and its sleepwatcher wake fix stay installed for the yabai side.
+- **WhichSpace's lettered, coloured strip.** WhichSpace only understands native Spaces, so with one Space it could show only a single badge. AeroSpace's menu-bar workspace name is the indicator now.
 
-## Adopting it later
+## Retired: yabai, skhd and WhichSpace
 
-Not part of this trial. When it passes: set `start-at-login = true`, `yabai --uninstall-service; skhd --uninstall-service`, keep both packages and their config for a few weeks of easy rollback, then reduce native Spaces to one and retire WhichSpace and the sleepwatcher agent. Re-enabling SIP and removing yabai/skhd come last, because rolling back after that needs recoveryOS.
+Once AeroSpace had proven itself in daily use, everything that existed only for the yabai/skhd setup was removed from this repo:
+
+- yabai and skhd: both formulae, their `asmvik/formulae` tap, `home/.yabairc`, `home/.skhdrc` and the `yabai-stack-focus` helper.
+- WhichSpace: the cask, its `io.gechr.WhichSpace` LaunchAgent and `whichspace/WhichSpaceSettings.json`. It shows native Spaces, and AeroSpace runs on one.
+- sleepwatcher: the formula, the `com.scottjrainey.sleepwatcher` LaunchAgent, `whichspace-wake-reset.sh` with its test, and `docs/whichspace-wake-reset.md`. It existed only to restart WhichSpace on every system wake, as a workaround for WhichSpace's menu bar collapsing to a single block after sleep.
+
+The repo change does not undo live machine state. Once, after it lands:
+
+1. `yabai --uninstall-service; skhd --uninstall-service`, and unload the two retired agents: `launchctl bootout "gui/$(id -u)/io.gechr.WhichSpace"; launchctl bootout "gui/$(id -u)/com.scottjrainey.sleepwatcher"`.
+2. `./rebuild.sh`. The Homebrew `zap` cleanup uninstalls yabai, skhd, sleepwatcher and WhichSpace, and the LaunchAgent links go away.
+3. Remove `/etc/sudoers.d/yabai` and the `-arm64e_preview_abi` boot argument, then re-enable SIP from recoveryOS.
+4. Reduce native Spaces to one.
+
+Every removed file stays in git history. `git log --diff-filter=D --oneline -- home/.yabairc` names the commit that removed it, and `git show <commit>^:<path>` prints the last version of any of them. Going back to yabai after step 3 also means relaxing SIP from recoveryOS again.
 
 ## Verifying changes
 
@@ -175,5 +144,5 @@ The config itself is easiest to check from a running AeroSpace with service-mode
 
 ## History
 
-AeroSpace ran on this machine before yabai. `home/.yabairc` and `home/.skhdrc` were translated from its config and keep comments crediting the AeroSpace bindings they came from; `aerospace.toml` here was rebuilt from those two files, so it follows today's yabai behaviour rather than the old config (the last version is at `git show 9f7eecc^:home/.config/aerospace/aerospace.toml`).
+AeroSpace ran on this machine before yabai. `home/.yabairc` and `home/.skhdrc` were translated from its config and kept comments crediting the AeroSpace bindings they came from; `aerospace.toml` here was rebuilt from those two files, so it follows the later yabai behaviour rather than the old config (the last version is at `git show 9f7eecc^:home/.config/aerospace/aerospace.toml`).
 The cask was removed in `9f7eecc` because `brew bundle` started failing on it. The cause was the stale Homebrew pin described above, not a broken cask.
