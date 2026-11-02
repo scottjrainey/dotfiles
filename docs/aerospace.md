@@ -130,6 +130,8 @@ The repo change does not undo live machine state. Once, after it lands:
 2. `./rebuild.sh`. The Homebrew `zap` cleanup uninstalls yabai, skhd, sleepwatcher and WhichSpace, and the LaunchAgent links go away.
 3. Remove `/etc/sudoers.d/yabai` and the `-arm64e_preview_abi` boot argument, then re-enable SIP from recoveryOS.
 4. Reduce native Spaces to one.
+5. Remove the leftover scripting addition: `sudo rm -rf /Library/ScriptingAdditions/yabai.osax`. `yabai --uninstall-sa` would normally do this, but it went away with the formula in step 2. With SIP back on the bundle cannot load, so it is only clutter.
+6. Check System Settings > Privacy & Security > Accessibility by eye and remove any stale yabai or skhd entries. macOS 27 does not let the TCC database be read from the shell, so there is no command to confirm they are gone.
 
 Every removed file stays in git history. `git log --diff-filter=D --oneline -- home/.yabairc` names the commit that removed it, and `git show <commit>^:<path>` prints the last version of any of them. Going back to yabai after step 3 also means relaxing SIP from recoveryOS again.
 
