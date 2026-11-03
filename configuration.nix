@@ -77,6 +77,14 @@
     # are untouched. Safe to leave set - the migration is one-time and this
     # is a no-op on every switch after the first.
     autoMigrate = true;
+    # Off: these add `eval "$(brew shellenv)"` to /etc/zshrc (and the bash
+    # and fish equivalents), which runs after ~/.zprofile and re-prepends
+    # /opt/homebrew/bin ahead of the Nix profile paths .zprofile put first.
+    # .zprofile already runs brew shellenv for every login shell, and child
+    # shells inherit that PATH, so nothing else needs it.
+    enableZshIntegration = false;
+    enableBashIntegration = false;
+    enableFishIntegration = false;
   };
 
   homebrew = {
