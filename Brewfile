@@ -6,11 +6,11 @@
 #   brew bundle check --verbose                        # listed here but not installed
 #   brew bundle cleanup --file=Brewfile --dry-run       # installed but not listed here
 #
-# HOMEBREW_REQUIRE_TAP_TRUST=1 (set in zprofile) makes Homebrew ignore the
-# third-party taps below unless they're trusted. `brew bundle` can't express
-# trust, so bootstrap.sh's Step 8 parses this file directly and runs
-# `brew trust` on every tap and every tap-qualified (user/tap/name) brew/cask
-# below.
+# Homebrew requires tap trust by default (HOMEBREW_REQUIRE_TAP_TRUST is
+# deprecated in 7.x), so it ignores the third-party taps below unless
+# they're trusted. `brew bundle` can't express trust, so bootstrap.sh's
+# Step 8 parses this file directly and runs `brew trust` on every tap and
+# every tap-qualified (user/tap/name) brew/cask below.
 
 tap "anomalyco/tap"
 tap "codecrafters-io/tap"
@@ -28,11 +28,12 @@ cask "font-iosevka-term-nerd-font"
 cask "font-symbols-only-nerd-font"
 
 # === Pretty viewers & process utilities ===
-# bat-extras extends bat (nix-managed); mprocs is a process-manager TUI;
+# bat-extras extends bat (nix-managed); dekit (formerly mprocs) is a
+# process-manager TUI;
 # tuicr is a code-review TUI, driven from gh-dash (see home/.config/gh-dash);
 # superfile is a TUI file manager (the binary is `spf`).
 brew "bat-extras"
-brew "mprocs"
+brew "dekit"
 brew "tuicr"
 brew "superfile"
 
@@ -58,7 +59,8 @@ brew "beads"
 
 # === Containers, cloud & networking ===
 cask "docker-desktop"
-cask "gcloud-cli"
+# gcloud-cli removed 2026-11: unused, and its stale python@3.13 install
+# receipt made Homebrew 7's bundle cleanup fail on mpdecimal/sqlite/xz.
 cask "tailscale-app"
 brew "supabase/tap/supabase"
 

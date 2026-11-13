@@ -104,7 +104,7 @@
 
     brews = [
       "bat-extras"
-      "mprocs"
+      "dekit"
       "tuicr"
       "superfile"
       "jqp"
@@ -131,13 +131,14 @@
       "ghostty"
       # AeroSpace, the window manager (docs/aerospace.md). Needs
       # Homebrew 6.0.16+ for its postflight_steps cask DSL - see the
-      # nix-homebrew pin in flake.nix.
+      # nix-homebrew input in flake.nix.
       "nikitabobko/tap/aerospace"
       "font-fira-code-nerd-font"
       "font-iosevka-term-nerd-font"
       "font-symbols-only-nerd-font"
       "docker-desktop"
-      "gcloud-cli"
+      # gcloud-cli removed 2026-11: unused, and its stale python@3.13 install
+      # receipt made Homebrew 7's bundle cleanup fail on mpdecimal/sqlite/xz.
       "tailscale-app"
       "claude"
       "chatgpt"
