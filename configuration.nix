@@ -131,7 +131,7 @@
       "ghostty"
       # AeroSpace, the window manager (docs/aerospace.md). Needs
       # Homebrew 6.0.16+ for its postflight_steps cask DSL - see the
-      # nix-homebrew pin in flake.nix.
+      # nix-homebrew input in flake.nix.
       "nikitabobko/tap/aerospace"
       "font-fira-code-nerd-font"
       "font-iosevka-term-nerd-font"

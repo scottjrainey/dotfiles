@@ -11,7 +11,7 @@ AeroSpace needs no scripting addition, no SIP change, no sudoers entry and no Do
 ## What this repo sets up
 
 - `configuration.nix` / `Brewfile`: the `nikitabobko/tap` tap and its `nikitabobko/tap/aerospace` cask (AeroSpace 0.21.3-Beta at the time of writing).
-- `flake.nix`: `nix-homebrew` pinned to the commit that ships Homebrew 6.0.22. The cask uses the `postflight_steps do run ... end` DSL, which needs Homebrew 6.0.16 or newer; the previous lock held Homebrew at 6.0.12, and that is what made `brew bundle` fail on the cask in September (not a broken cask upstream).
+- `flake.nix`: `nix-homebrew` tracks upstream, so `flake.lock` decides the Homebrew version (7.x). The cask uses the `postflight_steps do run ... end` DSL, which needs Homebrew 6.0.16 or newer. An older lock held Homebrew at 6.0.12, and that is what made `brew bundle` fail on the cask in September (not a broken cask upstream). From 2026-10-28 until November 2026 the input was pinned to Homebrew 6.0.22; the `flake.nix` comment records why and when that was lifted.
 - `home/.config/aerospace/aerospace.toml`, linked to `~/.config/aerospace/aerospace.toml`.
 - Helper scripts in `home/.local/bin/`, each with a `tests/<name>.test.sh`:
   - `aerospace-stack-focus`: alt+ctrl+j/k stack cycling.
@@ -26,7 +26,7 @@ AeroSpace needs no scripting addition, no SIP change, no sudoers entry and no Do
 1. Rebuild (`./rebuild.sh`), then check that Homebrew is new enough and AeroSpace is installed:
 
    ```sh
-   brew --version                        # 6.0.22
+   readlink /opt/homebrew/Library/Homebrew   # .../brew-7.0.<n>-patched/Library/Homebrew
    ls -d /Applications/AeroSpace.app
    ```
 
@@ -149,4 +149,4 @@ The config itself is easiest to check from a running AeroSpace with service-mode
 ## History
 
 AeroSpace ran on this machine before yabai. `home/.yabairc` and `home/.skhdrc` were translated from its config and kept comments crediting the AeroSpace bindings they came from; `aerospace.toml` here was rebuilt from those two files, so it follows the later yabai behaviour rather than the old config (the last version is at `git show 9f7eecc^:home/.config/aerospace/aerospace.toml`).
-The cask was removed in `9f7eecc` because `brew bundle` started failing on it. The cause was the stale Homebrew pin described above, not a broken cask.
+The cask was removed in `9f7eecc` because `brew bundle` started failing on it. The cause was the stale Homebrew lock described above, not a broken cask.
