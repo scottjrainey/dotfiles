@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Trusts every Homebrew tap, and every tap-qualified (user/tap/name) brew and
-# cask, listed in this repo's Brewfile. HOMEBREW_REQUIRE_TAP_TRUST=1 (set in
-# home/.zprofile) makes Homebrew refuse to load an untrusted tap's
-# casks/formulae, and `brew bundle` has no way to express trust - this is the
-# only thing that grants it. See AGENTS.md's "Package management" section.
+# cask, listed in this repo's Brewfile. Homebrew's default tap trust makes it
+# refuse to load an untrusted tap's casks/formulae, and `brew bundle` has no
+# way to express trust - this is the only thing that grants it. See
+# AGENTS.md's "Package management" section.
 #
 # Shared by bootstrap.sh (Step 8) and rebuild.sh, so a newly-added tap gets
 # trusted on an ordinary rebuild too, not only on a fresh-machine bootstrap.

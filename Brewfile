@@ -6,11 +6,11 @@
 #   brew bundle check --verbose                        # listed here but not installed
 #   brew bundle cleanup --file=Brewfile --dry-run       # installed but not listed here
 #
-# HOMEBREW_REQUIRE_TAP_TRUST=1 (set in zprofile) makes Homebrew ignore the
-# third-party taps below unless they're trusted. `brew bundle` can't express
-# trust, so bootstrap.sh's Step 8 parses this file directly and runs
-# `brew trust` on every tap and every tap-qualified (user/tap/name) brew/cask
-# below.
+# Homebrew requires tap trust by default (HOMEBREW_REQUIRE_TAP_TRUST is
+# deprecated in 7.x), so it ignores the third-party taps below unless
+# they're trusted. `brew bundle` can't express trust, so bootstrap.sh's
+# Step 8 parses this file directly and runs `brew trust` on every tap and
+# every tap-qualified (user/tap/name) brew/cask below.
 
 tap "anomalyco/tap"
 tap "codecrafters-io/tap"
