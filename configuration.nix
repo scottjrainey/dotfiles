@@ -104,7 +104,7 @@
 
     brews = [
       "bat-extras"
-      "mprocs"
+      "dekit"
       "tuicr"
       "superfile"
       "jqp"

@@ -28,11 +28,12 @@ cask "font-iosevka-term-nerd-font"
 cask "font-symbols-only-nerd-font"
 
 # === Pretty viewers & process utilities ===
-# bat-extras extends bat (nix-managed); mprocs is a process-manager TUI;
+# bat-extras extends bat (nix-managed); dekit (formerly mprocs) is a
+# process-manager TUI;
 # tuicr is a code-review TUI, driven from gh-dash (see home/.config/gh-dash);
 # superfile is a TUI file manager (the binary is `spf`).
 brew "bat-extras"
-brew "mprocs"
+brew "dekit"
 brew "tuicr"
 brew "superfile"
 
