@@ -58,7 +58,8 @@ brew "beads"
 
 # === Containers, cloud & networking ===
 cask "docker-desktop"
-cask "gcloud-cli"
+# gcloud-cli removed 2026-11: unused, and its stale python@3.13 install
+# receipt made Homebrew 7's bundle cleanup fail on mpdecimal/sqlite/xz.
 cask "tailscale-app"
 brew "supabase/tap/supabase"
 

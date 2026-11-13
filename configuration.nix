@@ -137,7 +137,8 @@
       "font-iosevka-term-nerd-font"
       "font-symbols-only-nerd-font"
       "docker-desktop"
-      "gcloud-cli"
+      # gcloud-cli removed 2026-11: unused, and its stale python@3.13 install
+      # receipt made Homebrew 7's bundle cleanup fail on mpdecimal/sqlite/xz.
       "tailscale-app"
       "claude"
       "chatgpt"
