@@ -9,3 +9,17 @@ cache/
 *.db
 *.db-shm
 *.db-wal
+
+# Baby Menu-owned seed files. On every launch Baby Menu copies its bundled
+# Contents/Resources/extensions-template/ over ~/.baby-menu/extensions/ with
+# a forced recursive copy (seedExtensionWorkspace in the app's main process),
+# so any tracked copy is overwritten with whatever the installed version
+# ships and re-dirties this repo at each login. The app re-seeds them on
+# every machine, so nothing is lost by not tracking them. Keep widget
+# changes in the per-extension sources (e.g. claude-code-quota/server.ts),
+# never in these files. If a Baby Menu upgrade adds a new template path, it
+# will show up as untracked: add it here rather than committing it.
+extensions/AGENTS.md
+extensions/babymenu-env.d.ts
+extensions/hello-world/
+extensions/recipes/
