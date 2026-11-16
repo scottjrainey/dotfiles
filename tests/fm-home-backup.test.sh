@@ -202,7 +202,9 @@ test_malformed_target_refuses() {
 test_unresolved_home_refuses() {
   local dir out rc=0
   dir=$(new_case)
-  out=$(PATH="$dir/fakebin:$PATH" GH_STUB_URL="$dir/bare.git" \
+  # Unset FM_HOME explicitly: a firstmate-launched session exports one, and an
+  # inherited value would resolve a home and bypass the refusal under test.
+  out=$(env -u FM_HOME PATH="$dir/fakebin:$PATH" GH_STUB_URL="$dir/bare.git" \
     FM_ROOT_OVERRIDE="$dir/fmroot" FM_HOME_BACKUP_CONFIG="$dir/cfg" \
     FM_HOME_BACKUP_WORKDIR="$dir/work" HOME="$dir/nohome" \
     "$BACKUP" backup 2>&1) || rc=$?
