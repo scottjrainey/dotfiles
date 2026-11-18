@@ -72,6 +72,22 @@ new_case() { # echoes the case dir
   fakebin=$(fm_fakebin "$dir")
   cat > "$fakebin/gh" <<'GHEOF'
 #!/usr/bin/env bash
+# GH_STUB_CALLS names a counter file; the first GH_STUB_HANG_CALLS calls hang the
+# way a connection held across a sleep does, and the first GH_STUB_NETFAIL_CALLS
+# fail the way gh does with the network down. The hang keeps a child holding the
+# output pipe, as git-remote-https does, so only a process-group kill ends it.
+if [ -n "${GH_STUB_CALLS:-}" ]; then
+  n=$(($(cat "$GH_STUB_CALLS" 2> /dev/null || printf 0) + 1))
+  printf '%s\n' "$n" > "$GH_STUB_CALLS"
+  if [ "$n" -le "${GH_STUB_HANG_CALLS:-0}" ]; then
+    sleep 287 &
+    wait
+  fi
+  if [ "$n" -le "${GH_STUB_NETFAIL_CALLS:-0}" ]; then
+    printf 'error connecting to api.github.com\ncheck your internet connection or https://githubstatus.com\n' >&2
+    exit 1
+  fi
+fi
 if [ "${GH_STUB_FAIL:-0}" = 1 ]; then
   printf 'GraphQL: Could not resolve to a Repository with the name.\n' >&2
   exit 1
@@ -82,6 +98,37 @@ printf '%s\037%s\037%s\037%s\037%s\n' \
 GHEOF
   chmod +x "$fakebin/gh"
   printf '%s\n' "$dir"
+}
+
+# Shadow git with a wrapper that makes the first GIT_STUB_HANG_CALLS calls of
+# subcommand GIT_STUB_HANG_VERB hang (counted in GIT_STUB_CALLS) and passes every
+# other call to the real git, so a stalled clone, fetch or push can be staged
+# against the case's real local remote.
+install_git_stub() { # <case-dir>
+  local real
+  real=$(command -v git) || fail 'no git on PATH'
+  cat > "$1/fakebin/git" <<GITEOF
+#!/usr/bin/env bash
+verb=
+for arg in "\$@"; do
+  case \$arg in
+    clone | fetch | push) verb=\$arg; break ;;
+  esac
+done
+if [ -n "\$verb" ] && [ "\$verb" = "\${GIT_STUB_HANG_VERB:-}" ]; then
+  n=\$((\$(cat "\$GIT_STUB_CALLS" 2> /dev/null || printf 0) + 1))
+  printf '%s\\n' "\$n" > "\$GIT_STUB_CALLS"
+  if [ "\$n" -le "\${GIT_STUB_HANG_CALLS:-0}" ]; then
+    sleep 287 &
+    wait
+  fi
+fi
+if [ -n "\$verb" ] && [ "\$verb" = "\${GIT_STUB_SLOW_VERB:-}" ]; then
+  sleep "\${GIT_STUB_SLOW_SECS:-0}"
+fi
+exec '$real' "\$@"
+GITEOF
+  chmod +x "$1/fakebin/git"
 }
 
 # Run the command for a case with that case's environment.
@@ -172,6 +219,22 @@ test_bad_invocations_exit_two() {
   run_case "$dir" restore --home 'bad id' --into /tmp/x > /dev/null 2>&1 || rc=$?
   expect_code 2 "$rc" 'restore with an invalid home id'
   pass 'fm-home-backup.sh: every malformed invocation exits 2'
+}
+
+test_invalid_network_bounds_exit_two() {
+  local dir rc
+  dir=$(new_case)
+  rc=0
+  FM_HOME_BACKUP_NET_TIMEOUT=0 run_case "$dir" backup > /dev/null 2>&1 || rc=$?
+  expect_code 2 "$rc" 'a zero network timeout'
+  rc=0
+  FM_HOME_BACKUP_NET_BUDGET=soon run_case "$dir" backup > /dev/null 2>&1 || rc=$?
+  expect_code 2 "$rc" 'a non-numeric network budget'
+  rc=0
+  FM_HOME_BACKUP_RETRY_PAUSE=-1 run_case "$dir" backup > /dev/null 2>&1 || rc=$?
+  expect_code 2 "$rc" 'a negative retry pause'
+  expect_code 0 "$(remote_commits "$dir")" 'an invalid network bound still pushed'
+  pass 'fm-home-backup.sh: a malformed network bound is invalid use, never an unbounded call'
 }
 
 # --- configuration refusals -------------------------------------------------
@@ -694,6 +757,233 @@ test_a_stale_lock_is_broken() {
   pass 'fm-home-backup.sh: a lock whose owner is gone is broken instead of wedging every run'
 }
 
+# --- network bounds ---------------------------------------------------------
+#
+# A call in flight when a laptop sleeps wakes holding a dead connection. These
+# cases stage that with stubs that hang until killed, and pin the contract a
+# watcher relies on: every call is cut off within its bound, a call is retried
+# once, a call that stays silent exits 75 rather than 1, and an answer that is a
+# refusal still exits 1 however the network behaved first.
+
+# run_case with tight network bounds, so a staged hang costs the suite seconds
+# rather than the production defaults.
+run_case_fast() { # <case-dir> <args...>
+  FM_HOME_BACKUP_NET_TIMEOUT=2 FM_HOME_BACKUP_NET_BUDGET=20 FM_HOME_BACKUP_RETRY_PAUSE=0 \
+    FM_HOME_BACKUP_TRANSFER_TIMEOUT=2 run_case "$@"
+}
+
+test_hung_privacy_check_is_cut_off_and_exits_tempfail() {
+  local dir out rc=0 start elapsed
+  dir=$(new_case)
+  start=$(date +%s)
+  out=$(GH_STUB_CALLS="$dir/gh.calls" GH_STUB_HANG_CALLS=9 \
+    run_case_fast "$dir" backup) || rc=$?
+  elapsed=$(($(date +%s) - start))
+  expect_code 75 "$rc" 'a privacy check that hangs through its retry'
+  [ "$elapsed" -lt 12 ] || fail "two 2s-bounded attempts took ${elapsed}s, so the hang was not cut off"
+  expect_code 2 "$(cat "$dir/gh.calls")" 'gh attempts for a hung privacy check'
+  assert_contains "$out" 'privacy could not be confirmed' 'the refusal did not say privacy was unconfirmed'
+  assert_contains "$out" 'nothing was pushed' 'the refusal did not say nothing was pushed'
+  assert_contains "$out" 'temporary' 'the refusal did not classify itself as temporary'
+  expect_code 0 "$(remote_commits "$dir")" 'a hung privacy check still pushed'
+  pass 'fm-home-backup.sh: a hung privacy check is cut off within its bound, retried once, and exits 75'
+}
+
+test_privacy_check_network_error_retries_then_succeeds() {
+  local dir out rc=0
+  dir=$(new_case)
+  out=$(GH_STUB_CALLS="$dir/gh.calls" GH_STUB_HANG_CALLS=1 \
+    run_case_fast "$dir" backup) || rc=$?
+  expect_code 0 "$rc" 'a privacy check that hangs once'
+  expect_code 2 "$(cat "$dir/gh.calls")" 'gh attempts for a privacy check that hangs once'
+  assert_contains "$out" 'retrying once' 'the run did not say it retried'
+  assert_contains "$out" 'pushed to owner/backup' 'the retried run did not push'
+  expect_code 1 "$(remote_commits "$dir")" 'the retried run did not commit once'
+
+  rm -f "$dir/gh.calls"
+  printf 'new note\n' > "$dir/homes/main/data/note.md"
+  rc=0
+  out=$(GH_STUB_CALLS="$dir/gh.calls" GH_STUB_NETFAIL_CALLS=1 \
+    run_case_fast "$dir" backup) || rc=$?
+  expect_code 0 "$rc" 'a privacy check that hits one network error'
+  expect_code 2 "$(remote_commits "$dir")" 'the run after one network error did not push'
+  pass 'fm-home-backup.sh: one hung or failed privacy check is retried and the run still pushes'
+}
+
+test_privacy_check_network_errors_exhaust_to_tempfail() {
+  local dir out rc=0
+  dir=$(new_case)
+  out=$(GH_STUB_CALLS="$dir/gh.calls" GH_STUB_NETFAIL_CALLS=9 \
+    run_case_fast "$dir" backup) || rc=$?
+  expect_code 75 "$rc" 'a privacy check that fails on the network twice'
+  expect_code 2 "$(cat "$dir/gh.calls")" 'gh attempts for a network-down privacy check'
+  assert_contains "$out" 'error connecting to api.github.com' 'the refusal hid the network error'
+  expect_code 0 "$(remote_commits "$dir")" 'a network-down privacy check still pushed'
+  pass 'fm-home-backup.sh: a privacy check that cannot reach GitHub twice exits 75 and pushes nothing'
+}
+
+# Refusals are answers, not silence: neither a flaky network before them nor
+# the new status may soften them to 75.
+test_refusals_after_a_flaky_network_still_exit_one() {
+  local dir out rc=0
+  dir=$(new_case)
+  out=$(GH_STUB_CALLS="$dir/gh.calls" GH_STUB_HANG_CALLS=1 \
+    GH_STUB_PRIVATE=false GH_STUB_VISIBILITY=PUBLIC \
+    run_case_fast "$dir" backup) || rc=$?
+  expect_code 1 "$rc" 'a public target answered on the retry'
+  assert_contains "$out" 'is not private' 'the retried public refusal did not say so'
+  expect_code 0 "$(remote_commits "$dir")" 'a public target was pushed to after a retry'
+
+  rc=0
+  out=$(GH_STUB_FAIL=1 GH_STUB_CALLS="$dir/gh.calls.fail" \
+    run_case_fast "$dir" backup) || rc=$?
+  expect_code 1 "$rc" 'a repo gh cannot find'
+  expect_code 1 "$(cat "$dir/gh.calls.fail")" 'gh attempts for a repo it cannot find (an answer is not retried)'
+
+  printf 'TOKEN=hunter2\n' > "$dir/homes/main/data/.env"
+  rc=0
+  out=$(GH_STUB_CALLS="$dir/gh.calls.cred" GH_STUB_HANG_CALLS=1 \
+    run_case_fast "$dir" backup) || rc=$?
+  expect_code 1 "$rc" 'a credential-shaped file after a retried privacy check'
+  assert_contains "$out" 'credential-shaped' 'the credential refusal did not classify the file'
+  expect_code 0 "$(remote_commits "$dir")" 'a credential-shaped file was pushed after a retry'
+  pass 'fm-home-backup.sh: a public target, an unknown repo and a credential-shaped file still exit 1'
+}
+
+test_hung_push_is_cut_off_and_the_next_run_recovers() {
+  local dir out rc=0 start elapsed
+  dir=$(new_case)
+  install_git_stub "$dir"
+  start=$(date +%s)
+  out=$(GIT_STUB_HANG_VERB=push GIT_STUB_CALLS="$dir/git.calls" GIT_STUB_HANG_CALLS=9 \
+    run_case_fast "$dir" backup) || rc=$?
+  elapsed=$(($(date +%s) - start))
+  expect_code 75 "$rc" 'a push that hangs through its retry'
+  [ "$elapsed" -lt 15 ] || fail "two 2s-bounded push attempts took ${elapsed}s, so the hang was not cut off"
+  expect_code 2 "$(cat "$dir/git.calls")" 'push attempts for a hung push'
+  assert_contains "$out" 'could not push to owner/backup' 'the tempfail did not name the push'
+  expect_code 0 "$(remote_commits "$dir")" 'a hung push still landed'
+  assert_absent "$dir/work/lock" 'a timed-out run left its lock behind'
+  [ -z "$(find "$dir/work" -maxdepth 1 -name 'net.*')" ] \
+    || fail 'a timed-out call left its timeout marker behind'
+
+  rc=0
+  dir=$(new_case)
+  install_git_stub "$dir"
+  out=$(GIT_STUB_HANG_VERB=push GIT_STUB_CALLS="$dir/git.calls" GIT_STUB_HANG_CALLS=1 \
+    run_case_fast "$dir" backup) || rc=$?
+  expect_code 0 "$rc" 'a push that hangs once'
+  expect_code 2 "$(cat "$dir/git.calls")" 'push attempts for a push that hangs once'
+  expect_code 1 "$(remote_commits "$dir")" 'the retried push did not land exactly once'
+  pass 'fm-home-backup.sh: a hung push is cut off and exits 75, and a push that hangs once is retried'
+}
+
+test_hung_clone_retries_from_an_empty_destination() {
+  local dir out rc=0
+  dir=$(new_case)
+  install_git_stub "$dir"
+  out=$(GIT_STUB_HANG_VERB=clone GIT_STUB_CALLS="$dir/git.calls" GIT_STUB_HANG_CALLS=1 \
+    run_case_fast "$dir" backup) || rc=$?
+  expect_code 0 "$rc" 'a clone that hangs once'
+  expect_code 2 "$(cat "$dir/git.calls")" 'clone attempts for a clone that hangs once'
+  assert_contains "$(remote_files "$dir")" 'main/data/backlog.md' 'the retried clone did not lead to a push'
+
+  rc=0
+  rm -f "$dir/git.calls"
+  out=$(GIT_STUB_HANG_VERB=fetch GIT_STUB_CALLS="$dir/git.calls" GIT_STUB_HANG_CALLS=9 \
+    run_case_fast "$dir" backup) || rc=$?
+  expect_code 75 "$rc" 'a fetch that hangs through its retry'
+  assert_contains "$out" 'could not fetch owner/backup' 'the tempfail did not name the fetch'
+  pass 'fm-home-backup.sh: a hung clone is retried from scratch, and a fetch that stays hung exits 75'
+}
+
+# A transfer that is slow but still moving is not a stall: it outlasts both the
+# short per-attempt bound and the run budget meant for the gh privacy check, and
+# still completes with a single attempt. A stub git stands in for the slow wire.
+test_a_slow_but_flowing_transfer_is_not_cut_off() {
+  local dir out rc=0
+  dir=$(new_case)
+  install_git_stub "$dir"
+  out=$(FM_HOME_BACKUP_NET_TIMEOUT=2 FM_HOME_BACKUP_NET_BUDGET=3 FM_HOME_BACKUP_RETRY_PAUSE=0 \
+    FM_HOME_BACKUP_TRANSFER_TIMEOUT=30 GIT_STUB_SLOW_VERB=push GIT_STUB_SLOW_SECS=5 \
+    run_case "$dir" backup) || rc=$?
+  expect_code 0 "$rc" 'a push slower than the short bounds but still flowing'
+  assert_contains "$out" 'pushed to owner/backup' 'the slow push did not complete'
+  expect_code 1 "$(remote_commits "$dir")" 'the slow push did not land once'
+  pass 'fm-home-backup.sh: a slow but flowing git transfer outlasts the short privacy-check bounds'
+}
+
+test_an_exhausted_network_budget_skips_rather_than_fails() {
+  local dir out rc=0
+  dir=$(new_case)
+  install_git_stub "$dir"
+  # A 3s budget is spent by one 2s gh attempt plus a 2s retry: the retry gets
+  # only the 1s left, and the clone after it has nothing, which is how a run
+  # that slept between calls finds its budget gone.
+  out=$(FM_HOME_BACKUP_NET_TIMEOUT=2 FM_HOME_BACKUP_NET_BUDGET=3 FM_HOME_BACKUP_RETRY_PAUSE=0 \
+    GH_STUB_CALLS="$dir/gh.calls" GH_STUB_HANG_CALLS=9 \
+    run_case "$dir" backup) || rc=$?
+  expect_code 75 "$rc" 'a run whose network budget ran out'
+  expect_code 0 "$(remote_commits "$dir")" 'a run out of budget still pushed'
+  pass 'fm-home-backup.sh: a run out of network budget exits 75 instead of overrunning its caller'
+}
+
+# A sleep stops the watchdog's timer but not the wall clock, so an attempt that
+# straddled one ends long after its bound by the wall clock. That attempt must
+# still get its retry, with a fresh budget, rather than finding the run's budget
+# spent by the time asleep. A date stub jumps the wall clock 1000s from its
+# third reading - the end of the first gh attempt - to stage exactly that.
+test_an_attempt_that_straddles_a_sleep_gets_a_fresh_retry() {
+  local dir out rc=0 real
+  dir=$(new_case)
+  real=$(command -v date) || fail 'no date on PATH'
+  cat > "$dir/fakebin/date" <<DATEEOF
+#!/usr/bin/env bash
+if [ "\$#" -eq 1 ] && [ "\$1" = +%s ]; then
+  n=\$((\$(cat "\$DATE_STUB_CALLS" 2> /dev/null || printf 0) + 1))
+  printf '%s\\n' "\$n" > "\$DATE_STUB_CALLS"
+  now=\$('$real' +%s)
+  [ "\$n" -lt 3 ] || now=\$((now + 1000))
+  printf '%s\\n' "\$now"
+  exit 0
+fi
+exec '$real' "\$@"
+DATEEOF
+  chmod +x "$dir/fakebin/date"
+  out=$(DATE_STUB_CALLS="$dir/date.calls" GH_STUB_CALLS="$dir/gh.calls" GH_STUB_HANG_CALLS=1 \
+    run_case_fast "$dir" backup) || rc=$?
+  expect_code 0 "$rc" 'a privacy check that straddled a sleep'
+  assert_contains "$out" 'slept during this call' 'the run did not recognise the sleep'
+  expect_code 2 "$(cat "$dir/gh.calls")" 'gh attempts across a sleep'
+  expect_code 1 "$(remote_commits "$dir")" 'the run after a sleep did not push'
+  pass 'fm-home-backup.sh: an attempt that straddles a sleep is retried once with a fresh budget'
+}
+
+test_a_terminated_run_exits_tempfail() {
+  local dir rc=0 pid cmd_pid='' tries=0
+  dir=$(new_case)
+  FM_HOME_BACKUP_NET_TIMEOUT=3 FM_HOME_BACKUP_NET_BUDGET=20 FM_HOME_BACKUP_RETRY_PAUSE=0 \
+    GH_STUB_CALLS="$dir/gh.calls" GH_STUB_HANG_CALLS=9 \
+    run_case "$dir" backup > "$dir/term.out" 2>&1 &
+  pid=$!
+  # Signal the command itself - the background subshell's child - not the
+  # subshell, which is what a supervisor's kill of one process looks like.
+  while [ -z "$cmd_pid" ] && [ "$tries" -lt 50 ]; do
+    cmd_pid=$(pgrep -P "$pid" -f fm-home-backup.sh | head -1)
+    [ -n "$cmd_pid" ] || sleep 0.1
+    tries=$((tries + 1))
+  done
+  [ -n "$cmd_pid" ] || fail 'the backup under test never started'
+  sleep 1
+  kill -TERM "$cmd_pid"
+  wait "$pid" || rc=$?
+  expect_code 75 "$rc" 'a run sent SIGTERM'
+  assert_grep 'terminated' "$dir/term.out" 'a terminated run did not say so'
+  expect_code 0 "$(remote_commits "$dir")" 'a terminated run still pushed'
+  assert_absent "$dir/work/lock" 'a terminated run left its lock behind'
+  pass 'fm-home-backup.sh: a run stopped with SIGTERM is a skipped run and exits 75'
+}
+
 # --- restore ----------------------------------------------------------------
 
 test_restore_prints_the_plan_and_writes_nothing() {
@@ -866,6 +1156,7 @@ test_restore_reports_visibility_rather_than_gating_on_it() {
 
 test_help_describes_both_verbs
 test_bad_invocations_exit_two
+test_invalid_network_bounds_exit_two
 test_unconfigured_target_refuses_with_setup_steps
 test_malformed_target_refuses
 test_unresolved_home_refuses
@@ -894,6 +1185,16 @@ test_restore_warns_when_the_home_was_not_captured_last_run
 test_a_live_lock_makes_the_run_a_no_op
 test_a_live_lock_no_ops_backup_but_refuses_restore
 test_a_stale_lock_is_broken
+test_hung_privacy_check_is_cut_off_and_exits_tempfail
+test_privacy_check_network_error_retries_then_succeeds
+test_privacy_check_network_errors_exhaust_to_tempfail
+test_refusals_after_a_flaky_network_still_exit_one
+test_hung_push_is_cut_off_and_the_next_run_recovers
+test_hung_clone_retries_from_an_empty_destination
+test_a_slow_but_flowing_transfer_is_not_cut_off
+test_an_exhausted_network_budget_skips_rather_than_fails
+test_an_attempt_that_straddles_a_sleep_gets_a_fresh_retry
+test_a_terminated_run_exits_tempfail
 test_restore_prints_the_plan_and_writes_nothing
 test_restore_refuses_a_populated_home_without_force
 test_restore_leaves_state_and_projects_alone

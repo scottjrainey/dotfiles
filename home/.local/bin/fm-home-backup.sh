@@ -84,7 +84,9 @@
 # when that same payload reports BOTH isPrivate=true AND visibility=PRIVATE and
 # the returned nameWithOwner matches the configured slug; anything else - public,
 # internal, missing field, unauthenticated gh, network failure - refuses without
-# pushing. Restore deliberately does NOT gate on privacy: it only reads, and
+# pushing. A network failure is the one refusal that exits 75 rather than 1 (see
+# NETWORK BOUNDS): it still pushes nothing, it is only classified as temporary.
+# Restore deliberately does NOT gate on privacy: it only reads, and
 # refusing to restore during a real outage because a repo's visibility drifted
 # would help nobody. Restore prints the visibility it saw instead.
 #
@@ -119,6 +121,39 @@
 # unreadable counts as held for a short grace window, so the instant between
 # creating the lock and recording its owner cannot hand one clone to two runs,
 # and a genuinely torn lock still self-heals once that window passes.
+#
+# NETWORK BOUNDS, AND WHY A STALLED NETWORK IS NOT A FAILURE
+# This runs on a laptop that sleeps. A call in flight when the machine sleeps
+# wakes up holding a dead TCP connection that neither gh nor git notices for many
+# minutes, so every network call - the gh privacy check, git clone, fetch and
+# push - is bounded:
+#   - each attempt is cut off after FM_HOME_BACKUP_NET_TIMEOUT seconds (default
+#     10). The bound is enforced in plain bash: the call runs in its own process
+#     group and a watchdog kills that whole group, so a helper such as
+#     git-remote-https cannot outlive it, and nothing beyond stock macOS (no
+#     coreutils timeout) is needed;
+#   - git additionally aborts a transfer slower than GIT_HTTP_LOW_SPEED_LIMIT
+#     bytes/s for GIT_HTTP_LOW_SPEED_TIME seconds (defaults 1000 and 10, each kept
+#     if already set), and never prompts for credentials;
+#   - the whole run spends at most FM_HOME_BACKUP_NET_BUDGET seconds of wall
+#     time (default 25) on the gh privacy check, which keeps that check inside
+#     the watcher's 30s per-check bound. git clone, fetch and push move data, so
+#     they are bound by the stall detector above plus a wall ceiling of
+#     FM_HOME_BACKUP_TRANSFER_TIMEOUT seconds (default 600) per attempt, and
+#     neither the short per-attempt bound nor the budget cuts off a slow but
+#     flowing transfer. A run whose budget is already gone - typically because
+#     the machine slept part way through - stops before the next call.
+# A call that timed out or failed with a network-shaped error is retried exactly
+# once after FM_HOME_BACKUP_RETRY_PAUSE seconds (default 3). An attempt whose
+# wall time far exceeded its bound means the machine slept during it, so that
+# retry also gets a fresh budget: one retry after a wake. Failures that are
+# answers rather than silence - an authentication error, a repo gh cannot find,
+# a public target - are never retried and keep exiting 1.
+# When the retry fails too or the budget runs out, the run exits 75
+# (EX_TEMPFAIL) naming what it could not reach, and nothing is published. A run
+# sent SIGTERM exits 75 too; a push is atomic, so nothing is ever half-published.
+# Either way the next run re-syncs from origin and starts over. A caller should treat 75 as neutral - a skipped
+# run - and never count it toward a failure threshold.
 #
 # UNEXPECTED SHAPES ARE REFUSALS
 # A symlink, a non-regular file, or a path containing a tab or newline anywhere
@@ -159,6 +194,15 @@
 #   FM_ROOT_OVERRIDE         firstmate repo root supplying bin/fm-ff-lib.sh
 #   FM_HOME_BACKUP_CONFIG    operator config dir
 #   FM_HOME_BACKUP_WORKDIR   work dir holding the backup clone and the lock
+#   FM_HOME_BACKUP_NET_TIMEOUT   seconds one network attempt may take (default 10)
+#   FM_HOME_BACKUP_NET_BUDGET    wall seconds the run may spend on network calls
+#                                (default 25)
+#   FM_HOME_BACKUP_TRANSFER_TIMEOUT  wall ceiling per git transfer attempt
+#                                (default 600)
+#   FM_HOME_BACKUP_RETRY_PAUSE   seconds between a failed attempt and its one
+#                                retry (default 3; 0 is allowed)
+#   GIT_HTTP_LOW_SPEED_LIMIT, GIT_HTTP_LOW_SPEED_TIME   git's stall detector,
+#                                defaulted to 1000 bytes/s over 10s when unset
 #
 # EXIT STATUS
 #   0  captured and pushed, clean no-op, or a plan-only restore
@@ -171,6 +215,13 @@
 #   3  every capturable home was captured and pushed, but at least one registered
 #      home was missed: a remote home this version cannot read, or a local home
 #      whose own directory is missing or is not a usable secondmate home
+#  75  temporary, the run did not complete: GitHub could not be reached within
+#      the network bounds even after one retry, or the run's network budget ran
+#      out (typically a sleep mid-run) - in both cases nothing was pushed - or
+#      the run was sent SIGTERM, which never leaves anything half-published. A
+#      privacy check that could not reach GitHub lands here and still refuses to
+#      push. Treat it as a skipped run, not a failure; the next run retries from
+#      scratch
 set -eu
 
 usage() {
@@ -272,6 +323,183 @@ else
     *) die "--into must be an absolute path, got: $RESTORE_INTO" 2 ;;
   esac
 fi
+
+# --- network bounds ---------------------------------------------------------
+#
+# Validated before anything else runs, so a mistyped knob is invalid use rather
+# than an unbounded or instantly-expiring network call.
+
+EX_TEMPFAIL=75
+
+net_knob() { # <name> <default> <minimum>
+  local value
+  eval "value=\${$1:-\$2}"
+  case $value in
+    '' | *[!0-9]*) die "$1 must be a whole number of seconds, got: $value" 2 ;;
+  esac
+  [ "$value" -ge "$3" ] || die "$1 must be at least $3, got: $value" 2
+  printf '%s\n' "$value"
+}
+
+NET_TIMEOUT=$(net_knob FM_HOME_BACKUP_NET_TIMEOUT 10 1)
+NET_BUDGET=$(net_knob FM_HOME_BACKUP_NET_BUDGET 25 1)
+RETRY_PAUSE=$(net_knob FM_HOME_BACKUP_RETRY_PAUSE 3 0)
+TRANSFER_TIMEOUT=$(net_knob FM_HOME_BACKUP_TRANSFER_TIMEOUT 600 1)
+# An attempt whose wall time overran its bound by more than this slept part way
+# through: the watchdog's sleep stops with the machine, the wall clock does not.
+WAKE_SLACK=5
+
+export GIT_HTTP_LOW_SPEED_LIMIT=${GIT_HTTP_LOW_SPEED_LIMIT:-1000}
+export GIT_HTTP_LOW_SPEED_TIME=${GIT_HTTP_LOW_SPEED_TIME:-10}
+export GIT_TERMINAL_PROMPT=0
+export GH_PROMPT_DISABLED=1
+
+NET_DEADLINE=$(($(date +%s) + NET_BUDGET))
+
+# Run a command with a wall-clock bound; exits 124 when the bound cut it off.
+# It is a subshell so that its job control and traps never leak into the script.
+# The command gets its own process group (set -m), so the watchdog can kill the
+# whole group - a git-remote-https helper holding the output pipe open would
+# otherwise keep the caller's command substitution waiting on a dead connection.
+# stdin is /dev/null because a background process group that reads the terminal
+# is stopped rather than failed.
+# Whether the bound fired is recorded in a marker file the watchdog writes BEFORE
+# it kills anything, rather than read from the watchdog's exit status: a command
+# can die of that kill before the watchdog gets to exit, and reaping the
+# watchdog at that instant would misreport a timeout as an ordinary failure.
+# shellcheck disable=SC2317,SC2329 # The trap bodies are reached only by signal.
+run_bounded() ( # <seconds> <command...>
+  # A kill aimed at a process group that already exited fails, which is
+  # expected here and must not end this subshell through the caller's set -e.
+  set +e
+  secs=$1
+  shift
+  marker=$(mktemp "$WORKDIR/net.XXXXXX") || {
+    printf 'could not create a timeout marker under %s\n' "$WORKDIR" >&2
+    exit 1
+  }
+  pid=
+  wd=
+  trap 'rm -f -- "$marker"' EXIT
+  trap '[ -z "$pid" ] || kill -KILL -- "-$pid" 2> /dev/null; [ -z "$wd" ] || kill -KILL -- "-$wd" 2> /dev/null; exit 143' TERM INT HUP
+  set -m
+  "$@" < /dev/null &
+  pid=$!
+  (
+    sleep "$secs"
+    printf 'fired\n' > "$marker"
+    kill -TERM -- "-$pid"
+    sleep 2
+    kill -KILL -- "-$pid"
+  ) > /dev/null 2>&1 &
+  wd=$!
+  set +m
+  rc=0
+  wait "$pid" || rc=$?
+  kill -KILL -- "-$wd" 2> /dev/null
+  wait "$wd" 2> /dev/null
+  [ "$rc" -ne 0 ] || exit 0
+  if [ -s "$marker" ]; then
+    # Anything of the command's group still alive ignored the TERM.
+    kill -KILL -- "-$pid" 2> /dev/null
+    exit 124
+  fi
+  exit "$rc"
+)
+
+# Whether a failed call's output reads as the network failing rather than as an
+# answer. Answers are checked first, so an authentication error that git follows
+# with "the remote end hung up" is still a refusal and never retried.
+net_transient() { # <exit-status> <output>
+  local text
+  [ "$1" -ne 124 ] || return 0
+  text=$(lower "$2")
+  case $text in
+    *'authentication failed'* | *'bad credentials'* | *'repository not found'* \
+      | *'could not resolve to a repository'* | *'permission denied'* \
+      | *'permission to '*' denied'* | *'http 401'* | *'http 403'* | *'http 404'* \
+      | *'gh auth login'*)
+      return 1
+      ;;
+    *'could not resolve host'* | *'could not resolve proxy'* | *'no such host'* \
+      | *'failed to connect'* | *"couldn't connect"* | *'error connecting to'* \
+      | *'connection timed out'* | *'operation timed out'* | *'i/o timeout'* \
+      | *'connection reset'* | *'connection refused'* | *'connection was reset'* \
+      | *'network is unreachable'* | *'no route to host'* | *'network is down'* \
+      | *'operation too slow'* | *'rpc failed; curl'* | *'early eof'* \
+      | *'remote end hung up'* | *'unexpected eof'* | *'broken pipe'* \
+      | *'tls handshake'* | *'ssl_error'* | *'ssl_read'* | *'ssl_connect'* \
+      | *'empty reply from server'* | *'temporary failure in name resolution'* \
+      | *'context deadline exceeded'* | *'dial tcp'*)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+net_tempfail() { # <what> <why>
+  printf 'fm-home-backup: %s: %s\n' "$1" "$2" >&2
+  die "nothing was pushed. This is temporary - usually the machine sleeping or the network dropping - and the next run retries from scratch." "$EX_TEMPFAIL"
+}
+
+# Run one network call under the bounds above, retrying once. On success, or on
+# a failure that is an answer rather than silence, it returns the call's status
+# with its combined output in NET_OUT for the caller to report. A call that
+# stays silent through its retry, or a run out of budget, exits 75 here.
+NET_OUT=
+NET_TRANSFER=0
+net_call() { # <what> <command...>
+  local what=$1 attempt=1 now remaining bound rc ended
+  shift
+  while :; do
+    now=$(date +%s)
+    if [ "$NET_TRANSFER" -eq 1 ]; then
+      bound=$TRANSFER_TIMEOUT
+    else
+      remaining=$((NET_DEADLINE - now))
+      [ "$remaining" -gt 0 ] \
+        || net_tempfail "$what" "the run's ${NET_BUDGET}s network budget ran out before this call (the machine most likely slept mid-run)"
+      bound=$NET_TIMEOUT
+      [ "$remaining" -ge "$bound" ] || bound=$remaining
+    fi
+    rc=0
+    NET_OUT=$(run_bounded "$bound" "$@" 2>&1) || rc=$?
+    [ "$rc" -ne 0 ] || return 0
+    net_transient "$rc" "$NET_OUT" || return "$rc"
+    ended=$(date +%s)
+    if [ "$attempt" -ge 2 ]; then
+      if [ "$rc" -eq 124 ]; then
+        net_tempfail "$what" "no response within ${bound}s, twice"
+      fi
+      net_tempfail "$what" "network error, twice:
+$NET_OUT"
+    fi
+    if [ "$NET_TRANSFER" -eq 0 ] && [ "$((ended - now))" -gt "$((bound + WAKE_SLACK))" ]; then
+      # The clock jumped past the bound while the watchdog slept with the
+      # machine: this attempt straddled a sleep, and its stale connection is
+      # exactly what the retry is for. It gets a full budget of its own.
+      NET_DEADLINE=$((ended + RETRY_PAUSE + NET_BUDGET))
+      printf 'fm-home-backup: %s: the machine slept during this call; retrying once\n' "$what" >&2
+    elif [ "$rc" -eq 124 ]; then
+      printf 'fm-home-backup: %s: no response within %ss; retrying once\n' "$what" "$bound" >&2
+    else
+      printf 'fm-home-backup: %s: network error; retrying once\n' "$what" >&2
+    fi
+    sleep "$RETRY_PAUSE"
+    attempt=2
+  done
+}
+
+# A git transfer moves real data, so it is bounded by stalls (git's low-speed
+# detector) and a generous wall ceiling rather than the short privacy-check
+# bounds: a slow but flowing clone or push must not be cut off.
+net_transfer() { # <what> <command...>
+  local rc=0
+  NET_TRANSFER=1
+  net_call "$@" || rc=$?
+  NET_TRANSFER=0
+  return "$rc"
+}
 
 # --- resolution -------------------------------------------------------------
 
@@ -397,6 +625,35 @@ tree_listed() { # <name> <space-separated list>
   return 1
 }
 
+# --- run cleanup ------------------------------------------------------------
+#
+# Armed before the first network call, so a run terminated during the privacy
+# check is classified the same way as one terminated during the push.
+
+LOCK_HELD=0
+TMP=
+# Set once restore has staged trees inside the destination. While a swap is in
+# flight that scratch directory holds the only copy of the trees it has already
+# moved aside, so cleanup must leave it for the operator instead of reaping it.
+RESTORE_SCRATCH=
+RESTORE_SWAPPING=0
+
+# shellcheck disable=SC2317,SC2329 # Reached only through the traps below.
+cleanup() {
+  [ "$LOCK_HELD" -eq 0 ] || rm -rf -- "$LOCK"
+  [ -z "$TMP" ] || rm -rf -- "$TMP"
+  if [ -n "$RESTORE_SCRATCH" ] && [ "$RESTORE_SWAPPING" -eq 0 ]; then
+    rm -rf -- "$RESTORE_SCRATCH"
+  fi
+}
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT
+# SIGTERM is how a supervisor such as the watcher's per-check timeout stops a
+# run. Nothing is half-published by one (see IDEMPOTENCE), so it is a skipped
+# run and exits 75 rather than reading as a failure.
+# shellcheck disable=SC2154 # EX_TEMPFAIL is set above, in the network bounds.
+trap 'printf "fm-home-backup: terminated before finishing; nothing is half-published, and the next run re-syncs from origin and retries\n" >&2; cleanup; exit $EX_TEMPFAIL' TERM
+
 # --- target resolution and privacy verification -----------------------------
 
 command -v gh > /dev/null 2>&1 \
@@ -409,11 +666,19 @@ command -v gh > /dev/null 2>&1 \
 # stays an empty field and fails its own check instead of corrupting another.
 # .isPrivate deliberately does not use jq's "//" default: "false // x" yields x,
 # so a public repo would be rewritten into whatever default was supplied.
+# The work dir is created before the first network call: run_bounded keeps its
+# timeout markers there, inside the only directory this command writes to.
+mkdir -p "$WORKDIR" || die "could not create work dir: $WORKDIR"
+
+# A network failure here exits 75 inside net_call - still before any push, so the
+# privacy refusal holds; only its classification differs from the refusals below.
 gh_rc=0
-gh_out=$(gh repo view "$TARGET_SLUG" \
+net_call "could not reach GitHub to read $TARGET_SLUG, so target privacy could not be confirmed" \
+  gh repo view "$TARGET_SLUG" \
   --json isPrivate,visibility,url,nameWithOwner,defaultBranchRef \
   --jq '[(.isPrivate | tostring), ((.visibility // "") | tostring), ((.url // "") | tostring), ((.nameWithOwner // "") | tostring), ((.defaultBranchRef.name // "") | tostring)] | join("\u001f")' \
-  2>&1) || gh_rc=$?
+  || gh_rc=$?
+gh_out=$NET_OUT
 if [ "$gh_rc" -ne 0 ]; then
   printf 'fm-home-backup: could not read %s through gh (exit %s):\n%s\n' \
     "$TARGET_SLUG" "$gh_rc" "$gh_out" >&2
@@ -438,26 +703,6 @@ fi
 
 # --- run scratch and lock ---------------------------------------------------
 
-mkdir -p "$WORKDIR" || die "could not create work dir: $WORKDIR"
-LOCK_HELD=0
-TMP=
-# Set once restore has staged trees inside the destination. While a swap is in
-# flight that scratch directory holds the only copy of the trees it has already
-# moved aside, so cleanup must leave it for the operator instead of reaping it.
-RESTORE_SCRATCH=
-RESTORE_SWAPPING=0
-
-# shellcheck disable=SC2317,SC2329 # Reached only through the traps below.
-cleanup() {
-  [ "$LOCK_HELD" -eq 0 ] || rm -rf -- "$LOCK"
-  [ -z "$TMP" ] || rm -rf -- "$TMP"
-  if [ -n "$RESTORE_SCRATCH" ] && [ "$RESTORE_SWAPPING" -eq 0 ]; then
-    rm -rf -- "$RESTORE_SCRATCH"
-  fi
-}
-trap cleanup EXIT
-trap 'cleanup; exit 130' INT
-trap 'cleanup; exit 143' TERM
 
 # Identity that survives pid reuse: the pid plus the kernel's own start time for
 # it. A recycled pid belonging to some unrelated process reports a different
@@ -541,15 +786,27 @@ for stale in "$WORKDIR"/run.*; do
   [ -d "$stale" ] && [ "$stale" != "$TMP" ] || continue
   rm -rf -- "$stale"
 done
+# Timeout markers are removed by the call that made them; one older than any
+# bound was orphaned by a hard kill. A concurrent run's live marker is minutes
+# younger than this, so it is never swept from under that run.
+find "$WORKDIR" -maxdepth 1 -type f -name 'net.*' -mmin +60 -exec rm -f -- {} + 2> /dev/null || true
 
 # --- backup clone -----------------------------------------------------------
 
 git_repo() { git -c core.autocrlf=false -C "$REPO" "$@"; }
 
-clone_fresh() {
+# A failed attempt can leave a partial clone behind, so each attempt - the retry
+# included - starts from an empty destination.
+# shellcheck disable=SC2329 # Invoked through net_call.
+clone_attempt() {
   rm -rf -- "$REPO"
-  git -c core.autocrlf=false clone --quiet -- "$TARGET_URL" "$REPO" \
-    || die "could not clone $TARGET_SLUG from $TARGET_URL"
+  git -c core.autocrlf=false clone --quiet -- "$TARGET_URL" "$REPO"
+}
+
+clone_fresh() {
+  net_transfer "could not clone $TARGET_SLUG" clone_attempt \
+    || die "could not clone $TARGET_SLUG from $TARGET_URL:
+$NET_OUT"
 }
 
 sync_repo() {
@@ -562,7 +819,9 @@ sync_repo() {
   else
     clone_fresh
   fi
-  git_repo fetch --quiet --prune origin || die "could not fetch $TARGET_SLUG"
+  net_transfer "could not fetch $TARGET_SLUG" git_repo fetch --quiet --prune origin \
+    || die "could not fetch $TARGET_SLUG:
+$NET_OUT"
   if git_repo rev-parse --verify --quiet "refs/remotes/origin/$TARGET_BRANCH" > /dev/null; then
     git_repo checkout --quiet -B "$TARGET_BRANCH" "refs/remotes/origin/$TARGET_BRANCH" \
       || die "could not check out $TARGET_BRANCH"
@@ -1022,8 +1281,10 @@ else
     git_repo -c user.name=fm-home-backup -c user.email=fm-home-backup@localhost \
       commit --quiet -m "backup:$CAPTURED_IDS" \
       || die "could not commit the snapshot"
-    git_repo push --quiet origin "HEAD:refs/heads/$TARGET_BRANCH" \
-      || die "could not push to $TARGET_SLUG. The next run re-syncs from origin and retries."
+    net_transfer "could not push to $TARGET_SLUG" \
+      git_repo push --quiet origin "HEAD:refs/heads/$TARGET_BRANCH" \
+      || die "could not push to $TARGET_SLUG. The next run re-syncs from origin and retries:
+$NET_OUT"
     printf 'fm-home-backup: pushed to %s (%s); homes:%s\n' \
       "$TARGET_SLUG" "$TARGET_BRANCH" "$CAPTURED_IDS"
   fi
