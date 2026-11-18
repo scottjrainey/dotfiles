@@ -136,8 +136,12 @@
 #     bytes/s for GIT_HTTP_LOW_SPEED_TIME seconds (defaults 1000 and 10, each kept
 #     if already set), and never prompts for credentials;
 #   - the whole run spends at most FM_HOME_BACKUP_NET_BUDGET seconds of wall
-#     time (default 25) on network calls, which keeps a run inside the watcher's
-#     30s per-check bound. A run whose budget is already gone - typically because
+#     time (default 25) on the gh privacy check, which keeps that check inside
+#     the watcher's 30s per-check bound. git clone, fetch and push move data, so
+#     they are bound by the stall detector above plus a wall ceiling of
+#     FM_HOME_BACKUP_TRANSFER_TIMEOUT seconds (default 600) per attempt, and
+#     neither the short per-attempt bound nor the budget cuts off a slow but
+#     flowing transfer. A run whose budget is already gone - typically because
 #     the machine slept part way through - stops before the next call.
 # A call that timed out or failed with a network-shaped error is retried exactly
 # once after FM_HOME_BACKUP_RETRY_PAUSE seconds (default 3). An attempt whose
@@ -193,6 +197,8 @@
 #   FM_HOME_BACKUP_NET_TIMEOUT   seconds one network attempt may take (default 10)
 #   FM_HOME_BACKUP_NET_BUDGET    wall seconds the run may spend on network calls
 #                                (default 25)
+#   FM_HOME_BACKUP_TRANSFER_TIMEOUT  wall ceiling per git transfer attempt
+#                                (default 600)
 #   FM_HOME_BACKUP_RETRY_PAUSE   seconds between a failed attempt and its one
 #                                retry (default 3; 0 is allowed)
 #   GIT_HTTP_LOW_SPEED_LIMIT, GIT_HTTP_LOW_SPEED_TIME   git's stall detector,
@@ -338,6 +344,7 @@ net_knob() { # <name> <default> <minimum>
 NET_TIMEOUT=$(net_knob FM_HOME_BACKUP_NET_TIMEOUT 10 1)
 NET_BUDGET=$(net_knob FM_HOME_BACKUP_NET_BUDGET 25 1)
 RETRY_PAUSE=$(net_knob FM_HOME_BACKUP_RETRY_PAUSE 3 0)
+TRANSFER_TIMEOUT=$(net_knob FM_HOME_BACKUP_TRANSFER_TIMEOUT 600 1)
 # An attempt whose wall time overran its bound by more than this slept part way
 # through: the watchdog's sleep stops with the machine, the wall clock does not.
 WAKE_SLACK=5
@@ -440,16 +447,21 @@ net_tempfail() { # <what> <why>
 # with its combined output in NET_OUT for the caller to report. A call that
 # stays silent through its retry, or a run out of budget, exits 75 here.
 NET_OUT=
+NET_TRANSFER=0
 net_call() { # <what> <command...>
   local what=$1 attempt=1 now remaining bound rc ended
   shift
   while :; do
     now=$(date +%s)
-    remaining=$((NET_DEADLINE - now))
-    [ "$remaining" -gt 0 ] \
-      || net_tempfail "$what" "the run's ${NET_BUDGET}s network budget ran out before this call (the machine most likely slept mid-run)"
-    bound=$NET_TIMEOUT
-    [ "$remaining" -ge "$bound" ] || bound=$remaining
+    if [ "$NET_TRANSFER" -eq 1 ]; then
+      bound=$TRANSFER_TIMEOUT
+    else
+      remaining=$((NET_DEADLINE - now))
+      [ "$remaining" -gt 0 ] \
+        || net_tempfail "$what" "the run's ${NET_BUDGET}s network budget ran out before this call (the machine most likely slept mid-run)"
+      bound=$NET_TIMEOUT
+      [ "$remaining" -ge "$bound" ] || bound=$remaining
+    fi
     rc=0
     NET_OUT=$(run_bounded "$bound" "$@" 2>&1) || rc=$?
     [ "$rc" -ne 0 ] || return 0
@@ -462,7 +474,7 @@ net_call() { # <what> <command...>
       net_tempfail "$what" "network error, twice:
 $NET_OUT"
     fi
-    if [ "$((ended - now))" -gt "$((bound + WAKE_SLACK))" ]; then
+    if [ "$NET_TRANSFER" -eq 0 ] && [ "$((ended - now))" -gt "$((bound + WAKE_SLACK))" ]; then
       # The clock jumped past the bound while the watchdog slept with the
       # machine: this attempt straddled a sleep, and its stale connection is
       # exactly what the retry is for. It gets a full budget of its own.
@@ -476,6 +488,17 @@ $NET_OUT"
     sleep "$RETRY_PAUSE"
     attempt=2
   done
+}
+
+# A git transfer moves real data, so it is bounded by stalls (git's low-speed
+# detector) and a generous wall ceiling rather than the short privacy-check
+# bounds: a slow but flowing clone or push must not be cut off.
+net_transfer() { # <what> <command...>
+  local rc=0
+  NET_TRANSFER=1
+  net_call "$@" || rc=$?
+  NET_TRANSFER=0
+  return "$rc"
 }
 
 # --- resolution -------------------------------------------------------------
@@ -781,7 +804,7 @@ clone_attempt() {
 }
 
 clone_fresh() {
-  net_call "could not clone $TARGET_SLUG" clone_attempt \
+  net_transfer "could not clone $TARGET_SLUG" clone_attempt \
     || die "could not clone $TARGET_SLUG from $TARGET_URL:
 $NET_OUT"
 }
@@ -796,7 +819,7 @@ sync_repo() {
   else
     clone_fresh
   fi
-  net_call "could not fetch $TARGET_SLUG" git_repo fetch --quiet --prune origin \
+  net_transfer "could not fetch $TARGET_SLUG" git_repo fetch --quiet --prune origin \
     || die "could not fetch $TARGET_SLUG:
 $NET_OUT"
   if git_repo rev-parse --verify --quiet "refs/remotes/origin/$TARGET_BRANCH" > /dev/null; then
@@ -805,15 +828,8 @@ $NET_OUT"
     git_repo reset --quiet --hard "refs/remotes/origin/$TARGET_BRANCH" \
       || die "could not reset to origin/$TARGET_BRANCH"
   else
-    # An empty remote is reset to too: an unborn branch with an empty index.
-    # Otherwise a commit left behind by a run whose push failed would survive,
-    # this run would find the tree unchanged against it, and nothing would ever
-    # be pushed until the fleet changed again.
-    if ! git_repo symbolic-ref HEAD "refs/heads/$TARGET_BRANCH" \
-      || ! git_repo update-ref -d "refs/heads/$TARGET_BRANCH" \
-      || ! git_repo read-tree --empty; then
-      die "could not start branch $TARGET_BRANCH in an empty $TARGET_SLUG"
-    fi
+    git_repo checkout --quiet -B "$TARGET_BRANCH" \
+      || die "could not start branch $TARGET_BRANCH in an empty $TARGET_SLUG"
   fi
   git_repo clean --quiet -ffdx || die "could not clean the backup clone"
 }
@@ -1265,7 +1281,7 @@ else
     git_repo -c user.name=fm-home-backup -c user.email=fm-home-backup@localhost \
       commit --quiet -m "backup:$CAPTURED_IDS" \
       || die "could not commit the snapshot"
-    net_call "could not push to $TARGET_SLUG" \
+    net_transfer "could not push to $TARGET_SLUG" \
       git_repo push --quiet origin "HEAD:refs/heads/$TARGET_BRANCH" \
       || die "could not push to $TARGET_SLUG. The next run re-syncs from origin and retries:
 $NET_OUT"

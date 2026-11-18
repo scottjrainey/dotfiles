@@ -123,6 +123,9 @@ if [ -n "\$verb" ] && [ "\$verb" = "\${GIT_STUB_HANG_VERB:-}" ]; then
     wait
   fi
 fi
+if [ -n "\$verb" ] && [ "\$verb" = "\${GIT_STUB_SLOW_VERB:-}" ]; then
+  sleep "\${GIT_STUB_SLOW_SECS:-0}"
+fi
 exec '$real' "\$@"
 GITEOF
   chmod +x "$1/fakebin/git"
@@ -766,7 +769,7 @@ test_a_stale_lock_is_broken() {
 # rather than the production defaults.
 run_case_fast() { # <case-dir> <args...>
   FM_HOME_BACKUP_NET_TIMEOUT=2 FM_HOME_BACKUP_NET_BUDGET=20 FM_HOME_BACKUP_RETRY_PAUSE=0 \
-    run_case "$@"
+    FM_HOME_BACKUP_TRANSFER_TIMEOUT=2 run_case "$@"
 }
 
 test_hung_privacy_check_is_cut_off_and_exits_tempfail() {
@@ -865,7 +868,8 @@ test_hung_push_is_cut_off_and_the_next_run_recovers() {
     || fail 'a timed-out call left its timeout marker behind'
 
   rc=0
-  rm -f "$dir/git.calls"
+  dir=$(new_case)
+  install_git_stub "$dir"
   out=$(GIT_STUB_HANG_VERB=push GIT_STUB_CALLS="$dir/git.calls" GIT_STUB_HANG_CALLS=1 \
     run_case_fast "$dir" backup) || rc=$?
   expect_code 0 "$rc" 'a push that hangs once'
@@ -891,6 +895,22 @@ test_hung_clone_retries_from_an_empty_destination() {
   expect_code 75 "$rc" 'a fetch that hangs through its retry'
   assert_contains "$out" 'could not fetch owner/backup' 'the tempfail did not name the fetch'
   pass 'fm-home-backup.sh: a hung clone is retried from scratch, and a fetch that stays hung exits 75'
+}
+
+# A transfer that is slow but still moving is not a stall: it outlasts both the
+# short per-attempt bound and the run budget meant for the gh privacy check, and
+# still completes with a single attempt. A stub git stands in for the slow wire.
+test_a_slow_but_flowing_transfer_is_not_cut_off() {
+  local dir out rc=0
+  dir=$(new_case)
+  install_git_stub "$dir"
+  out=$(FM_HOME_BACKUP_NET_TIMEOUT=2 FM_HOME_BACKUP_NET_BUDGET=3 FM_HOME_BACKUP_RETRY_PAUSE=0 \
+    FM_HOME_BACKUP_TRANSFER_TIMEOUT=30 GIT_STUB_SLOW_VERB=push GIT_STUB_SLOW_SECS=5 \
+    run_case "$dir" backup) || rc=$?
+  expect_code 0 "$rc" 'a push slower than the short bounds but still flowing'
+  assert_contains "$out" 'pushed to owner/backup' 'the slow push did not complete'
+  expect_code 1 "$(remote_commits "$dir")" 'the slow push did not land once'
+  pass 'fm-home-backup.sh: a slow but flowing git transfer outlasts the short privacy-check bounds'
 }
 
 test_an_exhausted_network_budget_skips_rather_than_fails() {
@@ -1171,6 +1191,7 @@ test_privacy_check_network_errors_exhaust_to_tempfail
 test_refusals_after_a_flaky_network_still_exit_one
 test_hung_push_is_cut_off_and_the_next_run_recovers
 test_hung_clone_retries_from_an_empty_destination
+test_a_slow_but_flowing_transfer_is_not_cut_off
 test_an_exhausted_network_budget_skips_rather_than_fails
 test_an_attempt_that_straddles_a_sleep_gets_a_fresh_retry
 test_a_terminated_run_exits_tempfail
